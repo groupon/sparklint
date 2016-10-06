@@ -71,7 +71,7 @@ class SparklintHomepage(sourceManager: EventSourceManagerLike) extends UITemplat
         {app.progress.description}
       </p>
         <div class="progress active">
-          <div class="progress-bar progress-bar-info" role="progressbar" id={uniqueId(app.appId, "progress-bar")}
+          <div class="progress-bar" role="progressbar" id={uniqueId(app.appId, "progress-bar")}
                aria-valuenow={app.progress.percent.toString} aria-valuemin="0" aria-valuemax="100"
                style={widthStyle(app.progress)}>
           </div>
@@ -130,6 +130,11 @@ class SparklintHomepage(sourceManager: EventSourceManagerLike) extends UITemplat
         <div class="col-lg-12">
           <div class="alert alert-success" id="summaryApplicationEndedAlert">
             <span id="summaryApplicationDuration"></span>
+          </div>
+          <div class="progress">
+            <div id="summaryApplicationProgress" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+              <span class="sr-only"></span>
+            </div>
           </div>
         </div>
       </div>{summaryRow}<div class="row">
