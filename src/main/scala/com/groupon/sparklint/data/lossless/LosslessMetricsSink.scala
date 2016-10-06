@@ -67,7 +67,7 @@ class LosslessMetricsSink(val dataRange: Option[Interval],
   }
 
 
-  def batchAddUsage(pairs: Seq[(Long, Long)], weight: Int): LosslessMetricsSink = {
+  override def batchAddUsage(pairs: Seq[(Long, Long)], weight: Int): LosslessMetricsSink = {
     val inputInterval = Interval(pairs.map(_._1).min, pairs.map(_._2).max)
     val newDataRange = Some(dataRange.fold(inputInterval)(_.merge(inputInterval)))
     val newStorage = mutable.Map(losslessStorage.toSeq: _*)
@@ -92,10 +92,10 @@ class LosslessMetricsSink(val dataRange: Option[Interval],
     new LosslessMetricsSink(dataRange, numBucketsNeeded, origin, losslessStorage)
   }
 
-  def addUsage(startTime: Long, endTime: Long, weight: Int = 1): LosslessMetricsSink =
+  override def addUsage(startTime: Long, endTime: Long, weight: Int = 1): LosslessMetricsSink =
     batchAddUsage(Seq(startTime -> endTime), weight)
 
-  def removeUsage(startTime: Long, endTime: Long, weight: Int = 1): LosslessMetricsSink =
+  override def removeUsage(startTime: Long, endTime: Long, weight: Int = 1): LosslessMetricsSink =
     batchAddUsage(Seq(startTime -> endTime), -weight)
 }
 
