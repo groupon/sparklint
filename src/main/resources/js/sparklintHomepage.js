@@ -21,8 +21,10 @@ function loadApp(appId) {
 function appSelectorClicked(ev) {
     ev.preventDefault();
 
-    $("#side-menu").find("li").removeClass("selected");
+    var sideMenu = $("#side-menu");
+    sideMenu.find("li").removeClass("selected");
     $(ev.currentTarget).closest('li').addClass('selected');
+    sideMenu.find(".sparklintApp .progress-bar").removeClass("progress-bar-info progress-bar-success progress-bar-striped active");
 
     var appId = $(ev.currentTarget).data("value");
     loadApp(appId)
@@ -35,6 +37,7 @@ function displayAppState(appId, appState) {
     updateSummaryNumExecutors(appState);
     updateSummaryPanel(appState);
     updateSummaryAppDuration(appState);
+    updateProgressBarFor($("#summaryApplicationProgress"), appState);
     updateSummaryCoreUtilization(appState);
     updateIdleTimePanel(appState);
     updateCoreUsageChart(appState);
@@ -57,10 +60,7 @@ function updateEventSourceControl(appId, appState) {
     var description = appState.progress.description;
     $(labelSelector).text(description);
 
-    var barSelector = "#" + appId + "-progress-bar";
-    var percent = appState.progress.percent.toString();
-    $(barSelector).attr('style', 'width: ' + percent + '%').attr('aria-valuenow', percent);
-
+    updateProgressBarFor($("#" + appId + "-progress-bar"), appState);
 
     // set button enabled state on the replay panel
     $("#eventsToStart").prop("disabled", !appState.progress.has_previous);
@@ -125,6 +125,18 @@ function updateSummaryAppDuration(appState) {
             " (" + start.toISOString() + " -> " + end.toISOString() + ")");
     } else {
         summaryApplicationDuration.text("Application is still running. (Since " + start.toISOString() + ")");
+    }
+}
+
+function updateProgressBarFor(progressBar, appState) {
+    progressBar.removeClass("progress-bar-success progress-bar-info progress-bar-striped active");
+    var percent = appState.progress.percent.toString();
+    progressBar.attr('style', 'width: ' + percent + '%').attr('aria-valuenow', percent);
+    progressBar.find(".sr-only").text(appState.progress.description);
+    if (appState.progress.percent == '100') {
+        progressBar.addClass("progress-bar-success");
+    } else {
+        progressBar.addClass("progress-bar-info active progress-bar-striped");
     }
 }
 
