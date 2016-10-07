@@ -12,6 +12,8 @@
 */
 package com.groupon.sparklint.data
 
+import com.groupon.sparklint.data.compressed.CompressedMetricsSink
+
 import scala.collection.mutable
 import scala.collection.mutable.ArrayBuffer
 
@@ -53,6 +55,12 @@ trait MetricsSink {
   }
 
   def changeResolution(toResolution: Long): MetricsSink
+
+  def batchAddUsage(pairs: Seq[(Long, Long)], weight: Int): MetricsSink
+
+  def addUsage(startTime: Long, endTime: Long, weight: Int = 1): MetricsSink
+
+  def removeUsage(startTime: Long, endTime: Long, weight: Int = 1): MetricsSink
 
   /**
     * Get usage distribution
@@ -140,6 +148,6 @@ object MetricsSink {
         mergedStorage(firstBucketIndex + index) += sink(index)
       })
     })
-    ReadonlyMetricSink(maxResolution, dataInterval, origin, mergedStorage.toArray)
+    new CompressedMetricsSink(maxResolution, dataInterval, origin, mergedStorage.toArray)
   }
 }

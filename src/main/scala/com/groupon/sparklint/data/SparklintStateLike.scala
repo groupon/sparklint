@@ -41,9 +41,4 @@ trait SparklintStateLike {
   def lastUpdatedAt: Long
 
   def coreUsage: Map[TaskLocality, MetricsSink]
-
-  lazy val aggregatedCoreUsage: MetricsSink = {
-    MetricsSink.mergeSinks(coreUsage.values)
-  }
-
 }

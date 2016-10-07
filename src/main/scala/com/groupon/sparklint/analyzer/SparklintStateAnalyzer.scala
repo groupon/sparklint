@@ -14,6 +14,7 @@ package com.groupon.sparklint.analyzer
 
 import com.groupon.sparklint.data._
 import com.groupon.sparklint.data.compressed._
+import org.apache.spark.scheduler.TaskLocality
 import org.apache.spark.scheduler.TaskLocality._
 
 import scala.collection.mutable.ArrayBuffer
@@ -95,9 +96,9 @@ case class SparklintStateAnalyzer(state: SparklintStateLike) extends SparklintAn
 
   override lazy val getTimeSeriesCoreUsage: Option[Seq[CoreUsage]] = {
     if (state.firstTaskAt.isDefined) {
-      val resolution = state.coreUsage.map(_._2.resolution).max
-      val adjustedCoreUsage = state.coreUsage.mapValues(_.changeResolution(resolution))
-      val dataRanges = state.coreUsage.flatMap(_._2.dataRange)
+      val resolution = coreUsageWithRunningTasks.map(_._2.resolution).max
+      val adjustedCoreUsage = coreUsageWithRunningTasks.mapValues(_.changeResolution(resolution))
+      val dataRanges = coreUsageWithRunningTasks.flatMap(_._2.dataRange)
       if (dataRanges.isEmpty) {
         Some(Seq.empty)
       } else {
@@ -126,7 +127,7 @@ case class SparklintStateAnalyzer(state: SparklintStateLike) extends SparklintAn
 
   override lazy val getCumulativeCoreUsage: Option[Map[Int, Long]] = {
     if (state.coreUsage.exists(_._2.nonEmpty)) {
-      Some(state.aggregatedCoreUsage.convertToUsageDistribution)
+      Some(aggregatedCoreUsage.convertToUsageDistribution)
     } else {
       None
     }
@@ -134,6 +135,7 @@ case class SparklintStateAnalyzer(state: SparklintStateLike) extends SparklintAn
 
   /**
     * Compress the time series of vcores allocated into an array with the length provided
+    *
     * @param numBuckets divide the app's lifetime into roughly this number of buckets
     * @return the metricsSink that stores the number of CPU millis allocated for each interval
     */
@@ -143,5 +145,22 @@ case class SparklintStateAnalyzer(state: SparklintStateLike) extends SparklintAn
       sink = sink.addUsage(executorInfo.startTime, executorInfo.endTime.getOrElse(state.lastUpdatedAt), executorInfo.cores)
     })
     sink
+  }
+
+  private lazy val aggregatedCoreUsage: MetricsSink = {
+    MetricsSink.mergeSinks(coreUsageWithRunningTasks.values)
+  }
+
+  private lazy val coreUsageWithRunningTasks: Map[TaskLocality, MetricsSink] = {
+    if (state.runningTasks.isEmpty) {
+      state.coreUsage
+    } else {
+      var toReturn = state.coreUsage
+      state.runningTasks.values.foreach(runningTask => {
+        val locality = TaskLocality.withName(runningTask.locality)
+        toReturn = toReturn.updated(locality, toReturn(locality).addUsage(runningTask.launchTime, state.lastUpdatedAt))
+      })
+      toReturn
+    }
   }
 }

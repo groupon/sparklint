@@ -119,7 +119,15 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
         |    } ]
         |  } ],
         |  "timeUntilFirstTask" : 102096,
-        |  "timeSeriesCoreUsage" : [ ],
+        |  "timeSeriesCoreUsage" : [ {
+        |    "time" : 1466087848562,
+        |    "idle" : 0.51048,
+        |    "any" : 0.0,
+        |    "processLocal" : 0.0,
+        |    "nodeLocal" : 0.0,
+        |    "rackLocal" : 0.0,
+        |    "noPref" : 0.0
+        |  } ],
         |  "maxAllocatedCores" : 4,
         |  "coreUtilizationPercentage" : 0.0,
         |  "lastUpdatedAt" : 1466087848562,
@@ -197,77 +205,81 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
         |  "timeUntilFirstTask" : 102096,
         |  "timeSeriesCoreUsage" : [ {
         |    "time" : 1466087848500,
-        |    "idle" : 1.2952,
+        |    "idle" : 0.4192,
         |    "any" : 0.0,
         |    "processLocal" : 0.0,
-        |    "nodeLocal" : 0.846,
+        |    "nodeLocal" : 1.722,
         |    "rackLocal" : 0.0,
         |    "noPref" : 0.0
         |  }, {
         |    "time" : 1466087849000,
-        |    "idle" : 1.1412,
+        |    "idle" : 0.1412
+        |    ,
         |    "any" : 0.0,
         |    "processLocal" : 0.0,
-        |    "nodeLocal" : 1.0,
+        |    "nodeLocal" : 2.0,
         |    "rackLocal" : 0.0,
         |    "noPref" : 0.0
         |  }, {
         |    "time" : 1466087849500,
-        |    "idle" : 1.1412,
+        |    "idle" : 0.1412,
         |    "any" : 0.0,
         |    "processLocal" : 0.0,
-        |    "nodeLocal" : 1.0,
+        |    "nodeLocal" : 2.0,
         |    "rackLocal" : 0.0,
         |    "noPref" : 0.0
         |  }, {
         |    "time" : 1466087850000,
-        |    "idle" : -0.8588,
+        |    "idle" : -1.8588,
         |    "any" : 0.0,
         |    "processLocal" : 0.0,
-        |    "nodeLocal" : 1.0,
+        |    "nodeLocal" : 2.0,
         |    "rackLocal" : 0.0,
         |    "noPref" : 0.0
         |  }, {
         |    "time" : 1466087850500,
-        |    "idle" : -0.8588,
+        |    "idle" : -1.8588,
         |    "any" : 0.0,
         |    "processLocal" : 0.0,
-        |    "nodeLocal" : 1.0,
+        |    "nodeLocal" : 2.0,
         |    "rackLocal" : 0.0,
         |    "noPref" : 0.0
         |  }, {
         |    "time" : 1466087851000,
-        |    "idle" : -0.8588,
+        |    "idle" : -1.8588,
         |    "any" : 0.0,
         |    "processLocal" : 0.0,
-        |    "nodeLocal" : 1.0,
+        |    "nodeLocal" : 2.0,
         |    "rackLocal" : 0.0,
         |    "noPref" : 0.0
         |  }, {
         |    "time" : 1466087851500,
-        |    "idle" : -0.8588,
+        |    "idle" : -1.8588,
         |    "any" : 0.0,
         |    "processLocal" : 0.0,
-        |    "nodeLocal" : 1.0,
+        |    "nodeLocal" : 2.0,
         |    "rackLocal" : 0.0,
         |    "noPref" : 0.0
         |  }, {
         |    "time" : 1466087852000,
-        |    "idle" : -0.0948,
+        |    "idle" : -0.5588,
         |    "any" : 0.0,
         |    "processLocal" : 0.0,
-        |    "nodeLocal" : 0.236,
-        |    "rackLocal" : 0.0,
+        |    "nodeLocal" : 0.472,
+        |    "rackLocal" : 0.228,
         |    "noPref" : 0.0
         |  } ],
         |  "cumulativeCoreUsage" : [ {
-        |    "cores" : 1,
-        |    "duration" : 3542
+        |    "cores" : 2,
+        |    "duration" : 3438
+        |  }, {
+        |    "cores" : 3,
+        |    "duration" : 119
         |  } ],
-        |  "maxConcurrentTasks" : 1,
+        |  "maxConcurrentTasks" : 3,
         |  "maxAllocatedCores" : 4,
-        |  "maxCoreUsage" : 1,
-        |  "coreUtilizationPercentage" : 0.9933236086175945,
+        |  "maxCoreUsage" : 3,
+        |  "coreUtilizationPercentage" : 2.0228343806104134,
         |  "lastUpdatedAt" : 1466087852118,
         |  "applicationLaunchedAt" : 1466087746466,
         |  "progress" : {
