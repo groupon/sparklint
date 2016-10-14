@@ -213,8 +213,7 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
         |    "noPref" : 0.0
         |  }, {
         |    "time" : 1466087849000,
-        |    "idle" : 0.1412
-        |    ,
+        |    "idle" : 0.1412,
         |    "any" : 0.0,
         |    "processLocal" : 0.0,
         |    "nodeLocal" : 2.0,
