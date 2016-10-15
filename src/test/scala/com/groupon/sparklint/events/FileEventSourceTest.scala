@@ -36,11 +36,11 @@ class FileEventSourceTest extends FlatSpec with Matchers {
     source.progress.hasNext shouldBe false
     source.progress.hasPrevious shouldBe false
 
-    intercept[NoSuchElementException] {
-      source.forward()
+    intercept[IllegalArgumentException] {
+      source.forwardEvents()
     }
-    intercept[NoSuchElementException] {
-      source.rewind()
+    intercept[IllegalArgumentException] {
+      source.rewindEvents()
     }
   }
 
@@ -65,16 +65,15 @@ class FileEventSourceTest extends FlatSpec with Matchers {
     val fileEvents = testEvents(testFileNoState)
     val source = FileEventSource(testFileNoState, state)
 
-    source.appId shouldEqual "file_event_log_test"
-    state.onEvents.size shouldEqual 1
-    getTaskId(state.onEvents.head) shouldEqual getTaskId(fileEvents.head)
+    source.appId shouldEqual "file_event_log_test_simple"
+    state.onEvents.size shouldEqual 0
     state.unEvents.isEmpty shouldEqual true
     source.progress.atEnd shouldBe false
-    source.progress.atStart shouldBe false
+    source.progress.atStart shouldBe true
     source.progress.hasNext shouldBe true
-    source.progress.hasPrevious shouldBe true
+    source.progress.hasPrevious shouldBe false
 
-    source.forward(count = 4)
+    source.forwardEvents(count = 5)
     state.onEvents.size shouldEqual 5
     getTaskId(state.onEvents(0)) shouldEqual getTaskId(fileEvents(0))
     getTaskId(state.onEvents(1)) shouldEqual getTaskId(fileEvents(1))
@@ -87,7 +86,7 @@ class FileEventSourceTest extends FlatSpec with Matchers {
     source.progress.hasNext shouldBe false
     source.progress.hasPrevious shouldBe true
 
-    source.rewind(count = 5)
+    source.rewindEvents(count = 5)
     state.onEvents.size shouldEqual 5
     getTaskId(state.onEvents(0)) shouldEqual getTaskId(fileEvents(0))
     getTaskId(state.onEvents(1)) shouldEqual getTaskId(fileEvents(1))
@@ -107,7 +106,7 @@ class FileEventSourceTest extends FlatSpec with Matchers {
   }
 
   private def testFileNoState: File = {
-    new File(resource("file_event_log_test"))
+    new File(resource("file_event_log_test_simple"))
   }
 
   private def testFileWithState: File = {

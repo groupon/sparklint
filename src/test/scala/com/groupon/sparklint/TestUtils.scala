@@ -12,7 +12,7 @@
 */
 package com.groupon.sparklint
 
-import com.groupon.sparklint.events.{CanFreeScroll, EventSourceLike}
+import com.groupon.sparklint.events.{EventSourceLike, FreeScrollEventSource}
 import org.apache.spark.scheduler.{SparkListenerEvent, SparkListenerStageSubmitted, StageInfo}
 
 /**
@@ -25,11 +25,11 @@ object TestUtils {
     ResourceHelper.convertResourcePathToFilePath(getClass.getClassLoader, name)
   }
 
-  def replay(eventSource: EventSourceLike with CanFreeScroll, count: Long = Long.MaxValue) = {
+  def replay(eventSource: EventSourceLike with FreeScrollEventSource, count: Long = Long.MaxValue) = {
     var counter = 0
     var progress = eventSource.progress
     while (counter < count && progress.hasNext) {
-      progress = eventSource.forward()
+      progress = eventSource.forwardEvents()
       counter += 1
     }
   }

@@ -12,9 +12,9 @@
 */
 package com.groupon.sparklint.ui
 
-import com.groupon.sparklint.analyzer.{SparklintAnalyzerLike, SparklintStateAnalyzer}
+import com.groupon.sparklint.analyzer.SparklintStateAnalyzer
 import com.groupon.sparklint.common.Logging
-import com.groupon.sparklint.events.{EventSourceManagerLike, EventSourceProgress}
+import com.groupon.sparklint.events.{EventSourceLike, EventSourceManagerLike, EventSourceProgress}
 import com.groupon.sparklint.server.{AdhocServer, StaticFileService}
 import org.http4s.dsl._
 import org.http4s.{HttpService, Response}
@@ -28,7 +28,7 @@ import scalaz.concurrent.Task
 
 /**
   *
-  * @author swhitear 
+  * @author swhitear
   * @since 8/18/16.
   */
 class UIServer(esManager: EventSourceManagerLike)
@@ -37,46 +37,50 @@ class UIServer(esManager: EventSourceManagerLike)
   routingMap("/") = sparklintService
 
   private def sparklintService = HttpService {
-    case GET -> Root                                                 => homepageHtml
-    case GET -> Root / appId / "state" if appExists(appId)           => stateJson(appId)
-    case GET -> Root / appId / "eventSource" if appExists(appId)     => eventSourceJson(appId)
-    case GET -> Root / appId / "forward" / count if appExists(appId) => forwardAppJson(appId, count)
-    case GET -> Root / appId / "rewind" / count if appExists(appId)  => rewindAppJson(appId, count)
-    case GET -> Root / appId / "to_end" if appExists(appId)          => endAppJson(appId)
-    case GET -> Root / appId / "to_start" if appExists(appId)        => startAppJson(appId)
+    case GET -> Root                                                          => homepageHtml
+    case GET -> Root / appId / "state" if appExists(appId)                    => progressJson(appId)
+    case GET -> Root / appId / "eventSource" if appExists(appId)              => eventSourceJson(appId)
+    case GET -> Root / appId / "forward" / count / evType if appExists(appId) => forwardAppJson(appId, count, evType)
+    case GET -> Root / appId / "rewind" / count / evType if appExists(appId)  => rewindAppJson(appId, count, evType)
+    case GET -> Root / appId / "to_end" if appExists(appId)                   => endAppJson(appId)
+    case GET -> Root / appId / "to_start" if appExists(appId)                 => startAppJson(appId)
   }
 
-  private def appExists(appId: String) = esManager.containsAppId(appId)
+  private def appExists(appId: String) = {
+    esManager.containsAppId(appId)
+  }
 
   private def homepageHtml = {
     val page = new SparklintHomepage(esManager)
     htmlResponse(Ok(page.HTML.toString))
   }
 
-  private def stateJson(appId: String) = {
-    val es = esManager(appId)
-    val report = SparklintStateAnalyzer(es.state)
-    jsonResponse(Ok(pretty(UIServer.reportJson(report, es.progress))))
+  private def progressJson(appId: String) = {
+    val es = esManager.getSource(appId)
+    val report = SparklintStateAnalyzer(es)
+    jsonResponse(Ok(pretty(UIServer.reportJson(report, es))))
   }
 
   private def eventSourceJson(appId: String) = {
-    jsonResponse(Ok(pretty(UIServer.progressJson(esManager(appId).progress))))
+    jsonResponse(Ok(pretty(UIServer.progressJson(esManager.getSource(appId).progress))))
   }
 
-  private def forwardAppJson(appId: String, count: String) = {
-    moveEventSource(count, appId)(esManager.getCanFreeScrollEventSource(appId).forward)
+  private def forwardAppJson(appId: String, count: String, evType: String) = evType.toLowerCase match {
+    case `eventsNav` => moveEventSource(count, appId)(esManager.getScrollingSource(appId).forwardEvents)
+    case `tasksNav`  => moveEventSource(count, appId)(esManager.getScrollingSource(appId).forwardTasks)
   }
 
-  private def rewindAppJson(appId: String, count: String) = {
-    moveEventSource(count, appId)(esManager.getCanFreeScrollEventSource(appId).rewind)
+  private def rewindAppJson(appId: String, count: String, evType: String) = evType.toLowerCase match {
+    case `eventsNav` => moveEventSource(count, appId)(esManager.getScrollingSource(appId).rewindEvents)
+    case `tasksNav`  => moveEventSource(count, appId)(esManager.getScrollingSource(appId).rewindTasks)
   }
 
   private def endAppJson(appId: String) = {
-    endOfEventSource(appId)(esManager.getCanFreeScrollEventSource(appId).end)
+    endOfEventSource(appId)(esManager.getScrollingSource(appId).toEnd)
   }
 
   private def startAppJson(appId: String) = {
-    endOfEventSource(appId)(esManager.getCanFreeScrollEventSource(appId).start)
+    endOfEventSource(appId)(esManager.getScrollingSource(appId).toStart)
   }
 
   private def moveEventSource(count: String, appId: String)(fx: (Int) => EventSourceProgress): Task[Response] = {
@@ -98,13 +102,26 @@ class UIServer(esManager: EventSourceManagerLike)
         eventSourceJson(appId)
     }
   }
+
+
+  private val eventsNav = UIServer.NAV_TYPE_EVENTS.toLowerCase
+  private val tasksNav  = UIServer.NAV_TYPE_TASKS.toLowerCase
 }
 
 object UIServer {
-  def reportJson(report: SparklintStateAnalyzer, progress: EventSourceProgress): JObject = {
+
+  val NAV_TYPE_EVENTS = "Events"
+  val NAV_TYPE_TASKS  = "Tasks"
+
+  def supportedNavTypes: Seq[String] = Seq("Events", "Tasks")
+
+  def reportJson(report: SparklintStateAnalyzer, es: EventSourceLike): JObject = {
     implicit val formats = DefaultFormats
-    ("appName" -> report.appName) ~
-      ("appId" -> report.appId) ~
+
+    val progress = es.progress
+
+    ("appName" -> es.appName) ~
+      ("appId" -> es.appId) ~
       ("allocatedCores" -> report.getExecutorInfo.map(_.values.map(_.cores).sum)) ~
       ("executors" -> report.getExecutorInfo.map(_.map({ case (executorId, info) =>
         ("executorId" -> executorId) ~
@@ -139,8 +156,8 @@ object UIServer {
       ("maxCoreUsage" -> report.getMaxCoreUsage) ~
       ("coreUtilizationPercentage" -> report.getCoreUtilizationPercentage) ~
       ("lastUpdatedAt" -> report.getLastUpdatedAt) ~
-      ("applicationLaunchedAt" -> report.getApplicationLaunchedAt) ~
-      ("applicationEndedAt" -> report.getApplicationEndedAt) ~
+      ("applicationLaunchedAt" -> es.startTime) ~
+      ("applicationEndedAt" -> es.endTime) ~
       ("progress" -> progressJson(progress))
   }
 

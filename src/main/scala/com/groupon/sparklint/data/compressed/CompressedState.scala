@@ -28,15 +28,7 @@ case class CompressedState(appStart: Option[SparkListenerApplicationStart],
                            runningTasks: Map[Long, SparklintTaskInfo],
                            firstTaskAt: Option[Long],
                            applicationEndedAt: Option[Long],
-                           lastUpdatedAt: Long) extends SparklintStateLike {
-  override def appId: Option[String] = appStart.flatMap(_.appId)
-
-  override def appName: Option[String] = appStart.map(_.appName)
-
-  override def applicationLaunchedAt: Option[Long] = appStart.map(_.time)
-
-  override def user: Option[String] = appStart.map(_.sparkUser)
-}
+                           lastUpdatedAt: Long) extends SparklintStateLike
 
 object CompressedState {
   def empty: CompressedState = CompressedState(None, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, None, 0L)

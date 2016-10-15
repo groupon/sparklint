@@ -103,9 +103,9 @@ class SparklintHomepage(sourceManager: EventSourceManagerLike) extends UITemplat
         <option>1000</option>
       </select>
       <select class="form-control" id="typeSelector">
-        <option>Events</option>
-        <!--<option>Tasks</option>
-                    <option>Stages</option>-->
+        {for (navType <- UIServer.supportedNavTypes) yield
+        <option>{navType}</option>
+        }
       </select>
       <div class="input-group-btn">
         <button type="button" class="btn btn-default" title="Forward" id="eventsForward">

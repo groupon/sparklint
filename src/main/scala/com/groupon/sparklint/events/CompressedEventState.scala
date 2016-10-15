@@ -67,14 +67,14 @@ class CompressedEventState(metricsBuckets: Int = 1000) extends EventStateLike {
 
   private def addApp(event: SparkListenerApplicationStart): Unit = {
     state = state.copy(
-      appStart = Some(event),
+      //appStart = Some(event),
       lastUpdatedAt = event.time
     )
   }
 
   private def unAddApp(event: SparkListenerApplicationStart): Unit = {
     state = state.copy(
-      appStart = None,
+      //appStart = None,
       lastUpdatedAt = event.time
     )
   }

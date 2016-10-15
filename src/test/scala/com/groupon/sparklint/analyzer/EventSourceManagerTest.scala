@@ -14,7 +14,7 @@ package com.groupon.sparklint.analyzer
 
 import com.groupon.sparklint.data.SparklintStateLike
 import com.groupon.sparklint.data.compressed.CompressedState
-import com.groupon.sparklint.events.{CanFreeScroll, EventSourceLike, EventSourceManager, EventSourceProgress}
+import com.groupon.sparklint.events._
 import org.scalatest.{FlatSpec, Matchers}
 
 /**
@@ -37,7 +37,7 @@ class EventSourceManagerTest extends FlatSpec with Matchers {
     manager.sourceCount shouldEqual 1
     manager.eventSources.head shouldBe evSource
     manager.containsAppId("test_app_id") shouldBe true
-    manager("test_app_id") shouldBe evSource
+    manager.getSource("test_app_id") shouldBe evSource
   }
 
   it should "add the extra event sources as expected and remain in order" in {
@@ -50,59 +50,22 @@ class EventSourceManagerTest extends FlatSpec with Matchers {
     manager.eventSources.toSet shouldBe Set(evSource1, evSource2)
     manager.containsAppId("test_app_id_1") shouldBe true
     manager.containsAppId("test_app_id_2") shouldBe true
-    manager("test_app_id_1") shouldBe evSource1
-    manager("test_app_id_2") shouldBe evSource2
+    manager.getSource("test_app_id_1") shouldBe evSource1
+    manager.getSource("test_app_id_2") shouldBe evSource2
   }
 
-  it should "forward and reverse the specified event source by the specified count" in {
-    val evSource1 = StubEventSource("test_app_id_1")
-    val evSource2 = StubEventSource("test_app_id_2")
-    val manager = new EventSourceManager(evSource1, evSource2)
-
-    evSource1.progress.position shouldEqual 0
-    evSource2.progress.position shouldEqual 0
-
-    manager.forwardApp("test_app_id_1")
-    evSource1.progress.position shouldEqual 1
-    evSource2.progress.position shouldEqual 0
-
-    manager.forwardApp("test_app_id_2", count = 5)
-    evSource1.progress.position shouldEqual 1
-    evSource2.progress.position shouldEqual 5
-
-    manager.forwardApp("test_app_id_1", count = 8)
-    evSource1.progress.position shouldEqual 9
-    evSource2.progress.position shouldEqual 5
-
-    manager.rewindApp("test_app_id_1", count = 5)
-    evSource1.progress.position shouldEqual 4
-    evSource2.progress.position shouldEqual 5
-
-    manager.rewindApp("test_app_id_2")
-    evSource1.progress.position shouldEqual 4
-    evSource2.progress.position shouldEqual 4
-  }
-
-  it should "throw up when invalid appId specified for indexer, forward or backward" in {
+  it should "throw up when invalid appId specified for indexer" in {
     val evSource = StubEventSource("test_app_id")
     val manager = new EventSourceManager(evSource)
 
     intercept[NoSuchElementException] {
-      manager("invalid_app_id")
-    }
-
-    intercept[NoSuchElementException] {
-      manager.forwardApp("invalid_app_id")
-    }
-
-    intercept[NoSuchElementException] {
-      manager.rewindApp("invalid_app_id")
+      manager.getSource("invalid_app_id")
     }
   }
 }
 
 
-case class StubEventSource(appId: String, count: Int = 10) extends EventSourceLike with CanFreeScroll {
+case class StubEventSource(appId: String, count: Int = 10) extends EventSourceLike with FreeScrollEventSource{
 
   var pointerValue = 0
 
@@ -111,22 +74,28 @@ case class StubEventSource(appId: String, count: Int = 10) extends EventSourceLi
   override def progress: EventSourceProgress = EventSourceProgress(count, pointerValue)
 
   @throws[NoSuchElementException]
-  override def forward(count: Int): EventSourceProgress = {
+  override def forwardEvents(count: Int): EventSourceProgress = {
     pointerValue += count
     progress
   }
 
   @throws[NoSuchElementException]
-  override def rewind(count: Int): EventSourceProgress = {
+  override def rewindEvents(count: Int): EventSourceProgress = {
     pointerValue -= count
     progress
   }
 
   @throws[NoSuchElementException]
-  override def end(): EventSourceProgress = ???
+  override def toEnd(): EventSourceProgress = ???
 
   @throws[NoSuchElementException]
-  override def start(): EventSourceProgress = ???
+  override def toStart(): EventSourceProgress = ???
+
+  @throws[IllegalArgumentException]
+  override def forwardTasks(count: Int): EventSourceProgress = ???
+
+  @throws[IllegalArgumentException]
+  override def rewindTasks(count: Int): EventSourceProgress = ???
 
   override def host: String = ???
 

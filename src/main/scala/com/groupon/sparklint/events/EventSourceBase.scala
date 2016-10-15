@@ -22,12 +22,22 @@ import scala.collection.immutable.HashMap
   * @author swhitear 
   * @since 9/29/16.
   */
-abstract class EventSourceBase(eventState: EventStateLike) {
+abstract class EventSourceBase(eventState: EventStateLike) extends EventSourceLike {
 
   type EnvironmentData = Map[String, Seq[(String, String)]]
 
   protected val UNKNOWN_STRING: String = "<unknown>"
   protected val UNKNOWN_NUMBER: Long = 0
+
+  val appId: String   // still abstract here
+
+  var appNameOpt: Option[String] = None
+
+  def appName: String = appNameOpt.getOrElse(UNKNOWN_STRING)
+
+  var userOpt: Option[String] = None
+
+  def user: String = userOpt.getOrElse(UNKNOWN_STRING)
 
   var versionOpt: Option[String] = None
 
@@ -45,22 +55,18 @@ abstract class EventSourceBase(eventState: EventStateLike) {
 
   def maxMemory: Long = maxMemoryOpt.getOrElse(UNKNOWN_NUMBER)
 
-  def appId: String   // still abstract here
+  var startTimeOpt: Option[Long] = None
 
-  def appName: String = esState.appName.getOrElse(UNKNOWN_STRING)
+  def startTime: Long = startTimeOpt.getOrElse(UNKNOWN_NUMBER)
 
-  def user: String = esState.user.getOrElse(UNKNOWN_STRING)
+  var endTimeOpt: Option[Long] = None
 
-  def startTime: Long = esState.applicationLaunchedAt.getOrElse(UNKNOWN_NUMBER)
-
-  def endTime: Long = esState.applicationEndedAt.getOrElse(UNKNOWN_NUMBER)
+  def endTime: Long = endTimeOpt.getOrElse(UNKNOWN_NUMBER)
 
   var environmentOpt: Option[EnvironmentData] = None
 
   def environment: EnvironmentData = environmentOpt.getOrElse(HashMap.empty)
 
   def fullName = s"$appName ($appId)"
-
-  private def esState = eventState.getState
 
 }

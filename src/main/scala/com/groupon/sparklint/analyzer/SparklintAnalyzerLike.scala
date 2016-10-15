@@ -23,29 +23,9 @@ import com.groupon.sparklint.data._
 trait SparklintAnalyzerLike {
   // Metadata
   /**
-    * @return The name of the application
-    */
-  def appName: Option[String]
-
-  /**
-    * @return The id of the application
-    */
-  def appId: Option[String]
-
-  /**
     * @return Time when the last event was processed
     */
   def getLastUpdatedAt: Option[Long]
-
-  /**
-    * @return Time when the application ends
-    */
-  def getApplicationLaunchedAt: Option[Long]
-
-  /**
-    * @return Time when the application ends
-    */
-  def getApplicationEndedAt: Option[Long]
 
   // Instantaneous stats
   /**

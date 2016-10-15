@@ -57,39 +57,9 @@ trait EventSourceManagerLike {
     * @return The specified EventSourceLike instance.
     */
   @throws[NoSuchElementException]
-  def apply(appId: String): EventSourceLike
-
-  /**
-    * Forwards the EventSourceLike instance matching the specified appId by the specified count amount.
-    *
-    * @param appId The appId of the EventSourceLike instance to forward.
-    * @param count The number of times to advance.
-    * @throws NoSuchElementException When the specified appId does not exist, or advancing by the specified
-    *                                count exceeds the upper limit of the EventSourceLike.
-    * @return An EventSourceProgress instance representing the the current progress state of the EventSourceLike
-    *         instance.
-    */
-  @throws[NoSuchElementException]
-  def forwardApp(appId: String, count: Int): EventSourceProgress
-
-  /**
-    * Rewinds the EventSourceLike instance matching the specified appId by the specified count amount.
-    *
-    * @param appId The appId of the EventSourceLike instance to rewind.
-    * @param count The number of times to rewind.
-    * @throws NoSuchElementException When the specified appId does not exist, or rewinding by the specified
-    *                                count exceeds the lower limit of the EventSourceLike.
-    * @return An EventSourceProgress instance representing the the current progress state of the EventSourceLike
-    *         instance.
-    */
-  @throws[NoSuchElementException]
-  def rewindApp(appId: String, count: Int): EventSourceProgress
+  def getSource(appId: String): EventSourceLike
 
   @throws[NoSuchElementException]
-  def endApp(appId: String): EventSourceProgress
+  def getScrollingSource(appId: String): FreeScrollEventSource
 
-  @throws[NoSuchElementException]
-  def startApp(appId: String): EventSourceProgress
-
-  def getCanFreeScrollEventSource(appId: String): CanFreeScroll
 }

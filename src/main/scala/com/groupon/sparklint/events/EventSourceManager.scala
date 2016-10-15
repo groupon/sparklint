@@ -26,7 +26,7 @@ class EventSourceManager(initialSources: EventSourceLike*) extends EventSourceMa
   // this sync'ed LinkedHashMap is necessary because we want to ensure ordering of items in the manager, not the UI.
   // insertion order works well enough here, we have no need for any other guarantees from the data structure.
   private val eventSourcesByAppId = new mutable.LinkedHashMap[String, EventSourceLike]()
-    with mutable.SynchronizedMap[String, EventSourceLike]
+                                        with mutable.SynchronizedMap[String, EventSourceLike]
   initialSources.foreach(es => eventSourcesByAppId += (es.appId -> es))
 
   override def addEventSource(eventSource: EventSourceLike): Unit = {
@@ -40,27 +40,14 @@ class EventSourceManager(initialSources: EventSourceLike*) extends EventSourceMa
   override def containsAppId(appId: String): Boolean = eventSourcesByAppId.contains(appId)
 
   @throws[NoSuchElementException]
-  override def apply(appId: String): EventSourceLike = eventSourcesByAppId(appId)
+  override def getSource(appId: String): EventSourceLike = eventSourcesByAppId(appId)
 
   @throws[NoSuchElementException]
-  override def forwardApp(appId: String, count: Int = 1): EventSourceProgress = getCanFreeScrollEventSource(appId).forward(count)
-
-  @throws[NoSuchElementException]
-  @throws[IllegalArgumentException]
-  override def rewindApp(appId: String, count: Int = 1): EventSourceProgress = getCanFreeScrollEventSource(appId).rewind(count)
-
-  override def getCanFreeScrollEventSource(appId: String): CanFreeScroll = {
+  override def getScrollingSource(appId: String): FreeScrollEventSource = {
     eventSourcesByAppId.get(appId) match {
-      case Some(eventSource: CanFreeScroll) => eventSource
-      case Some(_)                          => throw new IllegalArgumentException(s"$appId can not rewind")
-      case None                             => throw new NoSuchElementException(s"Missing appId $appId")
+      case Some(eventSource: FreeScrollEventSource) => eventSource
+      case Some(_)                                  => throw new IllegalArgumentException(s"$appId cannot free scroll")
+      case None                                     => throw new NoSuchElementException(s"Missing appId $appId")
     }
   }
-
-  @throws[NoSuchElementException]
-  override def endApp(appId: String): EventSourceProgress = getCanFreeScrollEventSource(appId).end()
-
-  @throws[NoSuchElementException]
-  override def startApp(appId: String): EventSourceProgress = getCanFreeScrollEventSource(appId).start()
-
 }
