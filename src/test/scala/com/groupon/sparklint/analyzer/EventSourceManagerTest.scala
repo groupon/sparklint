@@ -65,37 +65,8 @@ class EventSourceManagerTest extends FlatSpec with Matchers {
 }
 
 
-case class StubEventSource(appId: String, count: Int = 10) extends EventSourceLike with FreeScrollEventSource{
-
-  var pointerValue = 0
-
-  override def state: SparklintStateLike = CompressedState.empty
-
-  override def progress: EventSourceProgress = EventSourceProgress(count, pointerValue)
-
-  @throws[NoSuchElementException]
-  override def forwardEvents(count: Int): EventSourceProgress = {
-    pointerValue += count
-    progress
-  }
-
-  @throws[NoSuchElementException]
-  override def rewindEvents(count: Int): EventSourceProgress = {
-    pointerValue -= count
-    progress
-  }
-
-  @throws[NoSuchElementException]
-  override def toEnd(): EventSourceProgress = ???
-
-  @throws[NoSuchElementException]
-  override def toStart(): EventSourceProgress = ???
-
-  @throws[IllegalArgumentException]
-  override def forwardTasks(count: Int): EventSourceProgress = ???
-
-  @throws[IllegalArgumentException]
-  override def rewindTasks(count: Int): EventSourceProgress = ???
+case class StubEventSource(appId: String) extends EventSourceLike with FreeScrollEventSource {
+  override def version: String = ???
 
   override def host: String = ???
 
@@ -111,7 +82,37 @@ case class StubEventSource(appId: String, count: Int = 10) extends EventSourceLi
 
   override def endTime: Long = ???
 
+  override def progress: EventSourceProgress = ???
+
+  override def state: SparklintStateLike = ???
+
   override def fullName: String = ???
 
-  override def version: String = ???
+  @throws[IllegalArgumentException]
+  override def forwardEvents(count: Int): EventSourceProgress = ???
+
+  @throws[IllegalArgumentException]
+  override def rewindEvents(count: Int): EventSourceProgress = ???
+
+  @throws[IllegalArgumentException]
+  override def forwardTasks(count: Int): EventSourceProgress = ???
+
+  @throws[IllegalArgumentException]
+  override def rewindTasks(count: Int): EventSourceProgress = ???
+
+  @throws[IllegalArgumentException]
+  override def forwardStages(count: Int): EventSourceProgress = ???
+
+  @throws[IllegalArgumentException]
+  override def rewindStages(count: Int): EventSourceProgress = ???
+
+  @throws[IllegalArgumentException]
+  override def forwardJobs(count: Int): EventSourceProgress = ???
+
+  @throws[IllegalArgumentException]
+  override def rewindJobs(count: Int): EventSourceProgress = ???
+
+  override def toEnd(): EventSourceProgress = ???
+
+  override def toStart(): EventSourceProgress = ???
 }

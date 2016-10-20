@@ -69,6 +69,18 @@ trait FreeScrollEventSource {
   @throws[IllegalArgumentException]
   def rewindTasks(count: Int = 1): EventSourceProgress
 
+  @throws[IllegalArgumentException]
+  def forwardStages(count: Int = 1): EventSourceProgress
+
+  @throws[IllegalArgumentException]
+  def rewindStages(count: Int = 1): EventSourceProgress
+
+  @throws[IllegalArgumentException]
+  def forwardJobs(count: Int = 1): EventSourceProgress
+
+  @throws[IllegalArgumentException]
+  def rewindJobs(count: Int = 1): EventSourceProgress
+
   def toEnd(): EventSourceProgress
 
   def toStart(): EventSourceProgress

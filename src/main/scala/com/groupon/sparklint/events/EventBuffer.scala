@@ -26,8 +26,7 @@ import org.apache.spark.scheduler.SparkListenerEvent
 class EventBuffer(buffer: IndexedSeq[SparkListenerEvent])
   extends util.ListIterator[SparkListenerEvent] {
 
-  private var index: Int = 0
-
+  var index: Int = 0
   val eventCount = buffer.length
 
   override def next: SparkListenerEvent = {
@@ -43,9 +42,9 @@ class EventBuffer(buffer: IndexedSeq[SparkListenerEvent])
 
   override def previousIndex: Int = index - 1
 
-  override def hasNext: Boolean = progress.hasNext
+  override def hasNext: Boolean = index < eventCount
 
-  override def hasPrevious: Boolean = progress.hasPrevious
+  override def hasPrevious: Boolean = index > 0
 
   override def add(e: SparkListenerEvent): Unit = ???
 
@@ -54,6 +53,4 @@ class EventBuffer(buffer: IndexedSeq[SparkListenerEvent])
     index = index - 1
     buffer(index)
   }
-
-  def progress: EventSourceProgress = EventSourceProgress(eventCount, index)
 }

@@ -49,8 +49,6 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
         |  "progress" : {
         |    "percent" : 0,
         |    "description" : "0 / 426 (0%)",
-        |    "at_start" : true,
-        |    "at_end" : false,
         |    "has_next" : true,
         |    "has_previous" : false
         |  }
@@ -73,8 +71,6 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
         |  "progress" : {
         |    "percent" : 0,
         |    "description" : "1 / 426 (0%)",
-        |    "at_start" : false,
-        |    "at_end" : false,
         |    "has_next" : true,
         |    "has_previous" : true
         |  }
@@ -131,8 +127,6 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
         |  "progress" : {
         |    "percent" : 1,
         |    "description" : "6 / 426 (1%)",
-        |    "at_start" : false,
-        |    "at_end" : false,
         |    "has_next" : true,
         |    "has_previous" : true
         |  }
@@ -281,8 +275,6 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
         |  "progress" : {
         |    "percent" : 3,
         |    "description" : "11 / 426 (3%)",
-        |    "at_start" : false,
-        |    "at_end" : false,
         |    "has_next" : true,
         |    "has_previous" : true
         |  }
@@ -515,8 +507,6 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
         |  "progress" : {
         |    "percent" : 100,
         |    "description" : "426 / 426 (100%)",
-        |    "at_start" : false,
-        |    "at_end" : true,
         |    "has_next" : false,
         |    "has_previous" : true
         |  }

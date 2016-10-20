@@ -164,8 +164,6 @@ object UIServer {
   def progressJson(progress: EventSourceProgress) = {
     ("percent" -> progress.percent) ~
       ("description" -> progress.description) ~
-      ("at_start" -> progress.atStart) ~
-      ("at_end" -> progress.atEnd) ~
       ("has_next" -> progress.hasNext) ~
       ("has_previous" -> progress.hasPrevious)
   }

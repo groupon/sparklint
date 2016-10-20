@@ -20,24 +20,20 @@ package com.groupon.sparklint.events
   * @since 9/12/16.
   */
 @throws[IllegalArgumentException]
-case class EventSourceProgress(count: Int, position: Int) {
+case class EventSourceProgress(count: Int, index: Int) {
   require(count >= 0)
-  require(position >= 0)
-  require(position <= count)
+  require(index >= 0)
+  require(index <= count)
 
   private val safeCount: Double = if (count == 0) 1 else count
 
-  val atStart = position == 0
+  val hasNext = index < count
 
-  val atEnd = position == count
+  val hasPrevious = index > 0
 
-  val hasNext = !atEnd
+  val percent = ((index / safeCount) * 100).round
 
-  val hasPrevious = !atStart
+  val description = s"$index / $count ($percent%)"
 
-  val percent = ((position / safeCount) * 100).round
-
-  val description = s"$position / $count ($percent%)"
-
-  override def toString: String = s"$position of $count"
+  override def toString: String = s"$index of $count"
 }

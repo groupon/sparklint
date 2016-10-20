@@ -34,8 +34,6 @@ class EventSourceProgressTest extends FlatSpec with Matchers {
 
   it should "set start state correctly" in {
     val progress = EventSourceProgress(10, 0)
-    progress.atStart shouldBe true
-    progress.atEnd shouldBe false
     progress.hasNext shouldBe true
     progress.hasPrevious shouldBe false
     progress.percent shouldEqual 0
@@ -43,8 +41,6 @@ class EventSourceProgressTest extends FlatSpec with Matchers {
 
   it should "set end state correctly" in {
     val progress = EventSourceProgress(10, 10)
-    progress.atStart shouldBe false
-    progress.atEnd shouldBe true
     progress.hasNext shouldBe false
     progress.hasPrevious shouldBe true
     progress.percent shouldEqual 100
@@ -52,8 +48,6 @@ class EventSourceProgressTest extends FlatSpec with Matchers {
 
   it should "set mid state correctly" in {
     val progress = EventSourceProgress(10, 4)
-    progress.atStart shouldBe false
-    progress.atEnd shouldBe false
     progress.hasNext shouldBe true
     progress.hasPrevious shouldBe true
     progress.percent shouldEqual 40
