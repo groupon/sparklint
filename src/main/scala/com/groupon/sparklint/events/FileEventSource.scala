@@ -34,7 +34,6 @@ import scala.util.{Failure, Success, Try}
 case class FileEventSource(fileSource: File, eventState: EventStateLike)
   extends EventSourceBase(eventState) with FreeScrollEventSource with Logging {
 
-  // cache data to internal buffer and set initial state
   // important to declare this before the buffer is filled
   private var extractedId: Option[String] = None
 

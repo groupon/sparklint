@@ -45,6 +45,7 @@ class FileEventSourceTest extends FlatSpec with Matchers {
     state.unEvents.isEmpty shouldEqual true
     source.progress.hasNext shouldBe false
     source.progress.hasPrevious shouldBe false
+
     source.forwardEvents()
     state.onEvents.isEmpty shouldEqual true
     state.unEvents.isEmpty shouldEqual true
