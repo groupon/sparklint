@@ -68,11 +68,15 @@ class UIServer(esManager: EventSourceManagerLike)
   private def forwardAppJson(appId: String, count: String, evType: String) = evType.toLowerCase match {
     case `eventsNav` => moveEventSource(count, appId)(esManager.getScrollingSource(appId).forwardEvents)
     case `tasksNav`  => moveEventSource(count, appId)(esManager.getScrollingSource(appId).forwardTasks)
+    case `stagesNav` => moveEventSource(count, appId)(esManager.getScrollingSource(appId).forwardStages)
+    case `jobsNav`   => moveEventSource(count, appId)(esManager.getScrollingSource(appId).forwardJobs)
   }
 
   private def rewindAppJson(appId: String, count: String, evType: String) = evType.toLowerCase match {
     case `eventsNav` => moveEventSource(count, appId)(esManager.getScrollingSource(appId).rewindEvents)
     case `tasksNav`  => moveEventSource(count, appId)(esManager.getScrollingSource(appId).rewindTasks)
+    case `stagesNav` => moveEventSource(count, appId)(esManager.getScrollingSource(appId).rewindStages)
+    case `jobsNav`   => moveEventSource(count, appId)(esManager.getScrollingSource(appId).rewindJobs)
   }
 
   private def endAppJson(appId: String) = {
@@ -103,17 +107,20 @@ class UIServer(esManager: EventSourceManagerLike)
     }
   }
 
-
   private val eventsNav = UIServer.NAV_TYPE_EVENTS.toLowerCase
   private val tasksNav  = UIServer.NAV_TYPE_TASKS.toLowerCase
+  private val stagesNav = UIServer.NAV_TYPE_STAGES.toLowerCase
+  private val jobsNav   = UIServer.NAV_TYPE_JOBS.toLowerCase
 }
 
 object UIServer {
 
   val NAV_TYPE_EVENTS = "Events"
   val NAV_TYPE_TASKS  = "Tasks"
+  val NAV_TYPE_STAGES = "Stages"
+  val NAV_TYPE_JOBS   = "Jobs"
 
-  def supportedNavTypes: Seq[String] = Seq("Events", "Tasks")
+  def supportedNavTypes: Seq[String] = Seq(NAV_TYPE_EVENTS, NAV_TYPE_TASKS, NAV_TYPE_STAGES, NAV_TYPE_JOBS)
 
   def reportJson(report: SparklintStateAnalyzer, es: EventSourceLike): JObject = {
     implicit val formats = DefaultFormats
