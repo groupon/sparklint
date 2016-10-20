@@ -54,18 +54,22 @@ trait EventSourceLike {
 /**
   * An eventSource that supports free scroll
   */
-trait CanFreeScroll {
+trait FreeScrollEventSource {
   self: EventSourceLike =>
 
-  @throws[NoSuchElementException]
-  def forward(count: Int = 1): EventSourceProgress
+  @throws[IllegalArgumentException]
+  def forwardEvents(count: Int = 1): EventSourceProgress
 
-  @throws[NoSuchElementException]
-  def rewind(count: Int = 1): EventSourceProgress
+  @throws[IllegalArgumentException]
+  def rewindEvents(count: Int = 1): EventSourceProgress
 
-  @throws[scala.NoSuchElementException]
-  def end(): EventSourceProgress
+  @throws[IllegalArgumentException]
+  def forwardTasks(count: Int = 1): EventSourceProgress
 
-  @throws[scala.NoSuchElementException]
-  def start(): EventSourceProgress
+  @throws[IllegalArgumentException]
+  def rewindTasks(count: Int = 1): EventSourceProgress
+
+  def toEnd(): EventSourceProgress
+
+  def toStart(): EventSourceProgress
 }

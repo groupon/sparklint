@@ -14,6 +14,7 @@ package com.groupon.sparklint.analyzer
 
 import com.groupon.sparklint.data._
 import com.groupon.sparklint.data.compressed._
+import com.groupon.sparklint.events.EventSourceLike
 import org.apache.spark.scheduler.TaskLocality
 import org.apache.spark.scheduler.TaskLocality._
 
@@ -27,10 +28,9 @@ import scala.util.Try
   * @since 9/23/16.
   * @param state the state to analyze
   */
-case class SparklintStateAnalyzer(state: SparklintStateLike) extends SparklintAnalyzerLike {
-  override lazy val appName: Option[String] = state.appName
+case class SparklintStateAnalyzer(eventSource: EventSourceLike) extends SparklintAnalyzerLike {
 
-  override lazy val appId: Option[String] = state.appId
+  val state = eventSource.state
 
   override lazy val getCurrentCores: Option[Int] = getRunningTasks
 
@@ -51,7 +51,7 @@ case class SparklintStateAnalyzer(state: SparklintStateLike) extends SparklintAn
   }
 
   override lazy val getTimeUntilFirstTask: Option[Long] = Try {
-    state.firstTaskAt.get - state.applicationLaunchedAt.get
+    state.firstTaskAt.get - eventSource.startTime
   }.toOption
 
   override lazy val getCoreUtilizationPercentage: Option[Double] = {
@@ -82,10 +82,6 @@ case class SparklintStateAnalyzer(state: SparklintStateLike) extends SparklintAn
   override lazy val getMaxCoreUsage: Option[Int] = getMaxConcurrentTasks
 
   override lazy val getLastUpdatedAt: Option[Long] = Some(state.lastUpdatedAt)
-
-  override lazy val getApplicationLaunchedAt: Option[Long] = state.applicationLaunchedAt
-
-  override lazy val getApplicationEndedAt: Option[Long] = state.applicationEndedAt
 
   override def getLocalityStatsByStageIdentifier(stageIdentifier: StageIdentifier): Option[SparklintStageMetrics] = {
     state.stageMetrics.get(stageIdentifier)
@@ -140,7 +136,7 @@ case class SparklintStateAnalyzer(state: SparklintStateLike) extends SparklintAn
     * @return the metricsSink that stores the number of CPU millis allocated for each interval
     */
   private[analyzer] def getAllocatedCores(numBuckets: Int): MetricsSink = {
-    var sink = CompressedMetricsSink.empty(state.applicationLaunchedAt.getOrElse(0), numBuckets)
+    var sink = CompressedMetricsSink.empty(eventSource.startTime, numBuckets)
     state.executorInfo.values.foreach(executorInfo => {
       sink = sink.addUsage(executorInfo.startTime, executorInfo.endTime.getOrElse(state.lastUpdatedAt), executorInfo.cores)
     })

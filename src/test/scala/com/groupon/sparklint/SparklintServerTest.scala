@@ -15,8 +15,8 @@ package com.groupon.sparklint
 import java.io.File
 
 import com.groupon.sparklint.TestUtils.resource
-import com.groupon.sparklint.common.{SparklintConfig, ScheduledTask, SchedulerLike}
-import com.groupon.sparklint.events.{CanFreeScroll, EventSourceLike, EventSourceManagerLike, EventSourceProgress}
+import com.groupon.sparklint.common.{ScheduledTask, SchedulerLike, SparklintConfig}
+import com.groupon.sparklint.events.{EventSourceLike, EventSourceManagerLike, FreeScrollEventSource}
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 
 import scala.collection.mutable.ArrayBuffer
@@ -61,7 +61,7 @@ class SparklintServerTest extends FlatSpec with BeforeAndAfterEach with Matchers
 
     val es = eventSourceManager.eventSources.head
     es.appId shouldEqual "application_1462781278026_205691"
-    es.progress.atStart shouldEqual false
+    es.progress.atStart shouldEqual true
     es.progress.atEnd shouldEqual false
   }
 
@@ -98,12 +98,12 @@ class SparklintServerTest extends FlatSpec with BeforeAndAfterEach with Matchers
 
     var es = eventSourceManager.eventSources.filter(_.appId == "application_1462781278026_205691").head
     es.appId shouldEqual "application_1462781278026_205691"
-    es.progress.atStart shouldEqual false
+    es.progress.atStart shouldEqual true
     es.progress.atEnd shouldEqual false
 
     es = eventSourceManager.eventSources.filter(_.appId == "application_1472176676028_116806").head
     es.appId shouldEqual "application_1472176676028_116806"
-    es.progress.atStart shouldEqual false
+    es.progress.atStart shouldEqual true
     es.progress.atEnd shouldEqual false
   }
 
@@ -214,21 +214,11 @@ case class StubEventSourceManager(eventSources: ArrayBuffer[EventSourceLike] = A
 
   override def containsAppId(appId: String): Boolean = eventSources.exists(_.appId == appId)
 
-  override def apply(appId: String): EventSourceLike = ???
+  @throws[NoSuchElementException]
+  override def getSource(appId: String): EventSourceLike = ???
 
   @throws[NoSuchElementException]
-  override def forwardApp(appId: String, count: Int): EventSourceProgress = ???
-
-  @throws[NoSuchElementException]
-  override def rewindApp(appId: String, count: Int): EventSourceProgress = ???
-
-  @throws[NoSuchElementException]
-  override def endApp(appId: String): EventSourceProgress = ???
-
-  @throws[NoSuchElementException]
-  override def startApp(appId: String): EventSourceProgress = ???
-
-  override def getCanFreeScrollEventSource(appId: String): CanFreeScroll = ???
+  override def getScrollingSource(appId: String): FreeScrollEventSource = ???
 }
 
 case class StubScheduler(scheduledTasks: ArrayBuffer[ScheduledTask[_]] = ArrayBuffer[ScheduledTask[_]]())

@@ -76,14 +76,13 @@ class CompressedEventStateTest extends FlatSpec with Matchers {
   it should "undo events correctly" in {
     val evState1 = new CompressedEventState(30)
     val eventSource1 = FileEventSource(new File(TestUtils.resource("spark_event_log_example")), evState1)
-    eventSource1.forward(300)
+    eventSource1.forwardEvents(300)
     val expected = evState1.state
     val evState2 = new CompressedEventState(30)
     val eventSource2 = FileEventSource(new File(TestUtils.resource("spark_event_log_example")), evState2)
-    eventSource2.forward(350)
-    eventSource2.rewind(50)
+    eventSource2.forwardEvents(350)
+    eventSource2.rewindEvents(50)
     val actual = evState2.state
-    actual.appId shouldBe expected.appId
     actual.coreUsage.size shouldBe expected.coreUsage.size
     actual.coreUsage.foreach({
       // The resolution can be different but the sum should be the same
@@ -94,7 +93,6 @@ class CompressedEventStateTest extends FlatSpec with Matchers {
     actual.stageMetrics.size >= expected.stageMetrics.size shouldBe true
     actual.stageIdLookup shouldBe expected.stageIdLookup
     actual.runningTasks shouldBe expected.runningTasks
-    actual.applicationLaunchedAt shouldBe expected.applicationLaunchedAt
     // after rewinding, the lastUpdatedAt is usually one event away
     actual.lastUpdatedAt >= expected.lastUpdatedAt shouldBe true
     actual.applicationEndedAt shouldBe expected.applicationEndedAt

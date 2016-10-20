@@ -28,16 +28,7 @@ case class LosslessState(appStart: Option[SparkListenerApplicationStart],
                          runningTasks: Map[Long, SparklintTaskInfo],
                          firstTaskAt: Option[Long],
                          applicationEndedAt: Option[Long],
-                         lastUpdatedAt: Long) extends SparklintStateLike {
-
-  def appId: Option[String] = appStart.flatMap(_.appId)
-
-  def appName: Option[String] = appStart.map(_.appName)
-
-  def user: Option[String] = appStart.map(_.sparkUser)
-
-  def applicationLaunchedAt: Option[Long] = appStart.map(_.time)
-}
+                         lastUpdatedAt: Long) extends SparklintStateLike
 
 object LosslessState {
   def empty: LosslessState = {
