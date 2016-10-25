@@ -12,10 +12,11 @@
 */
 package com.groupon.sparklint.events
 
+import com.groupon.sparklint.common.Utils
 import com.groupon.sparklint.data.SparklintStateLike
 
 /**
-  * The EventSourceLike provides a replayable set of Spark events from a specific source.
+  * The EventSourceLike provides a set of Spark events from a specific source.
   *
   * @author swhitear 
   * @since 8/18/16.
@@ -49,39 +50,10 @@ trait EventSourceLike {
   def state: SparklintStateLike
 
   def fullName: String
+
+  def nameOrId: String = if (missingName) appId else appName
+
+  private def missingName = appName.isEmpty || appName == Utils.UNKNOWN_STRING
 }
 
-/**
-  * An eventSource that supports free scroll
-  */
-trait FreeScrollEventSource {
-  self: EventSourceLike =>
 
-  @throws[IllegalArgumentException]
-  def forwardEvents(count: Int = 1): EventSourceProgress
-
-  @throws[IllegalArgumentException]
-  def rewindEvents(count: Int = 1): EventSourceProgress
-
-  @throws[IllegalArgumentException]
-  def forwardTasks(count: Int = 1): EventSourceProgress
-
-  @throws[IllegalArgumentException]
-  def rewindTasks(count: Int = 1): EventSourceProgress
-
-  @throws[IllegalArgumentException]
-  def forwardStages(count: Int = 1): EventSourceProgress
-
-  @throws[IllegalArgumentException]
-  def rewindStages(count: Int = 1): EventSourceProgress
-
-  @throws[IllegalArgumentException]
-  def forwardJobs(count: Int = 1): EventSourceProgress
-
-  @throws[IllegalArgumentException]
-  def rewindJobs(count: Int = 1): EventSourceProgress
-
-  def toEnd(): EventSourceProgress
-
-  def toStart(): EventSourceProgress
-}

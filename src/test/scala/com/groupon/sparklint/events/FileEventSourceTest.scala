@@ -3,6 +3,7 @@ package com.groupon.sparklint.events
 import java.io.File
 
 import com.groupon.sparklint.TestUtils.resource
+import com.groupon.sparklint.common.Utils
 import com.groupon.sparklint.data.SparklintStateLike
 import com.groupon.sparklint.data.compressed.CompressedState
 import org.apache.spark.groupon.StringToSparkEvent
@@ -41,6 +42,9 @@ class FileEventSourceTest extends FlatSpec with Matchers {
     val source = FileEventSource(emptyFile, state)
 
     source.appId shouldEqual "file_event_log_empty_test"
+    source.appName shouldEqual Utils.UNKNOWN_STRING
+    source.nameOrId shouldEqual "file_event_log_empty_test"
+
     state.onEvents.isEmpty shouldEqual true
     state.unEvents.isEmpty shouldEqual true
     source.progress.hasNext shouldBe false
@@ -60,8 +64,10 @@ class FileEventSourceTest extends FlatSpec with Matchers {
 
     source.version shouldEqual "1.5.2"
     source.appId shouldEqual "application_1462781278026_205691"
+    source.trimmedId shouldEqual "1462781278026_205691"
     source.appName shouldEqual "MyAppName"
     source.fullName shouldEqual "MyAppName (application_1462781278026_205691)"
+    source.nameOrId shouldEqual "MyAppName"
     source.user shouldEqual "johndoe"
     source.host shouldEqual "10.22.81.222"
     source.port shouldEqual 44783

@@ -12,6 +12,8 @@
 */
 package com.groupon.sparklint.events
 
+import com.groupon.sparklint.common.Utils._
+
 import scala.collection.Map
 import scala.collection.immutable.HashMap
 
@@ -26,10 +28,7 @@ abstract class EventSourceBase(eventState: EventStateLike) extends EventSourceLi
 
   type EnvironmentData = Map[String, Seq[(String, String)]]
 
-  protected val UNKNOWN_STRING: String = "<unknown>"
-  protected val UNKNOWN_NUMBER: Long = 0
-
-  val appId: String   // still abstract here
+  val appId: String // still abstract here
 
   var appNameOpt: Option[String] = None
 
