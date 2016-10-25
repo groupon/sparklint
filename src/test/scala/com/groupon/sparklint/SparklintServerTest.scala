@@ -27,7 +27,8 @@ import scala.collection.mutable.ArrayBuffer
   */
 class SparklintServerTest extends FlatSpec with BeforeAndAfterEach with Matchers {
 
-  private val TEMP_FILE_CONTENT = "{\"Event\":\"SparkListenerLogStart\",\"Spark Version\":\"1.5.2\"}"
+  private val TEMP_FILE_CONTENT =
+    """{"Event":"SparkListenerApplicationStart","App Name":"MyAppName","App ID":"temp_addded_in_test","Timestamp":1466087746466,"User":"johndoe"}|"""
 
   private var server            : SparklintServer        = _
   private var eventSourceManager: StubEventSourceManager = _
@@ -61,8 +62,8 @@ class SparklintServerTest extends FlatSpec with BeforeAndAfterEach with Matchers
 
     val es = eventSourceManager.eventSources.head
     es.appId shouldEqual "application_1462781278026_205691"
-    es.progress.atStart shouldEqual true
-    es.progress.atEnd shouldEqual false
+    es.progress.hasNext shouldEqual true
+    es.progress.hasPrevious shouldEqual false
   }
 
   it should "load expected buffer from a file and replay when configured" in {
@@ -77,8 +78,8 @@ class SparklintServerTest extends FlatSpec with BeforeAndAfterEach with Matchers
 
     val es = eventSourceManager.eventSources.head
     es.appId shouldEqual "application_1462781278026_205691"
-    es.progress.atStart shouldEqual false
-    es.progress.atEnd shouldEqual true
+    es.progress.hasNext shouldEqual false
+    es.progress.hasPrevious shouldEqual true
   }
 
 
@@ -98,13 +99,13 @@ class SparklintServerTest extends FlatSpec with BeforeAndAfterEach with Matchers
 
     var es = eventSourceManager.eventSources.filter(_.appId == "application_1462781278026_205691").head
     es.appId shouldEqual "application_1462781278026_205691"
-    es.progress.atStart shouldEqual true
-    es.progress.atEnd shouldEqual false
+    es.progress.hasNext shouldEqual true
+    es.progress.hasPrevious shouldEqual false
 
     es = eventSourceManager.eventSources.filter(_.appId == "application_1472176676028_116806").head
     es.appId shouldEqual "application_1472176676028_116806"
-    es.progress.atStart shouldEqual true
-    es.progress.atEnd shouldEqual false
+    es.progress.hasNext shouldEqual true
+    es.progress.hasPrevious shouldEqual false
   }
 
   it should "load expected buffer from a directory and replay when configured" in {
@@ -122,13 +123,13 @@ class SparklintServerTest extends FlatSpec with BeforeAndAfterEach with Matchers
 
     var es = eventSourceManager.eventSources.filter(_.appId == "application_1462781278026_205691").head
     es.appId shouldEqual "application_1462781278026_205691"
-    es.progress.atStart shouldEqual false
-    es.progress.atEnd shouldEqual true
+    es.progress.hasNext shouldEqual false
+    es.progress.hasPrevious shouldEqual true
 
     es = eventSourceManager.eventSources.filter(_.appId == "application_1472176676028_116806").head
     es.appId shouldEqual "application_1472176676028_116806"
-    es.progress.atStart shouldEqual false
-    es.progress.atEnd shouldEqual true
+    es.progress.hasNext shouldEqual false
+    es.progress.hasPrevious shouldEqual true
   }
 
   it should "refresh with the latest new files when task fired" in {
@@ -180,8 +181,8 @@ class SparklintServerTest extends FlatSpec with BeforeAndAfterEach with Matchers
 
     val es = eventSourceManager.eventSources.filter(_.appId == "temp_addded_in_test").head
     es.appId shouldEqual "temp_addded_in_test"
-    es.progress.atStart shouldEqual true
-    es.progress.atEnd shouldEqual true
+    es.progress.hasNext shouldEqual false
+    es.progress.hasPrevious shouldEqual true
 
     // cleanup again
     cleanupTempFile(tempFile)
