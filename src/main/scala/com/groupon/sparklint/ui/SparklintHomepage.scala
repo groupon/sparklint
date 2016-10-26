@@ -66,7 +66,7 @@ class SparklintHomepage(sourceManager: EventSourceManagerLike) extends UITemplat
   def navbarItem(app: EventSourceLike): Seq[Node] =
     <li data-value={app.appId}>
       <a href="#" class="sparklintApp" data-value={app.appId}>
-        <strong>App:</strong>{app.trimmedId}
+        <strong>App: </strong>{app.nameOrId}
         <p class="text-center" id={uniqueId(app.appId, "app-prog")}>
         {app.progress.description}
       </p>

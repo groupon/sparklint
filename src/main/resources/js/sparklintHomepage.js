@@ -249,7 +249,7 @@ function moveEvents(direction) {
     var count = $("#countSelector").val();
     var type = $("#typeSelector").val();
     $.getJSON("/" + appId + "/" + direction + "/" + count + "/" + type, function (progJson) {
-        console.log("moved " + appId + " " + direction + " by " + count + " to progress: " + JSON.stringify(progJson));
+        console.log("moved " + appId + " " + direction + " by " + count + " " + type + "(s): " + JSON.stringify(progJson));
         loadApp(appId);
     })
 }
