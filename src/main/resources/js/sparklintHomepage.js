@@ -264,12 +264,24 @@ function moveEventsToEnd(end) {
     })
 }
 
-
 $(function () {
+    console.log("------Global document binding------");
+    $(document).ajaxStop(function(){
+        console.debug("ajaxStop");
+        $(".loading-spinner").hide();
+    });
+    $(document).ajaxStart(function(){
+        console.debug("ajaxStart");
+        $(".loading-spinner").show();
+    });
+
     console.log("------Sparklint control binding------");
     $("#side-menu").find(".sparklintApp").click(appSelectorClicked);
     $("#eventsToStart").click(eventsToStart);
     $("#eventsToEnd").click(eventsToEnd);
     $("#eventsBackward").click(eventsBackward);
     $("#eventsForward").click(eventsForward);
+
+    console.log("------Setting start state--------");
+    $(".loading-spinner").hide();
 });
