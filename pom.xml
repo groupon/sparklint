@@ -71,7 +71,7 @@
         <dep.plugin.scala-maven-plugin.version>3.2.2</dep.plugin.scala-maven-plugin.version>
 
         <!-- Project and Plugin Settings -->
-        <project.maven.version>3.3.3</project.maven.version>
+        <project.maven.version>3.2.5</project.maven.version>
         <basepom.check.skip-extended>true</basepom.check.skip-extended>
         <basepom.check.fail-duplicate-finder>false</basepom.check.fail-duplicate-finder>
         <basepom.check.fail-findbugs>false</basepom.check.fail-findbugs>
