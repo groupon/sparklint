@@ -4,7 +4,7 @@
     <groupId>com.groupon.sparklint</groupId>
     <artifactId>sparklint</artifactId>
     <packaging>jar</packaging>
-    <version>1.0.3.1</version>
+    <version>1.0.4-SNAPSHOT</version>
 
     <name>sparklint</name>
     <description>Listener and WebUI for Apache Spark performance events</description>
@@ -54,7 +54,7 @@
         <connection>scm:git:git://github.com/groupon/sparklint.git</connection>
         <developerConnection>scm:git:ssh://git@github.com/groupon/sparklint.git</developerConnection>
         <url>https://github.com/groupon/sparklint/tree/master</url>
-        <tag>sparklint-1.0.3.1</tag>
+        <tag>HEAD</tag>
     </scm>
 
     <properties>
