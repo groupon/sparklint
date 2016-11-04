@@ -1,13 +1,15 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.groupon.sparklint</groupId>
     <artifactId>sparklint</artifactId>
     <packaging>jar</packaging>
-    <version>1.0.3-SNAPSHOT</version>
+    <version>1.0.3.1-SNAPSHOT</version>
 
     <name>sparklint</name>
     <description>Listener and WebUI for Apache Spark performance events</description>
+    <url>https://github.com/groupon/sparklint</url>
 
     <licenses>
         <license>
@@ -18,15 +20,21 @@
     </licenses>
 
     <distributionManagement>
-        <repository>
-            <id>releases</id>
-            <url>http://nexus-dev/content/repositories/releases</url>
-        </repository>
         <snapshotRepository>
-            <id>snapshots</id>
-            <url>http://nexus-dev/content/repositories/snapshots</url>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/content/repositories/snapshots</url>
         </snapshotRepository>
+        <repository>
+            <id>ossrh</id>
+            <url>https://oss.sonatype.org/service/local/staging/deploy/maven2/</url>
+        </repository>
     </distributionManagement>
+
+    <parent>
+        <groupId>org.basepom</groupId>
+        <artifactId>basepom-oss</artifactId>
+        <version>18</version>
+    </parent>
 
     <developers>
         <developer>
@@ -45,8 +53,8 @@
 
     <scm>
         <connection>scm:git:git://github.com/groupon/sparklint.git</connection>
-        <developerConnection>scm:git:ssh://git@github.com/groupon/sparklint.git
-        </developerConnection>
+        <developerConnection>scm:git:ssh://git@github.com/groupon/sparklint.git</developerConnection>
+        <url>https://github.com/groupon/sparklint/tree/master</url>
         <tag>HEAD</tag>
     </scm>
 
@@ -57,14 +65,24 @@
         <http4s.version>0.13.2</http4s.version>
         <optparse.version>1.1.2</optparse.version>
         <scalatest.version>2.2.6</scalatest.version>
+        <slf4j.version>1.7.12</slf4j.version>
 
         <!-- Plugins -->
         <dep.plugin.scalatest-maven-plugin.version>1.0</dep.plugin.scalatest-maven-plugin.version>
-        <dep.plugin.release.version>2.4.2</dep.plugin.release.version>
-        <dep.plugin.shade.version>2.2</dep.plugin.shade.version>
         <dep.plugin.scala-maven-plugin.version>3.2.2</dep.plugin.scala-maven-plugin.version>
-        <dep.plugin.assembly.version>2.4.1</dep.plugin.assembly.version>
+
+        <!-- Project and Plugin Settings -->
+        <project.maven.version>3.3.3</project.maven.version>
+        <basepom.check.skip-extended>true</basepom.check.skip-extended>
+        <basepom.check.fail-duplicate-finder>false</basepom.check.fail-duplicate-finder>
+        <basepom.check.fail-findbugs>false</basepom.check.fail-findbugs>
+        <basepom.check.fail-dependency>false</basepom.check.fail-dependency>
+        <basepom.release.push-changes>true</basepom.release.push-changes>
     </properties>
+
+    <prerequisites>
+        <maven>${project.maven.version}</maven>
+    </prerequisites>
 
     <build>
         <sourceDirectory>src/main/scala</sourceDirectory>
@@ -79,6 +97,7 @@
                         <goals>
                             <goal>compile</goal>
                             <goal>testCompile</goal>
+                            <goal>doc-jar</goal>
                         </goals>
                         <configuration>
                             <args>
@@ -135,59 +154,24 @@
                 </configuration>
             </plugin>
             <plugin>
+                <groupId>com.mycila</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <configuration>
+                    <excludes>
+                        <exclude>**/pom.xml</exclude>
+                    </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-release-plugin</artifactId>
+                <version>${dep.plugin.release.version}</version>
                 <configuration>
-                    <autoVersionSubmodules>true</autoVersionSubmodules>
-                    <mavenExecutorId>forked-path</mavenExecutorId>
-                    <pushChanges>true</pushChanges>
-                    <localCheckout>true</localCheckout>
-                    <preparationGoals>clean install</preparationGoals>
-                    <useReleaseProfile>false</useReleaseProfile>
-                    <goals>deploy</goals>
+                    <useReleaseProfile>true</useReleaseProfile>
+                    <releaseProfiles>basepom.oss-release</releaseProfiles>
                 </configuration>
             </plugin>
         </plugins>
-        <pluginManagement>
-            <plugins>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-release-plugin</artifactId>
-                    <version>${dep.plugin.release.version}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-assembly-plugin</artifactId>
-                    <version>${dep.plugin.assembly.version}</version>
-                </plugin>
-                <plugin>
-                    <groupId>org.apache.maven.plugins</groupId>
-                    <artifactId>maven-shade-plugin</artifactId>
-                    <version>${dep.plugin.shade.version}</version>
-                    <executions>
-                        <execution>
-                            <phase>package</phase>
-                            <goals>
-                                <goal>shade</goal>
-                            </goals>
-                        </execution>
-                    </executions>
-                    <configuration>
-                        <filters>
-                            <filter>
-                                <artifact>*:*</artifact>
-                                <excludes>
-                                    <exclude>META-INF/*.SF</exclude>
-                                    <exclude>META-INF/*.DSA</exclude>
-                                    <exclude>META-INF/*.RSA</exclude>
-                                </excludes>
-                            </filter>
-                        </filters>
-                        <finalName>jar-with-dependencies-${project.artifactId}-${project.version}</finalName>
-                    </configuration>
-                </plugin>
-            </plugins>
-        </pluginManagement>
     </build>
 
     <dependencies>
@@ -219,6 +203,11 @@
             <groupId>com.frugalmechanic</groupId>
             <artifactId>scala-optparse_${scala.compat.version}</artifactId>
             <version>${optparse.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
         </dependency>
 
         <!-- Test -->
