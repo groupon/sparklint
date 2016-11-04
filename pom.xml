@@ -78,6 +78,7 @@
         <project.maven.version>3.3.3</project.maven.version>
         <basepom.check.fail-duplicate-finder>false</basepom.check.fail-duplicate-finder>
         <basepom.check.fail-findbugs>false</basepom.check.fail-findbugs>
+        <basepom.oss.skip-scala-doc>true</basepom.oss.skip-scala-doc>
         <basepom.release.push-changes>true</basepom.release.push-changes>
         <basepom.check.skip-extended>true</basepom.check.skip-extended>
     </properties>
@@ -102,6 +103,13 @@
                         </goals>
                     </execution>
                 </executions>
+                <configuration>
+                    <!-- force generation of javadocs for oss sonatype -->
+                    <sourceFileIncludes>
+                        <include>Dummy.java</include>
+                    </sourceFileIncludes>
+                    <sourcepath>${basedir}/src/main/java/com/groupon/sparklint</sourcepath>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>net.alchim31.maven</groupId>
