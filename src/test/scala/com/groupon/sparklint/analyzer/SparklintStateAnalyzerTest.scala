@@ -17,6 +17,7 @@ import java.io.File
 import com.groupon.sparklint.TestUtils
 import com.groupon.sparklint.data._
 import com.groupon.sparklint.events._
+import com.groupon.sparklint.TestUtils._
 import org.apache.spark.scheduler.TaskLocality
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 
@@ -32,56 +33,58 @@ class SparklintStateAnalyzerTest extends FlatSpec with Matchers with BeforeAndAf
   override protected def beforeEach(): Unit = {
     eventState = new CompressedEventState()
     val file = new File(TestUtils.resource("spark_event_log_example"))
-    eventSource = FileEventSource(file, eventState)
+    eventSource = FileEventSource(file, Seq(eventState))
+    val eventDetail = stubEventDetails(eventSource)
   }
 
   it should "getTimeUntilFirstTask correctly" in {
     val appStart = 1466087746466L
     val firstTaskSubmitted = 1466087848562L
     TestUtils.replay(eventSource)
-    SparklintStateAnalyzer(eventSource).getTimeUntilFirstTask shouldBe Some(firstTaskSubmitted - appStart)
+    SparklintStateAnalyzer(eventSource, eventState).getTimeUntilFirstTask shouldBe Some(firstTaskSubmitted - appStart)
   }
 
   it should "getCumulativeCoreUsage correctly" in {
     TestUtils.replay(eventSource)
-    SparklintStateAnalyzer(eventSource).getCumulativeCoreUsage shouldBe Some(Map(0 -> 67500, 1 -> 3873L, 2 -> 13938L, 3 -> 20500L, 4 -> 102500L))
+    SparklintStateAnalyzer(eventSource, eventState).getCumulativeCoreUsage shouldBe
+      Some(Map(0 -> 67500, 1 -> 3873L, 2 -> 13938L, 3 -> 20500L, 4 -> 102500L))
   }
 
   it should "getIdleTime correctly" in {
     TestUtils.replay(eventSource)
-    SparklintStateAnalyzer(eventSource).getIdleTime shouldBe Some(169596L)
+    SparklintStateAnalyzer(eventSource, eventState).getIdleTime shouldBe Some(169596L)
   }
 
   it should "getIdleTimeSinceFirstTask correctly" in {
     TestUtils.replay(eventSource)
-    SparklintStateAnalyzer(eventSource).getIdleTimeSinceFirstTask shouldBe Some(67500L)
+    SparklintStateAnalyzer(eventSource, eventState).getIdleTimeSinceFirstTask shouldBe Some(67500L)
   }
 
   it should "getMaxConcurrentTasks correctly" in {
     TestUtils.replay(eventSource)
-    SparklintStateAnalyzer(eventSource).getMaxConcurrentTasks shouldBe Some(4)
+    SparklintStateAnalyzer(eventSource, eventState).getMaxConcurrentTasks shouldBe Some(4)
   }
 
   it should "getMaxAllocatedCores correctly" in {
     TestUtils.replay(eventSource)
-    SparklintStateAnalyzer(eventSource).getMaxAllocatedCores shouldBe Some(6)
+    SparklintStateAnalyzer(eventSource, eventState).getMaxAllocatedCores shouldBe Some(6)
   }
 
   it should "getRunningTasks correctly" in {
     // Starts with 0
-    SparklintStateAnalyzer(eventSource).getRunningTasks shouldBe Some(0)
+    SparklintStateAnalyzer(eventSource, eventState).getRunningTasks shouldBe Some(0)
     TestUtils.replay(eventSource, count = 95)
     // Accumulate to 4 during run
-    SparklintStateAnalyzer(eventSource).getRunningTasks shouldBe Some(4)
+    SparklintStateAnalyzer(eventSource, eventState).getRunningTasks shouldBe Some(4)
   }
 
   it should "getCurrentTaskByExecutors correctly" in {
     // Starts with 0
-    SparklintStateAnalyzer(eventSource).getCurrentTaskByExecutors shouldBe None
+    SparklintStateAnalyzer(eventSource, eventState).getCurrentTaskByExecutors shouldBe None
     TestUtils.replay(eventSource, count = 95)
 
     // Accumulate to 4 during run
-    SparklintStateAnalyzer(eventSource).getCurrentTaskByExecutors.get shouldEqual
+    SparklintStateAnalyzer(eventSource, eventState).getCurrentTaskByExecutors.get shouldEqual
       Map("1" -> List(
         SparklintTaskInfo(46, "1", 45, 0, 1466087882535L, "ANY", false),
         SparklintTaskInfo(41, "1", 39, 0, 1466087875648L, "ANY", false)
@@ -93,7 +96,7 @@ class SparklintStateAnalyzerTest extends FlatSpec with Matchers with BeforeAndAf
 
   it should "getLocalityStatsByStageIdentifier correctly if stage identifier hit" in {
     TestUtils.replay(eventSource)
-    val actual: SparklintStageMetrics = SparklintStateAnalyzer(eventSource)
+    val actual: SparklintStageMetrics = SparklintStateAnalyzer(eventSource, eventState)
       .getLocalityStatsByStageIdentifier(StageIdentifier('myJobGroup, 'myJobDescription, "count at <console>:22")).get
     actual.metricsRepo.size shouldBe 4
     actual.metricsRepo should contain key (TaskLocality.PROCESS_LOCAL -> 'ResultTask)

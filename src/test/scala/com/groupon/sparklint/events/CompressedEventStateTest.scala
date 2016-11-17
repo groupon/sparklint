@@ -14,24 +14,31 @@ package com.groupon.sparklint.events
 
 import java.io.File
 
-import com.groupon.sparklint.TestUtils
+import com.groupon.sparklint.TestUtils._
 import com.groupon.sparklint.data.StageIdentifier
 import org.apache.spark.scheduler.TaskLocality
 import org.apache.spark.scheduler.TaskLocality._
-import org.scalatest.{FlatSpec, Matchers}
+import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 
 /**
   * @author swhitear 
   * @since 9/13/16.
   */
-class CompressedEventStateTest extends FlatSpec with Matchers {
-  it should "accumulate core usage correctly" in {
-    val evState = new CompressedEventState()
-    val file = new File(TestUtils.resource("spark_event_log_example"))
-    val eventSource = FileEventSource(file, evState)
+class CompressedEventStateTest extends FlatSpec with Matchers with BeforeAndAfterEach {
 
-    TestUtils.replay(eventSource)
-    val state = evState.state
+  var eventSource: FileEventSource      = _
+  var eventState : CompressedEventState = _
+  var file       : File                 = _
+
+  override protected def beforeEach(): Unit = {
+    eventState = new CompressedEventState()
+    file = new File(resource("spark_event_log_example"))
+    eventSource = FileEventSource(file, Seq(eventState))
+  }
+
+  it should "accumulate core usage correctly" in {
+    replay(eventSource)
+    val state = eventState.state
     val coreUsage = state.coreUsage
     coreUsage.size shouldBe 5
     // should be when first task was submitted
@@ -57,11 +64,8 @@ class CompressedEventStateTest extends FlatSpec with Matchers {
   }
 
   it should "accumulate stage metrics correctly" in {
-    val evState = new CompressedEventState()
-    val file = new File(TestUtils.resource("spark_event_log_example"))
-    val eventSource = FileEventSource(file, evState)
-    TestUtils.replay(eventSource)
-    val state = evState.state
+    replay(eventSource)
+    val state = eventState.state
     val stageMetrics = state.stageMetrics
 
     stageMetrics.size shouldBe 1
@@ -74,15 +78,13 @@ class CompressedEventStateTest extends FlatSpec with Matchers {
   }
 
   it should "undo events correctly" in {
-    val evState1 = new CompressedEventState(30)
-    val eventSource1 = FileEventSource(new File(TestUtils.resource("spark_event_log_example")), evState1)
-    eventSource1.forwardEvents(300)
-    val expected = evState1.state
-    val evState2 = new CompressedEventState(30)
-    val eventSource2 = FileEventSource(new File(TestUtils.resource("spark_event_log_example")), evState2)
+    val eventState2 = new CompressedEventState()
+    val eventSource2 = FileEventSource(file, Seq(eventState))
+
+    val expected = eventState.state
     eventSource2.forwardEvents(350)
     eventSource2.rewindEvents(50)
-    val actual = evState2.state
+    val actual = eventState2.state
     actual.coreUsage.size shouldBe expected.coreUsage.size
     actual.coreUsage.foreach({
       // The resolution can be different but the sum should be the same

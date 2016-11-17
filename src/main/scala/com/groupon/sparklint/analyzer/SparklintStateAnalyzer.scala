@@ -14,7 +14,7 @@ package com.groupon.sparklint.analyzer
 
 import com.groupon.sparklint.data._
 import com.groupon.sparklint.data.compressed._
-import com.groupon.sparklint.events.EventSourceLike
+import com.groupon.sparklint.events.{EventSourceLike, EventStateLike}
 import org.apache.spark.scheduler.TaskLocality
 import org.apache.spark.scheduler.TaskLocality._
 
@@ -26,11 +26,13 @@ import scala.util.Try
   *
   * @author rxue
   * @since 9/23/16.
-  * @param state the state to analyze
+  * @param source  the source to analyze
+  * @param evState the state to analyze
   */
-case class SparklintStateAnalyzer(eventSource: EventSourceLike) extends SparklintAnalyzerLike {
+case class SparklintStateAnalyzer(source: EventSourceLike, evState: EventStateLike)
+  extends SparklintAnalyzerLike {
 
-  val state = eventSource.state
+  val state = evState.getState
 
   override lazy val getCurrentCores: Option[Int] = getRunningTasks
 
@@ -51,7 +53,7 @@ case class SparklintStateAnalyzer(eventSource: EventSourceLike) extends Sparklin
   }
 
   override lazy val getTimeUntilFirstTask: Option[Long] = Try {
-    state.firstTaskAt.get - eventSource.startTime
+    state.firstTaskAt.get - source.startTime
   }.toOption
 
   override lazy val getCoreUtilizationPercentage: Option[Double] = {
@@ -136,7 +138,7 @@ case class SparklintStateAnalyzer(eventSource: EventSourceLike) extends Sparklin
     * @return the metricsSink that stores the number of CPU millis allocated for each interval
     */
   private[analyzer] def getAllocatedCores(numBuckets: Int): MetricsSink = {
-    var sink = CompressedMetricsSink.empty(eventSource.startTime, numBuckets)
+    var sink = CompressedMetricsSink.empty(source.startTime, numBuckets)
     state.executorInfo.values.foreach(executorInfo => {
       sink = sink.addUsage(executorInfo.startTime, executorInfo.endTime.getOrElse(state.lastUpdatedAt), executorInfo.cores)
     })

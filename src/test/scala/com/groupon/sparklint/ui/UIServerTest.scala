@@ -26,18 +26,23 @@ import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
   * @since 8/23/16.
   */
 class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
-  var evSource       : EventSourceLike with FreeScrollEventSource = _
-  var evSourceManager: EventSourceManagerLike                     = new EventSourceManager()
+  var evSource       : EventSourceLike with FreeScrollEventSource     = _
+  var evState        : EventStateLike with EventReceiverLike          = _
+  var progress       : EventSourceProgressLike with EventReceiverLike = _
+  var evSourceManager: EventSourceManagerLike                         = _
+
 
   override protected def beforeEach(): Unit = {
-    val evState = new CompressedEventState(30)
     val file = new File(TestUtils.resource("spark_event_log_example"))
-    evSource = new FileEventSource(file, evState)
-    evSourceManager.addEventSource(evSource)
+    progress = EventSourceProgress()
+    evState = new CompressedEventState(30)
+    evSource = new FileEventSource(file, Seq(progress, evState))
+    evSourceManager = new EventSourceManager()
+    evSourceManager.addEventSource(EventSourceDetail(evSource, progress, evState))
   }
 
   it should "return limited information when most of the information are not available" in {
-    pretty(reportEventSource(evSource)) shouldBe
+    pretty(reportEventSource()) shouldBe
       """{
         |  "appName" : "MyAppName",
         |  "appId" : "application_1462781278026_205691",
@@ -48,7 +53,7 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
         |  "applicationEndedAt" : 1466088058982,
         |  "progress" : {
         |    "percent" : 0,
-        |    "description" : "0 / 426 (0%)",
+        |    "description" : "Completed 0 / 426 (0%) with 0 active.",
         |    "has_next" : true,
         |    "has_previous" : false
         |  }
@@ -59,7 +64,7 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
 
     TestUtils.replay(evSource, count = 1)
 
-    pretty(reportEventSource(evSource)) shouldBe
+    pretty(reportEventSource()) shouldBe
       """{
         |  "appName" : "MyAppName",
         |  "appId" : "application_1462781278026_205691",
@@ -70,7 +75,7 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
         |  "applicationEndedAt" : 1466088058982,
         |  "progress" : {
         |    "percent" : 0,
-        |    "description" : "1 / 426 (0%)",
+        |    "description" : "Completed 1 / 426 (0%) with 0 active.",
         |    "has_next" : true,
         |    "has_previous" : true
         |  }
@@ -81,7 +86,7 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
 
     TestUtils.replay(evSource, count = 6)
 
-    pretty(reportEventSource(evSource)) shouldBe
+    pretty(reportEventSource()) shouldBe
       """{
         |  "appName" : "MyAppName",
         |  "appId" : "application_1462781278026_205691",
@@ -126,7 +131,7 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
         |  "applicationEndedAt" : 1466088058982,
         |  "progress" : {
         |    "percent" : 1,
-        |    "description" : "6 / 426 (1%)",
+        |    "description" : "Completed 6 / 426 (1%) with 0 active.",
         |    "has_next" : true,
         |    "has_previous" : true
         |  }
@@ -137,7 +142,7 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
 
     TestUtils.replay(evSource, count = 11)
 
-    pretty(reportEventSource(evSource)) shouldBe
+    pretty(reportEventSource()) shouldBe
       """{
         |  "appName" : "MyAppName",
         |  "appId" : "application_1462781278026_205691",
@@ -274,7 +279,7 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
         |  "applicationEndedAt" : 1466088058982,
         |  "progress" : {
         |    "percent" : 3,
-        |    "description" : "11 / 426 (3%)",
+        |    "description" : "Completed 11 / 426 (3%) with 0 active.",
         |    "has_next" : true,
         |    "has_previous" : true
         |  }
@@ -284,8 +289,8 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
   it should "return full information after all event was replayed" in {
 
     TestUtils.replay(evSource)
-    
-    pretty(reportEventSource(evSource)) shouldBe
+
+    pretty(reportEventSource()) shouldBe
       """{
         |  "appName" : "MyAppName",
         |  "appId" : "application_1462781278026_205691",
@@ -506,14 +511,14 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
         |  "applicationEndedAt" : 1466088058982,
         |  "progress" : {
         |    "percent" : 100,
-        |    "description" : "426 / 426 (100%)",
+        |    "description" : "Completed 426 / 426 (100%) with 0 active.",
         |    "has_next" : false,
         |    "has_previous" : true
         |  }
         |}""".stripMargin
   }
 
-  private def reportEventSource(evSource: EventSourceLike): JObject = {
-    UIServer.reportJson(SparklintStateAnalyzer(evSource), evSource)
+  private def reportEventSource(): JObject = {
+    UIServer.reportJson(SparklintStateAnalyzer(evSource, evState), evSource, progress)
   }
 }

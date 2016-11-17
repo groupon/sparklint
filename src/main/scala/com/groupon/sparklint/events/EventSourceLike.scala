@@ -13,7 +13,6 @@
 package com.groupon.sparklint.events
 
 import com.groupon.sparklint.common.Utils
-import com.groupon.sparklint.data.SparklintStateLike
 
 /**
   * The EventSourceLike provides a set of Spark events from a specific source.
@@ -44,10 +43,6 @@ trait EventSourceLike {
   def startTime: Long
 
   def endTime: Long
-
-  def progress: EventSourceProgress
-
-  def state: SparklintStateLike
 
   def fullName: String
 

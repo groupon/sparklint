@@ -45,4 +45,6 @@ trait EventStateLike {
     */
   def getState: SparklintStateLike
 
+
+
 }

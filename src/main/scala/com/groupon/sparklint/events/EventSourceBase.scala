@@ -24,7 +24,7 @@ import scala.collection.immutable.HashMap
   * @author swhitear 
   * @since 9/29/16.
   */
-abstract class EventSourceBase(eventState: EventStateLike) extends EventSourceLike {
+abstract class EventSourceBase() extends EventSourceLike {
 
   type EnvironmentData = Map[String, Seq[(String, String)]]
 

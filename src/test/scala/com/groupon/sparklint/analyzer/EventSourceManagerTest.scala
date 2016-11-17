@@ -12,8 +12,7 @@
 */
 package com.groupon.sparklint.analyzer
 
-import com.groupon.sparklint.data.SparklintStateLike
-import com.groupon.sparklint.data.compressed.CompressedState
+import com.groupon.sparklint.TestUtils._
 import com.groupon.sparklint.events._
 import org.scalatest.{FlatSpec, Matchers}
 
@@ -27,92 +26,39 @@ class EventSourceManagerTest extends FlatSpec with Matchers {
     val manager = new EventSourceManager()
 
     manager.sourceCount shouldEqual 0
-    manager.eventSources.isEmpty shouldBe true
+    manager.eventSource.isEmpty shouldBe true
   }
 
   it should "initialize with start state if initial sources supplied" in {
-    val evSource = StubEventSource("test_app_id")
-    val manager = new EventSourceManager(evSource)
+    val evDetail = stubEventDetails("test_app_id")
+    val manager = new EventSourceManager(evDetail)
 
     manager.sourceCount shouldEqual 1
-    manager.eventSources.head shouldBe evSource
+    manager.eventSource.head shouldBe evDetail
     manager.containsAppId("test_app_id") shouldBe true
-    manager.getSource("test_app_id") shouldBe evSource
+    manager.getSourceDetail("test_app_id") shouldBe evDetail
   }
 
   it should "add the extra event sources as expected and remain in order" in {
-    val evSource1 = StubEventSource("test_app_id_1")
-    val evSource2 = StubEventSource("test_app_id_2")
-    val manager = new EventSourceManager(evSource2)
-    manager.addEventSource(evSource1)
+    val evDetail1 = stubEventDetails("test_app_id_1")
+    val evDetail2 = stubEventDetails("test_app_id_2")
+    val manager = new EventSourceManager(evDetail2)
+    manager.addEventSource(evDetail1)
 
     manager.sourceCount shouldEqual 2
-    manager.eventSources.toSet shouldBe Set(evSource1, evSource2)
+    manager.eventSource.toSet shouldBe Set(evDetail1, evDetail2)
     manager.containsAppId("test_app_id_1") shouldBe true
     manager.containsAppId("test_app_id_2") shouldBe true
-    manager.getSource("test_app_id_1") shouldBe evSource1
-    manager.getSource("test_app_id_2") shouldBe evSource2
+    manager.getSourceDetail("test_app_id_1") shouldBe evDetail1
+    manager.getSourceDetail("test_app_id_2") shouldBe evDetail2
   }
 
   it should "throw up when invalid appId specified for indexer" in {
-    val evSource = StubEventSource("test_app_id")
-    val manager = new EventSourceManager(evSource)
+    val evDetail = stubEventDetails("test_app_id")
+    val manager = new EventSourceManager(evDetail)
 
     intercept[NoSuchElementException] {
       manager.getSource("invalid_app_id")
     }
   }
-}
-
-
-case class StubEventSource(appId: String) extends EventSourceLike with FreeScrollEventSource {
-  override def version: String = ???
-
-  override def host: String = ???
-
-  override def port: Int = ???
-
-  override def maxMemory: Long = ???
-
-  override def appName: String = ???
-
-  override def user: String = ???
-
-  override def startTime: Long = ???
-
-  override def endTime: Long = ???
-
-  override def progress: EventSourceProgress = ???
-
-  override def state: SparklintStateLike = ???
-
-  override def fullName: String = ???
-
-  @throws[IllegalArgumentException]
-  override def forwardEvents(count: Int): EventSourceProgress = ???
-
-  @throws[IllegalArgumentException]
-  override def rewindEvents(count: Int): EventSourceProgress = ???
-
-  @throws[IllegalArgumentException]
-  override def forwardTasks(count: Int): EventSourceProgress = ???
-
-  @throws[IllegalArgumentException]
-  override def rewindTasks(count: Int): EventSourceProgress = ???
-
-  @throws[IllegalArgumentException]
-  override def forwardStages(count: Int): EventSourceProgress = ???
-
-  @throws[IllegalArgumentException]
-  override def rewindStages(count: Int): EventSourceProgress = ???
-
-  @throws[IllegalArgumentException]
-  override def forwardJobs(count: Int): EventSourceProgress = ???
-
-  @throws[IllegalArgumentException]
-  override def rewindJobs(count: Int): EventSourceProgress = ???
-
-  override def toEnd(): EventSourceProgress = ???
-
-  override def toStart(): EventSourceProgress = ???
 }

@@ -26,7 +26,7 @@ trait EventSourceManagerLike {
     *
     * @param eventSource the EventSourceLike extending implementation to add.
     */
-  def addEventSource(eventSource: EventSourceLike): Unit
+  def addEventSource(eventSource: EventSourceDetail): Unit
 
   /**
     * The number of sources currently in the manager.
@@ -36,11 +36,11 @@ trait EventSourceManagerLike {
   def sourceCount: Int
 
   /**
-    * An Iterable of EventSourceLike instances returned in their insertion order.
+    * An Iterable of SourceDetail instances returned in their EventSourceLike insertion order that the .
     *
     * @return
     */
-  def eventSources: Iterable[EventSourceLike]
+  def eventSource: Iterable[EventSourceDetail]
 
   /** True if the current set of managed EventSourceLike instances contains the specified appId.
     *
@@ -62,4 +62,9 @@ trait EventSourceManagerLike {
   @throws[NoSuchElementException]
   def getScrollingSource(appId: String): FreeScrollEventSource
 
+  @throws[NoSuchElementException]
+  def getSourceDetail(appId: String): EventSourceDetail
+
 }
+
+case class EventSourceDetail(source: EventSourceLike, progress: EventSourceProgressLike, state: EventStateLike)

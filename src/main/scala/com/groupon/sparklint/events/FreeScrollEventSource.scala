@@ -22,31 +22,36 @@ trait FreeScrollEventSource {
   self: EventSourceLike =>
 
   @throws[IllegalArgumentException]
-  def forwardEvents(count: Int = 1): EventSourceProgress
+  def forwardEvents(count: Int = 1): Unit
 
   @throws[IllegalArgumentException]
-  def rewindEvents(count: Int = 1): EventSourceProgress
+  def rewindEvents(count: Int = 1): Unit
 
   @throws[IllegalArgumentException]
-  def forwardTasks(count: Int = 1): EventSourceProgress
+  def forwardTasks(count: Int = 1): Unit
 
   @throws[IllegalArgumentException]
-  def rewindTasks(count: Int = 1): EventSourceProgress
+  def rewindTasks(count: Int = 1): Unit
 
   @throws[IllegalArgumentException]
-  def forwardStages(count: Int = 1): EventSourceProgress
+  def forwardStages(count: Int = 1): Unit
 
   @throws[IllegalArgumentException]
-  def rewindStages(count: Int = 1): EventSourceProgress
+  def rewindStages(count: Int = 1): Unit
 
   @throws[IllegalArgumentException]
-  def forwardJobs(count: Int = 1): EventSourceProgress
+  def forwardJobs(count: Int = 1): Unit
 
   @throws[IllegalArgumentException]
-  def rewindJobs(count: Int = 1): EventSourceProgress
+  def rewindJobs(count: Int = 1): Unit
 
-  def toEnd(): EventSourceProgress
+  def toEnd(): Unit
 
-  def toStart(): EventSourceProgress
+  def toStart(): Unit
+
+  def hasNext: Boolean
+
+  def hasPrevious: Boolean
+
 }
 

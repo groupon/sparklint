@@ -12,8 +12,8 @@
 */
 package com.groupon.sparklint
 
-import com.groupon.sparklint.common.{SparklintConfig, Scheduler}
-import com.groupon.sparklint.events.{BufferedEventSource, CompressedEventState, EventSourceManager}
+import com.groupon.sparklint.common.{Scheduler, SparklintConfig}
+import com.groupon.sparklint.events._
 import org.apache.spark.scheduler.SparkListenerEvent
 import org.apache.spark.{SparkConf, SparkFirehoseListener}
 
@@ -28,8 +28,10 @@ class SparklintListener(appId: String, appName: String) extends SparkFirehoseLis
     this(conf.get("spark.app.id", "AppId"), conf.get("spark.app.name", "AppName"))
   }
 
-  private val eventSource   = BufferedEventSource(appId, new CompressedEventState())
-  private val sourceManager = new EventSourceManager(eventSource)
+  private val progressReceiver = EventSourceProgress()
+  private val stateReceiver = new CompressedEventState()
+  private val eventSource   = BufferedEventSource(appId, Seq(progressReceiver, stateReceiver))
+  private val sourceManager = new EventSourceManager(EventSourceDetail(eventSource, progressReceiver, stateReceiver))
 
   val scheduler = new Scheduler()
   val config    = SparklintConfig()
