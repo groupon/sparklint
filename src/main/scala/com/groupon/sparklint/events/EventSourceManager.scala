@@ -45,11 +45,13 @@ class EventSourceManager(initialSources: EventSourceDetail*) extends EventSource
   @throws[NoSuchElementException]
   override def getScrollingSource(appId: String): FreeScrollEventSource = {
     eventSourcesByAppId.get(appId) match {
-      case Some(eventSource: FreeScrollEventSource) => eventSource
-      case Some(_)                                  => throw new IllegalArgumentException(s"$appId cannot free scroll")
-      case None                                     => throw new NoSuchElementException(s"Missing appId $appId")
+      case Some(EventSourceDetail(eventSource: FreeScrollEventSource, p: EventSourceProgressLike, s: EventStateLike))
+                   => eventSource
+      case Some(_) => throw new IllegalArgumentException(s"$appId cannot free scroll")
+      case None    => throw new NoSuchElementException(s"Missing appId $appId")
     }
   }
 
-  @throws[NoSuchElementException]
-  override def getSourceDetail(appId: String): EventSourceDetail = eventSourcesByAppId(appId)}
+    @throws[NoSuchElementException]
+    override def getSourceDetail(appId: String): EventSourceDetail = eventSourcesByAppId(appId)
+  }

@@ -16,6 +16,7 @@ import com.groupon.sparklint.analyzer.SparklintStateAnalyzer
 import com.groupon.sparklint.common.Logging
 import com.groupon.sparklint.events._
 import com.groupon.sparklint.server.{AdhocServer, StaticFileService}
+import org.apache.commons.lang3.exception.ExceptionUtils
 import org.http4s.dsl.{->, /, _}
 import org.http4s.{HttpService, Response}
 import org.json4s.JsonAST.JObject
@@ -37,40 +38,50 @@ class UIServer(esManager: EventSourceManagerLike)
   routingMap("/") = sparklintService
 
   private def sparklintService = HttpService {
-    case GET -> Root                                                            => homepageHtml
-    case GET -> Root / appId / "state" if appExists(appId)                      => progressJson(appId)
-    case GET -> Root / appId / "eventSource" if appExists(appId)                => eventSourceJson(appId)
-    case GET -> Root / appId / "forward" / count / evString if appExists(appId) => fwdAppJson(appId, count, evString)
-    case GET -> Root / appId / "rewind" / count / evString if appExists(appId)  => rwdAppJson(appId, count, evString)
-    case GET -> Root / appId / "to_end" if appExists(appId)                     => endAppJson(appId)
-    case GET -> Root / appId / "to_start" if appExists(appId)                   => startAppJson(appId)
+    case GET -> Root                                                            => tryit(homepage, htmlResponse)
+    case GET -> Root / appId / "state" if appExists(appId)                      => tryit(progress(appId))
+    case GET -> Root / appId / "eventSource" if appExists(appId)                => tryit(eventSource(appId))
+    case GET -> Root / appId / "forward" / count / evString if appExists(appId) => tryit(fwdApp(appId, count, evString))
+    case GET -> Root / appId / "rewind" / count / evString if appExists(appId)  => tryit(rwdApp(appId, count, evString))
+    case GET -> Root / appId / "to_end" if appExists(appId)                     => tryit(endApp(appId))
+    case GET -> Root / appId / "to_start" if appExists(appId)                   => tryit(startApp(appId))
   }
 
-  private def appExists(appId: String) = {
+  private def tryit(exec: => String,
+                    formatFx: (Task[Response]) => Task[Response] = jsonResponse): Task[Response] = {
+    Try(exec) match {
+      case Success(result) =>
+        formatFx(Ok(result))
+      case Failure(ex)    =>
+        logError(s"Failure to navigate.", ex)
+        InternalServerError(ExceptionUtils.getStackTrace(ex))
+    }
+  }
+
+  private def appExists(appId: String): Boolean = {
     esManager.containsAppId(appId)
   }
 
-  private def homepageHtml = {
+  private def homepage: String = {
     val page = new SparklintHomepage(esManager)
-    htmlResponse(Ok(page.HTML.toString))
+    page.HTML.toString
   }
 
-  private def progressJson(appId: String) = {
+  private def progress(appId: String): String = {
     val detail = esManager.getSourceDetail(appId)
     val report = SparklintStateAnalyzer(detail.source, detail.state)
-    jsonResponse(Ok(pretty(UIServer.reportJson(report, detail.source, detail.progress))))
+    pretty(UIServer.reportJson(report, detail.source, detail.progress))
   }
 
-  private def eventSourceJson(appId: String) = {
-    jsonResponse(Ok(pretty(UIServer.progressJson(esManager.getSourceDetail(appId).progress))))
+  private def eventSource(appId: String): String = {
+    pretty(UIServer.progressJson(esManager.getSourceDetail(appId).progress))
   }
 
-  private def fwdAppJson(appId: String, count: String, evString: String): Task[Response] = {
-    fwdAppJson(appId, count, EventType.fromString(evString))
-
+  private def fwdApp(appId: String, count: String, evString: String): String = {
+    fwdApp(appId, count, EventType.fromString(evString))
   }
 
-  private def fwdAppJson(appId: String, count: String, evType: EventType): Task[Response] = {
+  private def fwdApp(appId: String, count: String, evType: EventType): String = {
     def progress() = esManager.getSourceDetail(appId).progress
     val mover = moveEventSource(count, appId, progress) _
     evType match {
@@ -81,12 +92,11 @@ class UIServer(esManager: EventSourceManagerLike)
     }
   }
 
-  private def rwdAppJson(appId: String, count: String, evString: String): Task[Response] = {
-    rwdAppJson(appId, count, EventType.fromString(evString))
-
+  private def rwdApp(appId: String, count: String, evString: String): String = {
+    rwdApp(appId, count, EventType.fromString(evString))
   }
 
-  private def rwdAppJson(appId: String, count: String, evType: EventType): Task[Response] = {
+  private def rwdApp(appId: String, count: String, evType: EventType): String = {
     def progress() = esManager.getSourceDetail(appId).progress
     val mover = moveEventSource(count, appId, progress) _
     evType match {
@@ -97,38 +107,38 @@ class UIServer(esManager: EventSourceManagerLike)
     }
   }
 
-  private def endAppJson(appId: String) = {
+  private def endApp(appId: String): String = {
     endOfEventSource(appId,
       (appid) => esManager.getScrollingSource(appid).toEnd(),
       (appid) => esManager.getSourceDetail(appid).progress)
   }
 
-  private def startAppJson(appId: String) = {
+  private def startApp(appId: String): String = {
     endOfEventSource(appId,
       (appid) => esManager.getScrollingSource(appId).toStart(),
       (appid) => esManager.getSourceDetail(appid).progress)
   }
 
   private def moveEventSource(count: String, appId: String, progFn: () => EventSourceProgressLike)
-                             (moveFn: (Int) => Unit): Task[Response] = {
+                             (moveFn: (Int) => Unit): String = {
     Try(moveFn(count.toInt)) match {
       case Success(progress) =>
-        jsonResponse(Ok(pretty(UIServer.progressJson(progFn()))))
+        pretty(UIServer.progressJson(progFn()))
       case Failure(ex)       =>
         logError(s"Failure to move appId $appId: ${ex.getMessage}")
-        eventSourceJson(appId)
+        eventSource(appId)
     }
   }
 
   private def endOfEventSource(appId: String,
                                moveFn: (String) => Unit,
-                               progFn: (String) => EventSourceProgressLike): Task[Response] = {
+                               progFn: (String) => EventSourceProgressLike): String = {
     Try(moveFn(appId)) match {
       case Success(unit) =>
-        jsonResponse(Ok(pretty(UIServer.progressJson(progFn(appId)))))
+        pretty(UIServer.progressJson(progFn(appId)))
       case Failure(ex)   =>
         logError(s"Failure to end of appId $appId: ${ex.getMessage}")
-        eventSourceJson(appId)
+        eventSource(appId)
     }
   }
 }

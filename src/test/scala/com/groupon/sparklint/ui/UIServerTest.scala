@@ -15,9 +15,9 @@ package com.groupon.sparklint.ui
 import java.io.File
 
 import com.groupon.sparklint.TestUtils
-import com.groupon.sparklint.analyzer.SparklintStateAnalyzer
 import com.groupon.sparklint.events.{FreeScrollEventSource, _}
-import org.json4s.JObject
+import org.http4s.client.blaze.PooledHttp1Client
+import org.json4s.JValue
 import org.json4s.jackson.JsonMethods._
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 
@@ -30,7 +30,7 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
   var evState        : EventStateLike with EventReceiverLike          = _
   var progress       : EventSourceProgressLike with EventReceiverLike = _
   var evSourceManager: EventSourceManagerLike                         = _
-
+  var server         : UIServer                                       = _
 
   override protected def beforeEach(): Unit = {
     val file = new File(TestUtils.resource("spark_event_log_example"))
@@ -39,10 +39,17 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
     evSource = new FileEventSource(file, Seq(progress, evState))
     evSourceManager = new EventSourceManager()
     evSourceManager.addEventSource(EventSourceDetail(evSource, progress, evState))
+
+    server = new UIServer(evSourceManager)
+    server.startServer(Some(42424))
+  }
+
+  override protected def afterEach(): Unit = {
+    server.stopServer()
   }
 
   it should "return limited information when most of the information are not available" in {
-    pretty(reportEventSource()) shouldBe
+    pretty(state) shouldBe
       """{
         |  "appName" : "MyAppName",
         |  "appId" : "application_1462781278026_205691",
@@ -62,9 +69,9 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
 
   it should "return limited information after application was submitted" in {
 
-    TestUtils.replay(evSource, count = 1)
+    forward(1)
 
-    pretty(reportEventSource()) shouldBe
+    pretty(state) shouldBe
       """{
         |  "appName" : "MyAppName",
         |  "appId" : "application_1462781278026_205691",
@@ -84,9 +91,9 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
 
   it should "return limited information after first task was submitted" in {
 
-    TestUtils.replay(evSource, count = 6)
+    forward(6)
 
-    pretty(reportEventSource()) shouldBe
+    pretty(state) shouldBe
       """{
         |  "appName" : "MyAppName",
         |  "appId" : "application_1462781278026_205691",
@@ -140,9 +147,9 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
 
   it should "return full information after first task was finished" in {
 
-    TestUtils.replay(evSource, count = 11)
+    forward(11)
 
-    pretty(reportEventSource()) shouldBe
+    pretty(state) shouldBe
       """{
         |  "appName" : "MyAppName",
         |  "appId" : "application_1462781278026_205691",
@@ -288,9 +295,9 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
 
   it should "return full information after all event was replayed" in {
 
-    TestUtils.replay(evSource)
+    end
 
-    pretty(reportEventSource()) shouldBe
+    pretty(state) shouldBe
       """{
         |  "appName" : "MyAppName",
         |  "appId" : "application_1462781278026_205691",
@@ -518,7 +525,35 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
         |}""".stripMargin
   }
 
-  private def reportEventSource(): JObject = {
-    UIServer.reportJson(SparklintStateAnalyzer(evSource, evState), evSource, progress)
+  private def state: JValue = {
+    parse(request(stateUrl))
+    //UIServer.reportJson(SparklintStateAnalyzer(evSource, evState), evSource, progress)
+  }
+
+  private def forward(count: Int): String = {
+    request(forwardUrl(count))
+  }
+
+  private def end: String = {
+    request(endUrl)
+  }
+
+  private def forwardUrl(count: Int) = {
+    s"http://localhost:42424/application_1462781278026_205691/forward/$count/Events"
+  }
+
+  private def endUrl = {
+    s"http://localhost:42424/application_1462781278026_205691/to_end"
+  }
+
+  private def stateUrl = {
+    s"http://localhost:42424/application_1462781278026_205691/state"
+  }
+
+  private def request(url: String): String = {
+    val client = PooledHttp1Client()
+    val response = client.getAs[String](url).run
+    client.shutdown.run
+    response
   }
 }
