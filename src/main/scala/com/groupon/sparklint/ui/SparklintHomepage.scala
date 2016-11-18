@@ -121,18 +121,23 @@ class SparklintHomepage(sourceManager: EventSourceManagerLike) extends UITemplat
   def mainContainer: Seq[Node] =
     <div class="container-fluid">
       <div class="row">
-        <div class="col-lg-12">
+        <div class="col-md-12">
+          <div class="alert alert-danger" id="error-message">
+          </div>
+        </div>
+        <div class="col-md-12">
           <h1 class="page-header">
             <span id="appName">Sparklint</span>
             <small id="appId">Select an app from left side</small>
           </h1>
         </div>
-        <div class="col-lg-12">
+        <div class="col-md-12">
           <div class="alert alert-success" id="summaryApplicationEndedAlert">
             <span id="summaryApplicationDuration"></span>
           </div>
           <div class="progress">
-            <div id="summaryApplicationProgress" class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
+            <div id="summaryApplicationProgress" class="progress-bar" role="progressbar"
+                 aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
               <span class="sr-only"></span>
             </div>
           </div>
@@ -147,7 +152,6 @@ class SparklintHomepage(sourceManager: EventSourceManagerLike) extends UITemplat
     </div>
     <div class="loading-spinner">
     </div>
-
 
   def summaryRow: Seq[Node] =
     <div id="summaryRow" class="row" style="display:None">

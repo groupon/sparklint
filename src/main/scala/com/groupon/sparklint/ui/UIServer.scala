@@ -52,9 +52,9 @@ class UIServer(esManager: EventSourceManagerLike)
     Try(exec) match {
       case Success(result) =>
         formatFx(Ok(result))
-      case Failure(ex)    =>
+      case Failure(ex)     =>
         logError(s"Failure to navigate.", ex)
-        InternalServerError(ExceptionUtils.getStackTrace(ex))
+        formatFx(InternalServerError(ExceptionUtils.getMessage(ex)))
     }
   }
 
