@@ -15,11 +15,11 @@ package com.groupon.sparklint.events
 import org.apache.spark.scheduler._
 
 /**
-  * The EventReceiverLike interface provides base event routing and handling for all the event recievers
+  * The EventReceiverLike interface provides base event routing and handling for all the event receivers
   * that are injected into an EventSource.
   *
   * All base methods are no-ops, implementers can chose to implement only those they need, and compose freely
-  * from other traits.  Note, teh onPreprocEvent, onOnEvent and onUnEvent handlers are called for each inbound
+  * from other traits.  Note, the onPreprocEvent, onOnEvent and onUnEvent handlers are called for each inbound
   * preproc, on and un event before routing to the typed event handler for each, resulting in at least two
   * handler calls for each event type.
   *
@@ -30,96 +30,96 @@ trait EventReceiverLike {
 
   // Always called event handlers of prepreoc, on and un
 
-  def onPreprocEvent(event: SparkListenerEvent): Unit = {}
+  protected def onPreprocEvent(event: SparkListenerEvent): Unit = {}
 
-  def onOnEvent(event: SparkListenerEvent): Unit = {}
+  protected def onOnEvent(event: SparkListenerEvent): Unit = {}
 
-  def onUnEvent(event: SparkListenerEvent): Unit = {}
+  protected def onUnEvent(event: SparkListenerEvent): Unit = {}
 
 
   // Preprocessing base no-ops
 
-  def preprocAddApp(event: SparkListenerApplicationStart): Unit = {}
+  protected def preprocAddApp(event: SparkListenerApplicationStart): Unit = {}
 
-  def preprocAddExecutor(event: SparkListenerExecutorAdded): Unit = {}
+  protected def preprocAddExecutor(event: SparkListenerExecutorAdded): Unit = {}
 
-  def preprocRemoveExecutor(event: SparkListenerExecutorRemoved): Unit = {}
+  protected def preprocRemoveExecutor(event: SparkListenerExecutorRemoved): Unit = {}
 
-  def preprocAddBlockManager(event: SparkListenerBlockManagerAdded): Unit = {}
+  protected def preprocAddBlockManager(event: SparkListenerBlockManagerAdded): Unit = {}
 
-  def preprocJobStart(event: SparkListenerJobStart): Unit = {}
+  protected def preprocJobStart(event: SparkListenerJobStart): Unit = {}
 
-  def preprocStageSubmitted(event: SparkListenerStageSubmitted): Unit = {}
+  protected def preprocStageSubmitted(event: SparkListenerStageSubmitted): Unit = {}
 
-  def preprocTaskStart(event: SparkListenerTaskStart): Unit = {}
+  protected def preprocTaskStart(event: SparkListenerTaskStart): Unit = {}
 
-  def preprocTaskEnd(event: SparkListenerTaskEnd): Unit = {}
+  protected def preprocTaskEnd(event: SparkListenerTaskEnd): Unit = {}
 
-  def preprocStageCompleted(event: SparkListenerStageCompleted): Unit = {}
+  protected def preprocStageCompleted(event: SparkListenerStageCompleted): Unit = {}
 
-  def preprocJobEnd(event: SparkListenerJobEnd): Unit = {}
+  protected def preprocJobEnd(event: SparkListenerJobEnd): Unit = {}
 
-  def preprocUnpersistRDD(event: SparkListenerUnpersistRDD): Unit = {}
+  protected def preprocUnpersistRDD(event: SparkListenerUnpersistRDD): Unit = {}
 
-  def preprocEndApp(event: SparkListenerApplicationEnd): Unit = {}
+  protected def preprocEndApp(event: SparkListenerApplicationEnd): Unit = {}
 
 
   // On events base no-ops
 
-  def addApp(event: SparkListenerApplicationStart): Unit = {}
+  protected def addApp(event: SparkListenerApplicationStart): Unit = {}
 
-  def addExecutor(event: SparkListenerExecutorAdded): Unit = {}
+  protected def addExecutor(event: SparkListenerExecutorAdded): Unit = {}
 
-  def removeExecutor(event: SparkListenerExecutorRemoved): Unit = {}
+  protected def removeExecutor(event: SparkListenerExecutorRemoved): Unit = {}
 
-  def addBlockManager(event: SparkListenerBlockManagerAdded): Unit = {}
+  protected def addBlockManager(event: SparkListenerBlockManagerAdded): Unit = {}
 
-  def jobStart(event: SparkListenerJobStart): Unit = {}
+  protected def jobStart(event: SparkListenerJobStart): Unit = {}
 
-  def stageSubmitted(event: SparkListenerStageSubmitted): Unit = {}
+  protected def stageSubmitted(event: SparkListenerStageSubmitted): Unit = {}
 
-  def taskStart(event: SparkListenerTaskStart): Unit = {}
+  protected def taskStart(event: SparkListenerTaskStart): Unit = {}
 
-  def taskEnd(event: SparkListenerTaskEnd): Unit = {}
+  protected def taskEnd(event: SparkListenerTaskEnd): Unit = {}
 
-  def stageCompleted(event: SparkListenerStageCompleted): Unit = {}
+  protected def stageCompleted(event: SparkListenerStageCompleted): Unit = {}
 
-  def jobEnd(event: SparkListenerJobEnd): Unit = {}
+  protected def jobEnd(event: SparkListenerJobEnd): Unit = {}
 
-  def unpersistRDD(event: SparkListenerUnpersistRDD): Unit = {}
+  protected def unpersistRDD(event: SparkListenerUnpersistRDD): Unit = {}
 
-  def endApp(event: SparkListenerApplicationEnd): Unit = {}
+  protected def endApp(event: SparkListenerApplicationEnd): Unit = {}
 
 
   // Un event base no-ops
 
-  def unAddApp(event: SparkListenerApplicationStart): Unit = {}
+  protected def unAddApp(event: SparkListenerApplicationStart): Unit = {}
 
-  def unAddExecutor(event: SparkListenerExecutorAdded): Unit = {}
+  protected def unAddExecutor(event: SparkListenerExecutorAdded): Unit = {}
 
-  def unRemoveExecutor(event: SparkListenerExecutorRemoved): Unit = {}
+  protected def unRemoveExecutor(event: SparkListenerExecutorRemoved): Unit = {}
 
-  def unAddBlockManager(event: SparkListenerBlockManagerAdded): Unit = {}
+  protected def unAddBlockManager(event: SparkListenerBlockManagerAdded): Unit = {}
 
-  def unJobStart(event: SparkListenerJobStart): Unit = {}
+  protected def unJobStart(event: SparkListenerJobStart): Unit = {}
 
-  def unStageSubmitted(event: SparkListenerStageSubmitted): Unit = {}
+  protected def unStageSubmitted(event: SparkListenerStageSubmitted): Unit = {}
 
-  def unTaskStart(event: SparkListenerTaskStart): Unit = {}
+  protected def unTaskStart(event: SparkListenerTaskStart): Unit = {}
 
-  def unTaskEnd(event: SparkListenerTaskEnd): Unit = {}
+  protected def unTaskEnd(event: SparkListenerTaskEnd): Unit = {}
 
-  def unStageCompleted(event: SparkListenerStageCompleted): Unit = {}
+  protected def unStageCompleted(event: SparkListenerStageCompleted): Unit = {}
 
-  def unJobEnd(event: SparkListenerJobEnd): Unit = {}
+  protected def unJobEnd(event: SparkListenerJobEnd): Unit = {}
 
-  def unUnpersistRDD(event: SparkListenerUnpersistRDD): Unit = {}
+  protected def unUnpersistRDD(event: SparkListenerUnpersistRDD): Unit = {}
 
-  def unEndApp(event: SparkListenerApplicationEnd): Unit = {}
+  protected def unEndApp(event: SparkListenerApplicationEnd): Unit = {}
 
   // Main event routers
 
-  final def preprocess(event: SparkListenerEvent): Unit = synchronized {
+  def preprocess(event: SparkListenerEvent): Unit = synchronized {
     onPreprocEvent(event)
     event match {
       case event: SparkListenerApplicationStart  => preprocAddApp(event)
@@ -138,7 +138,7 @@ trait EventReceiverLike {
     }
   }
 
- final def onEvent(event: SparkListenerEvent): Unit = synchronized {
+  def onEvent(event: SparkListenerEvent): Unit = synchronized {
    onOnEvent(event)
    event match {
       case event: SparkListenerApplicationStart  => addApp(event)
@@ -157,7 +157,7 @@ trait EventReceiverLike {
     }
   }
 
-  final def unEvent(event: SparkListenerEvent): Unit = synchronized {
+  def unEvent(event: SparkListenerEvent): Unit = synchronized {
     onUnEvent(event)
     event match {
       case event: SparkListenerApplicationStart  => unAddApp(event)

@@ -54,11 +54,11 @@ object TestUtils {
   }
 
   def stubEventDetails(appId: String): EventSourceDetail = {
-    EventSourceDetail(StubEventSource(appId), EventSourceProgress(), StubEventState())
+    EventSourceDetail(StubEventSource(appId), StubEventState(), new EventSourceProgress())
   }
 
   def stubEventDetails(eventSource: EventSourceLike): EventSourceDetail = {
-    EventSourceDetail(eventSource, EventSourceProgress(), StubEventState())
+    EventSourceDetail(eventSource, StubEventState(), new EventSourceProgress())
   }
 
   def sparkAppStart(name: String = TEST_NAME,

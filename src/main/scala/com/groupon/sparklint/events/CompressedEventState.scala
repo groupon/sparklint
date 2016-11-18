@@ -21,7 +21,7 @@ import org.apache.spark.scheduler._
   * @author rxue
   * @since 9/7/16.
   */
-class CompressedEventState(metricsBuckets: Int = 1000) extends EventStateLike with EventReceiverLike {
+class CompressedEventState(metricsBuckets: Int = 1000) extends EventStateLike {
   // collections will be optimized for fast writes
   // snapshoting will enable the analyzer to capture the raw data and run models against it
   var state: CompressedState = CompressedState.empty

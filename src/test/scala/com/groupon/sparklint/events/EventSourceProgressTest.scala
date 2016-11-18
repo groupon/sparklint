@@ -24,7 +24,7 @@ import org.scalatest.{FlatSpec, Matchers}
 class EventSourceProgressTest extends FlatSpec with Matchers {
 
   it should "default to empty progress trackers" in {
-    val progress = EventSourceProgress()
+    val progress = new EventSourceProgress()
 
     testProgress(progress.eventProgress, 0)
     testProgress(progress.taskProgress, 0)
@@ -33,7 +33,7 @@ class EventSourceProgressTest extends FlatSpec with Matchers {
   }
 
   it should "preprocess as expected" in {
-    val progress = EventSourceProgress()
+    val progress = new EventSourceProgress()
 
     progress.preprocess(sparkAppStart())
     testProgress(progress.eventProgress, 1)
@@ -79,7 +79,7 @@ class EventSourceProgressTest extends FlatSpec with Matchers {
   }
 
   it should "process on events as expected" in {
-    val progress = EventSourceProgress()
+    val progress = new EventSourceProgress()
 
     progress.onEvent(sparkAppStart())
     testProgress(progress.eventProgress, 1, 1)
@@ -135,7 +135,7 @@ class EventSourceProgressTest extends FlatSpec with Matchers {
   }
 
   it should "process un events as expected" in {
-    val progress = EventSourceProgress()
+    val progress = new EventSourceProgress()
 
     progress.onEvent(sparkAppStart())
     progress.onEvent(sparkJobStartFromId(0))
@@ -252,7 +252,7 @@ class EventProgressTest extends FlatSpec with Matchers {
   }
 
   it should "represent progress correctly" in {
-    val progress = EventProgress(10, 6, 4, Set("test-in-flight1", "test-in-flight2"))
+    val progress = new EventProgress(10, 6, 4, Set("test-in-flight1", "test-in-flight2"))
 
     progress.count shouldEqual 10
     progress.started shouldEqual 6
@@ -266,7 +266,7 @@ class EventProgressTest extends FlatSpec with Matchers {
   }
 
   it should "represent end of events correctly" in {
-    val progress = EventProgress(10, 10, 10, Set())
+    val progress = new EventProgress(10, 10, 10, Set())
 
     progress.count shouldEqual 10
     progress.started shouldEqual 10

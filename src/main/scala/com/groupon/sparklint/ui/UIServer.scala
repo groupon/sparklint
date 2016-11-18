@@ -68,13 +68,13 @@ class UIServer(esManager: EventSourceManagerLike)
   }
 
   private def progress(appId: String): String = {
-    val detail = esManager.getSourceDetail(appId)
+    val detail = esManager.getSource(appId)
     val report = SparklintStateAnalyzer(detail.source, detail.state)
     pretty(UIServer.reportJson(report, detail.source, detail.progress))
   }
 
   private def eventSource(appId: String): String = {
-    pretty(UIServer.progressJson(esManager.getSourceDetail(appId).progress))
+    pretty(UIServer.progressJson(esManager.getSource(appId).progress))
   }
 
   private def fwdApp(appId: String, count: String, evString: String): String = {
@@ -82,7 +82,7 @@ class UIServer(esManager: EventSourceManagerLike)
   }
 
   private def fwdApp(appId: String, count: String, evType: EventType): String = {
-    def progress() = esManager.getSourceDetail(appId).progress
+    def progress() = esManager.getSource(appId).progress
     val mover = moveEventSource(count, appId, progress) _
     evType match {
       case Events() => mover(esManager.getScrollingSource(appId).forwardEvents)
@@ -97,7 +97,7 @@ class UIServer(esManager: EventSourceManagerLike)
   }
 
   private def rwdApp(appId: String, count: String, evType: EventType): String = {
-    def progress() = esManager.getSourceDetail(appId).progress
+    def progress() = esManager.getSource(appId).progress
     val mover = moveEventSource(count, appId, progress) _
     evType match {
       case Events() => mover(esManager.getScrollingSource(appId).rewindEvents)
@@ -110,13 +110,13 @@ class UIServer(esManager: EventSourceManagerLike)
   private def endApp(appId: String): String = {
     endOfEventSource(appId,
       (appid) => esManager.getScrollingSource(appid).toEnd(),
-      (appid) => esManager.getSourceDetail(appid).progress)
+      (appid) => esManager.getSource(appid).progress)
   }
 
   private def startApp(appId: String): String = {
     endOfEventSource(appId,
       (appid) => esManager.getScrollingSource(appId).toStart(),
-      (appid) => esManager.getSourceDetail(appid).progress)
+      (appid) => esManager.getSource(appid).progress)
   }
 
   private def moveEventSource(count: String, appId: String, progFn: () => EventSourceProgressLike)

@@ -25,10 +25,10 @@ import scala.collection.mutable
   * @since 9/12/16.
   */
 @throws[IllegalArgumentException]
-case class EventSourceProgress(eventProgress: EventProgressLike = EventProgress.empty(),
-                               taskProgress: EventProgressLike = EventProgress.empty(),
-                               stageProgress: EventProgressLike = EventProgress.empty(),
-                               jobProgress: EventProgressLike = EventProgress.empty())
+class EventSourceProgress(val eventProgress: EventProgressLike = EventProgress.empty(),
+                          val taskProgress: EventProgressLike = EventProgress.empty(),
+                          val stageProgress: EventProgressLike = EventProgress.empty(),
+                          val  jobProgress: EventProgressLike = EventProgress.empty())
   extends EventSourceProgressLike with EventReceiverLike {
 
   require(eventProgress != null)
@@ -106,7 +106,6 @@ case class EventSourceProgress(eventProgress: EventProgressLike = EventProgress.
 
   override def jobStart(event: SparkListenerJobStart): Unit = {
     jobProgress.started += 1
-    val name = jobNameFromInfo(event)
     jobProgress.active = jobProgress.active + jobNameFromInfo(event)
   }
 
@@ -150,7 +149,7 @@ trait EventSourceProgressLike {
   val jobProgress  : EventProgressLike
 }
 
-case class EventProgress(var count: Int, var started: Int, var complete: Int, var active: Set[String])
+class EventProgress(var count: Int, var started: Int, var complete: Int, var active: Set[String])
   extends EventProgressLike {
   require(count >= 0)
   require(started >= 0 && started <= count)
@@ -167,8 +166,8 @@ case class EventProgress(var count: Int, var started: Int, var complete: Int, va
   private def activeString = if (active.isEmpty) "" else s" (${active.mkString(", ")})"
 }
 
-case object EventProgress {
-  def empty(): EventProgress = EventProgress(0, 0, 0, Set.empty)
+object EventProgress {
+  def empty(): EventProgress = new EventProgress(0, 0, 0, Set.empty)
 }
 
 trait EventProgressLike {

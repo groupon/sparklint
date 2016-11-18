@@ -27,19 +27,18 @@ import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
   */
 class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
   var evSource       : EventSourceLike with FreeScrollEventSource     = _
-  var evState        : EventStateLike with EventReceiverLike          = _
+  var evState        : EventStateLike                                 = _
   var progress       : EventSourceProgressLike with EventReceiverLike = _
   var evSourceManager: EventSourceManagerLike                         = _
   var server         : UIServer                                       = _
 
   override protected def beforeEach(): Unit = {
     val file = new File(TestUtils.resource("spark_event_log_example"))
-    progress = EventSourceProgress()
+    progress = new EventSourceProgress()
     evState = new CompressedEventState(30)
-    evSource = new FileEventSource(file, Seq(progress, evState))
+    evSource = FileEventSource(file, Seq(progress, evState))
     evSourceManager = new EventSourceManager()
-    evSourceManager.addEventSource(EventSourceDetail(evSource, progress, evState))
-
+    evSourceManager.addEventSource(EventSourceDetail(evSource, evState, progress))
     server = new UIServer(evSourceManager)
     server.startServer(Some(42424))
   }
@@ -527,7 +526,6 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
 
   private def state: JValue = {
     parse(request(stateUrl))
-    //UIServer.reportJson(SparklintStateAnalyzer(evSource, evState), evSource, progress)
   }
 
   private def forward(count: Int): String = {

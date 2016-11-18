@@ -31,7 +31,7 @@ import scala.util.{Failure, Success, Try}
   */
 @throws[IllegalArgumentException]
 case class FileEventSource(fileSource: File, receivers: Seq[EventReceiverLike])
-  extends EventSourceBase() with FreeScrollEventSource with Logging {
+  extends EventSourceBase with FreeScrollEventSource with Logging {
 
   // important to declare this before the buffer is filled
   private var extractedId = Option.empty[String]
@@ -133,29 +133,6 @@ case class FileEventSource(fileSource: File, receivers: Seq[EventReceiverLike])
 
   private def unEvent(event: SparkListenerEvent) = receivers.foreach(_.unEvent(event))
 
-}
-
-object FileEventSource {
-  def apply(fileSource: File, runImmediately: Boolean): Option[EventSourceDetail] = {
-    val progressReceiver = EventSourceProgress()
-    val stateReceiver = new LosslessEventState()
-    Try {
-      val eventReceivers = Seq(progressReceiver, stateReceiver)
-      val eventSource = new FileEventSource(fileSource, eventReceivers)
-      if (runImmediately) {
-        logInfo(s"Auto playing event source ${eventSource.fullName}")
-        eventSource.toEnd()
-      }
-      eventSource
-    } match {
-      case Success(eventSource) =>
-        logInfo(s"Successfully created file source ${fileSource.getName}")
-        Some(EventSourceDetail(eventSource, progressReceiver, stateReceiver))
-      case Failure(ex)          =>
-        logWarn(s"Failure creating file source from ${fileSource.getName}: ${ex.getMessage}")
-        None
-    }
-  }
 }
 
 private class ScrollHandler(movefn: () => SparkListenerEvent,

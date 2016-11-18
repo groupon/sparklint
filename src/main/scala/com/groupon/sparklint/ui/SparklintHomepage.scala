@@ -56,7 +56,7 @@ class SparklintHomepage(sourceManager: EventSourceManagerLike) extends UITemplat
       <div class="navbar-default sidebar" role="navigation">
         <div class="sidebar-nav navbar-collapse">
           <ul class="nav" id="side-menu">
-            {for (source <- sourceManager.eventSource) yield navbarItem(source.source, source.progress)}
+            {for (source <- sourceManager.eventSources) yield navbarItem(source.source, source.progress)}
             {navbarReplayControl}
           </ul>
         </div>
