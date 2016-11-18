@@ -21,7 +21,7 @@ import org.apache.spark.scheduler._
   * @author rxue
   * @since 9/22/16.
   */
-class LosslessEventState(metricsBuckets: Int = 1000) extends EventStateLike with EventReceiverLike {
+class LosslessEventState(metricsBuckets: Int = 1000) extends EventStateLike {
 
   var state: LosslessState = LosslessState.empty
 

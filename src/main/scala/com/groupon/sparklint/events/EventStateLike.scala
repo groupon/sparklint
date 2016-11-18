@@ -22,21 +22,7 @@ import org.apache.spark.scheduler.SparkListenerEvent
   * @author swhitear 
   * @since 9/10/16.
   */
-trait EventStateLike {
-
-  /**
-    * Modify the EventState by adding the specified message.
-    *
-    * @param event the SparkListenerEvent class to add.
-    */
-  def onEvent(event: SparkListenerEvent): Unit
-
-  /**
-    * Modify the EventState by removing the specified message.
-    *
-    * @param event the SparkListenerEvent class to add.
-    */
-  def unEvent(event: SparkListenerEvent): Unit
+trait EventStateLike extends EventReceiverLike {
 
   /**
     * The current EventState represented as a SparklintState object.
@@ -44,7 +30,5 @@ trait EventStateLike {
     * @return the SparklintState object representing current state.
     */
   def getState: SparklintStateLike
-
-
 
 }

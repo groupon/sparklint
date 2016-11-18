@@ -26,7 +26,7 @@ class EventSourceManagerTest extends FlatSpec with Matchers {
     val manager = new EventSourceManager()
 
     manager.sourceCount shouldEqual 0
-    manager.eventSource.isEmpty shouldBe true
+    manager.eventSources.isEmpty shouldBe true
   }
 
   it should "initialize with start state if initial sources supplied" in {
@@ -34,9 +34,9 @@ class EventSourceManagerTest extends FlatSpec with Matchers {
     val manager = new EventSourceManager(evDetail)
 
     manager.sourceCount shouldEqual 1
-    manager.eventSource.head shouldBe evDetail
+    manager.eventSources.head shouldBe evDetail
     manager.containsAppId("test_app_id") shouldBe true
-    manager.getSourceDetail("test_app_id") shouldBe evDetail
+    manager.getSource("test_app_id") shouldBe evDetail
   }
 
   it should "add the extra event sources as expected and remain in order" in {
@@ -46,11 +46,11 @@ class EventSourceManagerTest extends FlatSpec with Matchers {
     manager.addEventSource(evDetail1)
 
     manager.sourceCount shouldEqual 2
-    manager.eventSource.toSet shouldBe Set(evDetail1, evDetail2)
+    manager.eventSources.toSet shouldBe Set(evDetail1, evDetail2)
     manager.containsAppId("test_app_id_1") shouldBe true
     manager.containsAppId("test_app_id_2") shouldBe true
-    manager.getSourceDetail("test_app_id_1") shouldBe evDetail1
-    manager.getSourceDetail("test_app_id_2") shouldBe evDetail2
+    manager.getSource("test_app_id_1") shouldBe evDetail1
+    manager.getSource("test_app_id_2") shouldBe evDetail2
   }
 
   it should "throw up when invalid appId specified for indexer" in {

@@ -35,23 +35,23 @@ class EventSourceManager(initialSources: EventSourceDetail*) extends EventSource
 
   override def sourceCount: Int = eventSourcesByAppId.size
 
-  override def eventSource: Iterable[EventSourceDetail] = eventSourcesByAppId.values
+  override def eventSources: Iterable[EventSourceDetail] = eventSourcesByAppId.values
 
   override def containsAppId(appId: String): Boolean = eventSourcesByAppId.contains(appId)
 
   @throws[NoSuchElementException]
-  override def getSource(appId: String): EventSourceLike = eventSourcesByAppId(appId).source
+  override def getSource(appId: String): EventSourceDetail = eventSourcesByAppId(appId)
 
   @throws[NoSuchElementException]
   override def getScrollingSource(appId: String): FreeScrollEventSource = {
     eventSourcesByAppId.get(appId) match {
-      case Some(EventSourceDetail(eventSource: FreeScrollEventSource, p: EventSourceProgressLike, s: EventStateLike))
-                   => eventSource
-      case Some(_) => throw new IllegalArgumentException(s"$appId cannot free scroll")
-      case None    => throw new NoSuchElementException(s"Missing appId $appId")
+      case Some(EventSourceDetail(source: FreeScrollEventSource, s: Any, p: Any)) => source
+      case Some(_)                                                                => scrollFail(appId)
+      case None                                                                   => idFail(appId)
     }
   }
 
-    @throws[NoSuchElementException]
-    override def getSourceDetail(appId: String): EventSourceDetail = eventSourcesByAppId(appId)
-  }
+  private def scrollFail(appId: String) = throw new IllegalArgumentException(s"$appId cannot free scroll")
+
+  private def idFail(appId: String) = throw new NoSuchElementException(s"Missing appId $appId")
+}
