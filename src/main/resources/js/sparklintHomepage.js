@@ -33,7 +33,6 @@ function appSelectorClicked(ev) {
 }
 
 function displayAppState(appId, appState) {
-    hideErrorMessage();
     updateNameAndId(appState);
     updateSummaryNumExecutors(appState);
     updateSummaryPanel(appState);
@@ -277,6 +276,7 @@ function moveEventsToEnd(end) {
 }
 
 function handleJSON(url, successFn) {
+    hideErrorMessage();
     $.ajax({
         url: url,
         dataType: 'json',

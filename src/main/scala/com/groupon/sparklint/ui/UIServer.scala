@@ -54,7 +54,7 @@ class UIServer(esManager: EventSourceManagerLike)
         formatFx(Ok(result))
       case Failure(ex)     =>
         logError(s"Failure to navigate.", ex)
-        formatFx(InternalServerError(ExceptionUtils.getMessage(ex)))
+        htmlResponse(InternalServerError(ExceptionUtils.getMessage(ex)))
     }
   }
 
