@@ -12,8 +12,10 @@
  */
 
 function loadApp(appId) {
-    $.getJSON("/" + appId + "/state", function (appState) {
-        displayAppState(appId, appState)
+    var url = "/" + appId + "/state";
+    handleJSON(url, function (responseJson) {
+        console.log(responseJson);
+        displayAppState(appId, responseJson);
     });
     return false; // prevent the url navigate to /# with false as the return value
 }
@@ -27,12 +29,10 @@ function appSelectorClicked(ev) {
     sideMenu.find(".sparklintApp .progress-bar").removeClass("progress-bar-info progress-bar-success progress-bar-striped active");
 
     var appId = $(ev.currentTarget).data("value");
-    loadApp(appId)
+    loadApp(appId);
 }
 
 function displayAppState(appId, appState) {
-    console.log(appState);
-
     updateNameAndId(appState);
     updateSummaryNumExecutors(appState);
     updateSummaryPanel(appState);
@@ -43,7 +43,16 @@ function displayAppState(appId, appState) {
     updateCoreUsageChart(appState);
     updateTaskDistributionList(appState);
     updateEventSourceControl(appId, appState);
+}
 
+function displayErrorMessage(errorMsg) {
+    var msgDiv = $("#error-message");
+    msgDiv.text(errorMsg);
+    msgDiv.show();
+}
+
+function hideErrorMessage() {
+    $("#error-message").hide();
 }
 
 function updateEventSourceControl(appId, appState) {
@@ -248,7 +257,8 @@ function moveEvents(direction) {
 
     var count = $("#countSelector").val();
     var type = $("#typeSelector").val();
-    $.getJSON("/" + appId + "/" + direction + "/" + count + "/" + type, function (progJson) {
+    var url = "/" + appId + "/" + direction + "/" + count + "/" + type;
+    handleJSON(url, function (progJson) {
         console.log("moved " + appId + " " + direction + " by " + count + " " + type + "(s): " + JSON.stringify(progJson));
         loadApp(appId);
     })
@@ -258,19 +268,33 @@ function moveEventsToEnd(end) {
     var appId = $("#side-menu").find("li.selected").data("value");
     if (!appId) return;
 
-    $.getJSON("/" + appId + "/to_" + end, function (progJson) {
+    var url = "/" + appId + "/to_" + end;
+    handleJSON(url, function (progJson) {
         console.log("moved " + appId + " to " + end + ": " + JSON.stringify(progJson));
         loadApp(appId);
-    })
+    });
+}
+
+function handleJSON(url, successFn) {
+    hideErrorMessage();
+    $.ajax({
+        url: url,
+        dataType: 'json',
+        success: successFn,
+        error: function (exMsg) {
+            console.log(exMsg);
+            displayErrorMessage(exMsg.responseText);
+        }
+    });
 }
 
 $(function () {
     console.log("------Global document binding------");
-    $(document).ajaxStop(function(){
+    $(document).ajaxStop(function () {
         console.debug("ajaxStop");
         $(".loading-spinner").hide();
     });
-    $(document).ajaxStart(function(){
+    $(document).ajaxStart(function () {
         console.debug("ajaxStart");
         $(".loading-spinner").show();
     });
@@ -284,4 +308,5 @@ $(function () {
 
     console.log("------Setting start state--------");
     $(".loading-spinner").hide();
+    hideErrorMessage();
 });
