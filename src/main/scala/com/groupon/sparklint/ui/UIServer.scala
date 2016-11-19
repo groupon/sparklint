@@ -109,14 +109,14 @@ class UIServer(esManager: EventSourceManagerLike)
 
   private def endApp(appId: String): String = {
     endOfEventSource(appId,
-      (appid) => esManager.getScrollingSource(appid).toEnd(),
-      (appid) => esManager.getSource(appid).progressTracker)
+      () => esManager.getScrollingSource(appId).toEnd(),
+      () => esManager.getSource(appId).progressTracker)
   }
 
   private def startApp(appId: String): String = {
     endOfEventSource(appId,
-      (appid) => esManager.getScrollingSource(appId).toStart(),
-      (appid) => esManager.getSource(appid).progressTracker)
+      () => esManager.getScrollingSource(appId).toStart(),
+      () => esManager.getSource(appId).progressTracker)
   }
 
   private def moveEventSource(count: String, appId: String, progFn: () => EventSourceProgressTrackerLike)
@@ -131,11 +131,11 @@ class UIServer(esManager: EventSourceManagerLike)
   }
 
   private def endOfEventSource(appId: String,
-                               moveFn: (String) => Unit,
-                               progFn: (String) => EventSourceProgressTrackerLike): String = {
-    Try(moveFn(appId)) match {
+                               moveFn: () => Unit,
+                               progFn: () => EventSourceProgressTrackerLike): String = {
+    Try(moveFn()) match {
       case Success(unit) =>
-        pretty(UIServer.progressJson(progFn(appId)))
+        pretty(UIServer.progressJson(progFn()))
       case Failure(ex)   =>
         logError(s"Failure to end of appId $appId: ${ex.getMessage}")
         eventSource(appId)
@@ -190,10 +190,10 @@ object UIServer {
       ("progress" -> progressJson(progress))
   }
 
-  def progressJson(progress: EventSourceProgressTrackerLike) = {
-    ("percent" -> progress.eventProgress.percent) ~
-      ("description" -> progress.eventProgress.description) ~
-      ("has_next" -> progress.eventProgress.hasNext) ~
-      ("has_previous" -> progress.eventProgress.hasPrevious)
+  def progressJson(progressTracker: EventSourceProgressTrackerLike) = {
+    ("percent" -> progressTracker.eventProgress.percent) ~
+      ("description" -> progressTracker.eventProgress.description) ~
+      ("has_next" -> progressTracker.eventProgress.hasNext) ~
+      ("has_previous" -> progressTracker.eventProgress.hasPrevious)
   }
 }
