@@ -65,9 +65,9 @@ class SparklintServer(eventSourceManager: EventSourceManagerLike,
     } else if (config.fileSource) {
       logInfo(s"Loading data from file source ${config.fileSource}")
       FileEventSource(config.fileSource.get) match {
-        case Some(detail) =>
-          if (runImmediately) detail.forwardIfPossible()
-          eventSourceManager.addEventSource(detail)
+        case Some(eventSource) =>
+          if (runImmediately) eventSource.forwardIfPossible()
+          eventSourceManager.addEventSource(eventSource)
         case None         =>
           logger.logWarn(s"Failed to construct source from ${config.fileSource}")
       }

@@ -24,15 +24,15 @@ import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
   * @author swhitear 
   * @since 9/13/16.
   */
-class CompressedEventStateTest extends FlatSpec with Matchers with BeforeAndAfterEach {
+class CompressedStateManagerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
 
-  var eventSource: FileEventSource      = _
-  var eventState : CompressedEventState = _
-  var file       : File                 = _
-  var progress   : EventSourceProgress  = _
+  var eventSource: FileEventSource        = _
+  var eventState : CompressedStateManager = _
+  var file       : File                   = _
+  var progress   : EventSourceProgress    = _
 
   override protected def beforeEach(): Unit = {
-    eventState = new CompressedEventState()
+    eventState = new CompressedStateManager()
     file = new File(resource("spark_event_log_example"))
     progress = new EventSourceProgress()
     eventSource = FileEventSource(file, progress, eventState)
@@ -40,7 +40,7 @@ class CompressedEventStateTest extends FlatSpec with Matchers with BeforeAndAfte
 
   it should "accumulate core usage correctly" in {
     replay(eventSource)
-    val state = eventState.state
+    val state = eventState.getState
     val coreUsage = state.coreUsage
     coreUsage.size shouldBe 5
     // should be when first task was submitted
@@ -67,7 +67,7 @@ class CompressedEventStateTest extends FlatSpec with Matchers with BeforeAndAfte
 
   it should "accumulate stage metrics correctly" in {
     replay(eventSource)
-    val state = eventState.state
+    val state = eventState.getState
     val stageMetrics = state.stageMetrics
 
     stageMetrics.size shouldBe 1
@@ -82,13 +82,13 @@ class CompressedEventStateTest extends FlatSpec with Matchers with BeforeAndAfte
   it should "undo events correctly" in {
     eventSource.forwardEvents(300)
 
-    val eventState2 = new CompressedEventState()
+    val eventState2 = new CompressedStateManager()
     val eventSource2 = FileEventSource(file, new EventSourceProgress(), eventState2)
 
-    val expected = eventState.state
+    val expected = eventState.getState
     eventSource2.forwardEvents(350)
     eventSource2.rewindEvents(50)
-    val actual = eventState2.state
+    val actual = eventState2.getState
     actual.coreUsage.size shouldBe expected.coreUsage.size
     actual.coreUsage.foreach({
       // The resolution can be different but the sum should be the same

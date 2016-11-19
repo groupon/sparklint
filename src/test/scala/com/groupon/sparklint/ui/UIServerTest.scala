@@ -27,7 +27,7 @@ import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
   */
 class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
   var evSource       : EventSourceLike with FreeScrollEventSource = _
-  var evState        : EventStateLike                             = _
+  var evState        : EventStateManagerLike                      = _
   var progress       : EventSourceProgress                        = _
   var evSourceManager: EventSourceManagerLike                     = _
   var server         : UIServer                                   = _
@@ -35,7 +35,7 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
   override protected def beforeEach(): Unit = {
     val file = new File(TestUtils.resource("spark_event_log_example"))
     progress = new EventSourceProgress()
-    evState = new CompressedEventState(30)
+    evState = new CompressedStateManager(30)
     evSource = FileEventSource(file, progress, evState)
     evSourceManager = new EventSourceManager()
     evSourceManager.addEventSource(evSource)

@@ -69,7 +69,7 @@ class UIServer(esManager: EventSourceManagerLike)
 
   private def progress(appId: String): String = {
     val source = esManager.getSource(appId)
-    val report = SparklintStateAnalyzer(source, source.state)
+    val report = new SparklintStateAnalyzer(source, source.stateManager.getState)
     pretty(UIServer.reportJson(report, source, source.progress))
   }
 

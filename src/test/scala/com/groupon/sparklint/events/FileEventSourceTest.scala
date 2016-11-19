@@ -16,11 +16,11 @@ import scala.io.Source
   */
 class FileEventSourceTest extends FlatSpec with Matchers with BeforeAndAfterEach {
 
-  var state: StubEventState = _
+  var state: StubEventStateManager  = _
   var progress: EventSourceProgress = _
 
   override protected def beforeEach(): Unit = {
-    state = new StubEventState()
+    state = new StubEventStateManager()
     progress = new EventSourceProgress()
   }
 

@@ -5,7 +5,7 @@ package com.groupon.sparklint.events
   * @author swhitear 
   * @since 11/16/16.
   */
-case class StubEventSource(appId: String, progress: EventSourceProgress, state: EventStateLike) extends EventSourceLike with FreeScrollEventSource {
+case class StubEventSource(appId: String, progress: EventSourceProgress, stateManager: EventStateManagerLike) extends EventSourceLike with FreeScrollEventSource {
   override def version: String = ???
 
   override def host: String = ???

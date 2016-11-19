@@ -50,9 +50,9 @@ trait EventSourceLike {
 
   def progress: EventSourceProgress
 
-  def state: EventStateLike
+  def stateManager: EventStateManagerLike
 
-  lazy val receivers: Seq[EventReceiverLike] = Seq(progress, state)
+  lazy val receivers: Seq[EventReceiverLike] = Seq(progress, stateManager)
 
   private def missingName = appName.isEmpty || appName == Utils.UNKNOWN_STRING
 

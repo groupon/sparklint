@@ -11,10 +11,10 @@ import scala.collection.mutable.ArrayBuffer
   * @author swhitear 
   * @since 11/16/16.
   */
-class StubEventState(val onEvents: ArrayBuffer[SparkListenerEvent] = ArrayBuffer.empty,
-                     val unEvents: ArrayBuffer[SparkListenerEvent] = ArrayBuffer.empty,
-                     val state: SparklintStateLike = CompressedState.empty)
-  extends EventStateLike {
+class StubEventStateManager(val onEvents: ArrayBuffer[SparkListenerEvent] = ArrayBuffer.empty,
+                            val unEvents: ArrayBuffer[SparkListenerEvent] = ArrayBuffer.empty,
+                            val state: SparklintStateLike = CompressedState.empty)
+  extends EventStateManagerLike {
 
   val preprocEvents = ArrayBuffer.empty[SparkListenerEvent]
 

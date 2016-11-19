@@ -14,7 +14,7 @@ package com.groupon.sparklint.analyzer
 
 import com.groupon.sparklint.data._
 import com.groupon.sparklint.data.compressed._
-import com.groupon.sparklint.events.{EventSourceLike, EventStateLike}
+import com.groupon.sparklint.events.EventSourceLike
 import org.apache.spark.scheduler.TaskLocality
 import org.apache.spark.scheduler.TaskLocality._
 
@@ -26,13 +26,11 @@ import scala.util.Try
   *
   * @author rxue
   * @since 9/23/16.
-  * @param source  the source to analyze
-  * @param evState the state to analyze
+  * @param source the source to analyze
+  * @param state  the state to analyze
   */
-case class SparklintStateAnalyzer(source: EventSourceLike, evState: EventStateLike)
+class SparklintStateAnalyzer(source: EventSourceLike, state: SparklintStateLike)
   extends SparklintAnalyzerLike {
-
-  val state = evState.getState
 
   override lazy val getCurrentCores: Option[Int] = getRunningTasks
 

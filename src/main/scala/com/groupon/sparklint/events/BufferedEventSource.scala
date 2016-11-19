@@ -26,7 +26,7 @@ import scala.concurrent.Future
   * @author swhitear 
   * @since 8/18/16.
   */
-case class BufferedEventSource(appId: String, progress: EventSourceProgress, state: EventStateLike)
+case class BufferedEventSource(appId: String, progress: EventSourceProgress, stateManager: EventStateManagerLike)
   extends EventSourceBase {
 
   val buffer: BlockingQueue[SparkListenerEvent] = new LinkedBlockingDeque()
@@ -50,7 +50,7 @@ case class BufferedEventSource(appId: String, progress: EventSourceProgress, sta
 object BufferedEventSource {
   def apply(sourceId: String): BufferedEventSource = {
     val progressReceiver = new EventSourceProgress()
-    val stateReceiver = new CompressedEventState()
+    val stateReceiver = new CompressedStateManager()
     val eventSource = BufferedEventSource(sourceId, progressReceiver, stateReceiver)
     eventSource.startConsuming()
     logInfo(s"Successfully created buffered source $sourceId")

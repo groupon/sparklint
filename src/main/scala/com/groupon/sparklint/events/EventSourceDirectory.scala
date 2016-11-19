@@ -30,9 +30,9 @@ case class EventSourceDirectory(eventSourceManager: EventSourceManagerLike, dir:
   def poll(eventSourceManager: EventSourceManagerLike): Unit = {
     newFiles.foreach(file => {
       FileEventSource(file) match {
-        case Some(detail) =>
-          if (runImmediately) detail.forwardIfPossible()
-          eventSourceManager.addEventSource(detail)
+        case Some(fileSource) =>
+          if (runImmediately) fileSource.forwardIfPossible()
+          eventSourceManager.addEventSource(fileSource)
           loadedFileNames = loadedFileNames + file.getName
         case None         =>
           logger.logWarn(s"Failed to construct source from ${file.getName}")
