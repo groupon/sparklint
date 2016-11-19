@@ -14,19 +14,19 @@ package com.groupon.sparklint.events
 
 import java.util.concurrent.{BlockingQueue, LinkedBlockingDeque}
 
-import com.groupon.sparklint.data.SparklintStateLike
 import org.apache.spark.scheduler.SparkListenerEvent
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 /**
-  *
+  * An EventSource that uses an intermediary queue to buffer live events before updating receivers.
   * @author swhitear 
   * @since 8/18/16.
   */
-case class BufferedEventSource(appId: String, eventState: EventStateLike)
-  extends EventSourceBase(eventState) with EventSourceLike {
+case class BufferedEventSource(appId: String, receivers: Seq[EventReceiverLike])
+  extends EventSourceBase {
+
   val buffer: BlockingQueue[SparkListenerEvent] = new LinkedBlockingDeque()
 
   def push(event: SparkListenerEvent): Unit = {
@@ -35,18 +35,16 @@ case class BufferedEventSource(appId: String, eventState: EventStateLike)
 
   private var processed: Int = 0
 
-  def runnit() = Future {
+  def startConsuming() = Future {
     while (true) {
-      eventState.onEvent(buffer.take())
+      val event = buffer.take()
+      receivers.foreach(r => {
+        r.preprocess(event)
+        r.onEvent(event)
+      })
       processed += 1
     }
     // TODO make cancelable
   }
-
-  def current(): SparkListenerEvent = buffer.peek()
-
-  override def progress: EventSourceProgress = EventSourceProgress(buffer.size() + processed, processed)
-
-  override def state: SparklintStateLike = eventState.getState
 
 }

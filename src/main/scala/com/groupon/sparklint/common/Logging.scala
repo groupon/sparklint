@@ -35,6 +35,10 @@ trait Logging {
     log.error(message)
   }
 
+  def logError(message: String, ex: Throwable): Unit = {
+    log.error(message, ex)
+  }
+
   def logWarn(message: String): Unit = {
     log.warn(message)
   }

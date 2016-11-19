@@ -32,7 +32,7 @@ class SparklintServer(eventSourceManager: EventSourceManagerLike,
   implicit val logger: Logging = this
 
   private val DEFAULT_RUN_IMMEDIATELY = false
-  private val DEFAULT_POLL = 5
+  private val DEFAULT_POLL            = 5
 
   private var ui: Option[UIServer] = None
 
@@ -57,18 +57,24 @@ class SparklintServer(eventSourceManager: EventSourceManagerLike,
       logError("historySource unsupported.")
     } else if (config.directorySource) {
       logInfo(s"Loading data from directory source $config.directorySource")
-      val directoryEventSource = DirectoryEventSource(eventSourceManager, config.directorySource.get, runImmediately)
+      val directoryEventSource = EventSourceDirectory(eventSourceManager, config.directorySource.get, runImmediately)
       scheduleDirectoryPolling(directoryEventSource)
     } else if (config.fileSource) {
       logInfo(s"Loading data from file source ${config.fileSource}")
-      val loadedFile = FileEventSource(config.fileSource.get, runImmediately)
-      if (loadedFile.isDefined) eventSourceManager.addEventSource(loadedFile.get)
+      val factory = new FileEventSourceFactory
+      factory.buildEventSourceDetail(config.fileSource.get) match {
+        case Some(detail) =>
+          if(runImmediately) detail.forwardIfPossible
+          eventSourceManager.addEventSource(detail)
+        case None         =>
+          logger.logWarn(s"Failed to construct source from ${config.fileSource}")
+      }
     } else {
       logWarn("No source specified, require one of fileSource, directorySource or historySource to be set.")
     }
   }
 
-  private def scheduleDirectoryPolling(directoryEventSource: DirectoryEventSource) = {
+  private def scheduleDirectoryPolling(directoryEventSource: EventSourceDirectory) = {
     val taskName = s"Directory source poller [${directoryEventSource.dir}]"
     val pollRate = config.pollRate.getOrElse(DEFAULT_POLL)
     val task = ScheduledTask(taskName, eventSourceManager, directoryEventSource.poll, periodSeconds = pollRate)

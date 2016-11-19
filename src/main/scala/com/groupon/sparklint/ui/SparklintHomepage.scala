@@ -12,7 +12,7 @@
 */
 package com.groupon.sparklint.ui
 
-import com.groupon.sparklint.events.{EventSourceLike, EventSourceManagerLike, EventSourceProgress}
+import com.groupon.sparklint.events._
 
 import scala.xml.Node
 
@@ -56,24 +56,24 @@ class SparklintHomepage(sourceManager: EventSourceManagerLike) extends UITemplat
       <div class="navbar-default sidebar" role="navigation">
         <div class="sidebar-nav navbar-collapse">
           <ul class="nav" id="side-menu">
-            {for (app <- sourceManager.eventSources) yield navbarItem(app)}
+            {for (source <- sourceManager.eventSources) yield navbarItem(source.source, source.progress)}
             {navbarReplayControl}
           </ul>
         </div>
       </div>
     </nav>
 
-  def navbarItem(app: EventSourceLike): Seq[Node] =
-    <li data-value={app.appId}>
-      <a href="#" class="sparklintApp" data-value={app.appId}>
-        <strong>App: </strong>{app.nameOrId}
-        <p class="text-center" id={uniqueId(app.appId, "app-prog")}>
-        {app.progress.description}
+  def navbarItem(source: EventSourceLike, progress: EventSourceProgressLike): Seq[Node] =
+    <li data-value={source.appId}>
+      <a href="#" class="sparklintApp" data-value={source.appId}>
+        <strong>App: </strong>{source.nameOrId}
+        <p class="text-center" id={uniqueId(source.appId, "app-prog")}>
+        {progress.eventProgress.description}
       </p>
         <div class="progress active">
-          <div class="progress-bar" role="progressbar" id={uniqueId(app.appId, "progress-bar")}
-               aria-valuenow={app.progress.percent.toString} aria-valuemin="0" aria-valuemax="100"
-               style={widthStyle(app.progress)}>
+          <div class="progress-bar" role="progressbar" id={uniqueId(source.appId, "progress-bar")}
+               aria-valuenow={progress.eventProgress.percent.toString} aria-valuemin="0" aria-valuemax="100"
+               style={widthStyle(progress.eventProgress)}>
           </div>
         </div>
       </a>
@@ -103,7 +103,7 @@ class SparklintHomepage(sourceManager: EventSourceManagerLike) extends UITemplat
           <option>1000</option>
         </select>
         <select class="form-control" id="typeSelector">
-          {for (navType <- UIServer.supportedNavTypes) yield
+          {for (navType <- EventType.ALL_TYPES) yield
           <option>{navType}</option>
           }
         </select>
@@ -288,7 +288,7 @@ class SparklintHomepage(sourceManager: EventSourceManagerLike) extends UITemplat
       <!-- /.panel-body -->
     </div>
 
-  private def widthStyle(esp: EventSourceProgress) = s"width: ${esp.percent}%"
+  private def widthStyle(esp: EventProgressLike) = s"width: ${esp.percent}%"
 
   private def uniqueId(appId: String, idType: String) = s"$appId-$idType"
 }

@@ -14,6 +14,10 @@ package com.groupon.sparklint.common
 
 import java.util.{Timer, TimerTask}
 
+import org.apache.commons.lang3.exception.ExceptionUtils
+
+import scala.util.{Failure, Success, Try}
+
 /**
   * A way of scheduling tasks to run on timers. Not intended as a high resolution component,
   * hence the use of multi-second period and delays.
@@ -50,9 +54,11 @@ case class ScheduledTask[T](name: String, context: T, fn: (T) => Unit,
                            (implicit logger: Logging)
   extends TimerTask {
 
-  override def run(): Unit = {
+  override def run(): Unit = Try({
     logger.logInfo(s"Executing ScheduledTask $name.")
     fn(context)
-    logger.logInfo(s"Execution of $name completed with state $context")
+  }) match {
+    case Success(_) => logger.logInfo(s"Execution of $name completed with state $context")
+    case Failure(ex) => logger.logError(s"Execution of $name failed with exception.", ex)
   }
 }

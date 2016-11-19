@@ -12,8 +12,8 @@
 */
 package com.groupon.sparklint
 
-import com.groupon.sparklint.common.{SparklintConfig, Scheduler}
-import com.groupon.sparklint.events.{BufferedEventSource, CompressedEventState, EventSourceManager}
+import com.groupon.sparklint.common.{Scheduler, SparklintConfig}
+import com.groupon.sparklint.events._
 import org.apache.spark.scheduler.SparkListenerEvent
 import org.apache.spark.{SparkConf, SparkFirehoseListener}
 
@@ -24,22 +24,36 @@ import org.apache.spark.{SparkConf, SparkFirehoseListener}
   * @since 8/18/16.
   */
 class SparklintListener(appId: String, appName: String) extends SparkFirehoseListener {
+
   def this(conf: SparkConf) = {
     this(conf.get("spark.app.id", "AppId"), conf.get("spark.app.name", "AppName"))
   }
 
-  private val eventSource   = BufferedEventSource(appId, new CompressedEventState())
-  private val sourceManager = new EventSourceManager(eventSource)
-
-  val scheduler = new Scheduler()
-  val config    = SparklintConfig()
-  val server    = new SparklintServer(sourceManager, scheduler, config)
-  server.run()
-
-  eventSource.runnit()
-
   override def onEvent(event: SparkListenerEvent): Unit = {
     // push unconsumed events to the queue so the listener can keep consuming on the main thread
-    eventSource.push(event)
+    buffer.push(event)
   }
+
+  private val factory                     = new ListenerEventSourceFactory()
+  private val sourceManager               = new EventSourceManager()
+  private val eventSource                 = factory.buildEventSourceDetail(appId) match {
+    case Some(detail) => startListening(detail)
+    case None         => throw new Exception(s"Unable to construct buffered source from $appId:$appName")
+  }
+  private var buffer: BufferedEventSource = _
+
+  private def startListening(detail: EventSourceDetail) = detail.source match {
+    case bufferedSource: BufferedEventSource => setAndRun(bufferedSource)
+    case _                                   => throw new Exception("Created EventSource cannot act as a buffer")
+  }
+
+  private def setAndRun(bufferedSource: BufferedEventSource) = {
+    buffer = bufferedSource
+    val scheduler = new Scheduler()
+    val config = SparklintConfig()
+    val server = new SparklintServer(sourceManager, scheduler, config)
+    server.run()
+  }
+
+
 }
