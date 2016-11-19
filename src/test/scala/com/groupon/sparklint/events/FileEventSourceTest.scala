@@ -16,22 +16,22 @@ import scala.io.Source
   */
 class FileEventSourceTest extends FlatSpec with Matchers with BeforeAndAfterEach {
 
-  var state: StubEventStateManager  = _
-  var progress: EventSourceProgress = _
+  var stateManager   : StubEventStateManager      = _
+  var progressTracker: EventSourceProgressTracker = _
 
   override protected def beforeEach(): Unit = {
-    state = new StubEventStateManager()
-    progress = new EventSourceProgress()
+    stateManager = new StubEventStateManager()
+    progressTracker = new EventSourceProgressTracker()
   }
 
   it should "throw up if the file does not exist" in {
     intercept[IllegalArgumentException] {
-      FileEventSource(new File("wherefore/art/though/filey"), progress, state)
+      FileEventSource(new File("wherefore/art/though/filey"), progressTracker, stateManager)
     }
   }
 
   it should "throw up if negative scroll count used" in {
-    val source = FileEventSource(testFileWithState, progress, state)
+    val source = FileEventSource(testFileWithState, progressTracker, stateManager)
 
     intercept[IllegalArgumentException] {
       source.forwardEvents(count = -1)
@@ -42,29 +42,29 @@ class FileEventSourceTest extends FlatSpec with Matchers with BeforeAndAfterEach
   }
 
   it should "handle an empty file just fine" in {
-    val source = FileEventSource(emptyFile, progress, state)
+    val source = FileEventSource(emptyFile, progressTracker, stateManager)
 
     source.appId shouldEqual "file_event_log_empty_test"
     source.appName shouldEqual Utils.UNKNOWN_STRING
     source.nameOrId shouldEqual "file_event_log_empty_test"
 
-    state.eventCount shouldEqual 0
+    stateManager.eventCount shouldEqual 0
     source.hasNext shouldBe false
     source.hasPrevious shouldBe false
 
     source.forwardEvents()
-    state.eventCount shouldEqual 0
+    stateManager.eventCount shouldEqual 0
     source.hasNext shouldBe false
     source.hasPrevious shouldBe false
 
     source.rewindEvents()
-    state.eventCount shouldEqual 0
+    stateManager.eventCount shouldEqual 0
     source.hasNext shouldBe false
     source.hasPrevious shouldBe false
   }
 
   it should "set initial state if events in source" in {
-    val source = FileEventSource(testFileWithState, progress, state)
+    val source = FileEventSource(testFileWithState, progressTracker, stateManager)
 
     source.version shouldEqual "1.5.2"
     source.appId shouldEqual "application_1462781278026_205691"
@@ -82,163 +82,163 @@ class FileEventSourceTest extends FlatSpec with Matchers with BeforeAndAfterEach
 
   it should "preprocess the source events" in {
     val fileEvents = testEvents(testFileNoState)
-    val source = FileEventSource(testFileNoState, progress, state)
+    val source = FileEventSource(testFileNoState, progressTracker, stateManager)
 
     source.appId shouldEqual "file_event_log_test_simple"
-    state.eventCount shouldEqual 5
-    state.preprocCount shouldEqual 5
-    state.onCount shouldEqual 0
-    state.unCount shouldEqual 0
+    stateManager.eventCount shouldEqual 5
+    stateManager.preprocCount shouldEqual 5
+    stateManager.onCount shouldEqual 0
+    stateManager.unCount shouldEqual 0
     source.hasNext shouldBe true
     source.hasPrevious shouldBe false
-    testIdsMatchForRange(state.preprocEvents, fileEvents, 0 to 4)
+    testIdsMatchForRange(stateManager.preprocEvents, fileEvents, 0 to 4)
   }
 
   it should "allow two way iteration through file content" in {
     val fileEvents = testEvents(testFileNoState)
-    val source = FileEventSource(testFileNoState, progress, state)
+    val source = FileEventSource(testFileNoState, progressTracker, stateManager)
 
     source.appId shouldEqual "file_event_log_test_simple"
-    state.eventCount shouldEqual 5
-    state.preprocCount shouldEqual 5
-    state.onCount shouldEqual 0
-    state.unCount shouldEqual 0
+    stateManager.eventCount shouldEqual 5
+    stateManager.preprocCount shouldEqual 5
+    stateManager.onCount shouldEqual 0
+    stateManager.unCount shouldEqual 0
     source.hasNext shouldBe true
     source.hasPrevious shouldBe false
 
     source.forwardEvents(count = 5)
-    state.onCount shouldEqual 5
-    testIdsMatchForRange(state.onEvents, fileEvents, 0 to 4)
-    state.unCount shouldEqual 0
+    stateManager.onCount shouldEqual 5
+    testIdsMatchForRange(stateManager.onEvents, fileEvents, 0 to 4)
+    stateManager.unCount shouldEqual 0
     source.hasNext shouldBe false
     source.hasPrevious shouldBe true
 
     source.rewindEvents(count = 5)
-    state.onCount shouldEqual 5
-    testIdsMatchForRange(state.onEvents, fileEvents, 0 to 4)
-    state.unCount shouldEqual 5
-    testIdsMatchForRange(state.unEvents, fileEvents, 0 to 4, 4 to 0 by -1)
+    stateManager.onCount shouldEqual 5
+    testIdsMatchForRange(stateManager.onEvents, fileEvents, 0 to 4)
+    stateManager.unCount shouldEqual 5
+    testIdsMatchForRange(stateManager.unEvents, fileEvents, 0 to 4, 4 to 0 by -1)
     source.hasNext shouldBe true
     source.hasPrevious shouldBe false
   }
 
   it should "allow two way task iteration through file content" in {
     val fileEvents = testEvents(testFileWithNavEvents)
-    val source = FileEventSource(testFileWithNavEvents, progress, state)
+    val source = FileEventSource(testFileWithNavEvents, progressTracker, stateManager)
 
     source.appId shouldEqual "file_event_log_test_nav_events"
-    state.eventCount shouldEqual 16
-    state.preprocCount shouldEqual 16
-    state.onCount shouldEqual 0
-    state.unCount shouldEqual 0
+    stateManager.eventCount shouldEqual 16
+    stateManager.preprocCount shouldEqual 16
+    stateManager.onCount shouldEqual 0
+    stateManager.unCount shouldEqual 0
     source.hasNext shouldBe true
     source.hasPrevious shouldBe false
 
     source.forwardTasks()
-    state.onCount shouldEqual 4
-    testIdsMatchForRange(state.onEvents, fileEvents, 0 to 3)
-    state.unCount shouldEqual 0
+    stateManager.onCount shouldEqual 4
+    testIdsMatchForRange(stateManager.onEvents, fileEvents, 0 to 3)
+    stateManager.unCount shouldEqual 0
     source.hasNext shouldBe true
     source.hasPrevious shouldBe true
 
     source.forwardTasks(count = 2)
-    state.onCount shouldEqual 14
-    testIdsMatchForRange(state.onEvents, fileEvents, 0 to 13)
-    state.unCount shouldEqual 0
+    stateManager.onCount shouldEqual 14
+    testIdsMatchForRange(stateManager.onEvents, fileEvents, 0 to 13)
+    stateManager.unCount shouldEqual 0
     source.hasNext shouldBe true
     source.hasPrevious shouldBe true
 
     source.rewindTasks()
-    state.onCount shouldEqual 14
-    testIdsMatchForRange(state.onEvents, fileEvents, 0 to 13)
-    state.unCount shouldEqual 2
-    testIdsMatchForRange(state.unEvents, fileEvents, 0 to 1, 13 to 12 by -1)
+    stateManager.onCount shouldEqual 14
+    testIdsMatchForRange(stateManager.onEvents, fileEvents, 0 to 13)
+    stateManager.unCount shouldEqual 2
+    testIdsMatchForRange(stateManager.unEvents, fileEvents, 0 to 1, 13 to 12 by -1)
     source.hasNext shouldBe true
     source.hasPrevious shouldBe true
 
     source.rewindTasks(count = 2)
-    state.onCount shouldEqual 14
-    testIdsMatchForRange(state.onEvents, fileEvents, 0 to 13)
-    state.unCount shouldEqual 12
-    testIdsMatchForRange(state.unEvents, fileEvents, 0 to 11, 13 to 3 by -1)
+    stateManager.onCount shouldEqual 14
+    testIdsMatchForRange(stateManager.onEvents, fileEvents, 0 to 13)
+    stateManager.unCount shouldEqual 12
+    testIdsMatchForRange(stateManager.unEvents, fileEvents, 0 to 11, 13 to 3 by -1)
     source.hasNext shouldBe true
     source.hasPrevious shouldBe true
   }
 
   it should "allow two way stage iteration through file content" in {
     val fileEvents = testEvents(testFileWithNavEvents)
-    val source = FileEventSource(testFileWithNavEvents, progress, state)
+    val source = FileEventSource(testFileWithNavEvents, progressTracker, stateManager)
 
     source.appId shouldEqual "file_event_log_test_nav_events"
-    state.eventCount shouldEqual 16
-    state.preprocCount shouldEqual 16
-    state.onCount shouldEqual 0
-    state.unCount shouldEqual 0
+    stateManager.eventCount shouldEqual 16
+    stateManager.preprocCount shouldEqual 16
+    stateManager.onCount shouldEqual 0
+    stateManager.unCount shouldEqual 0
     source.hasNext shouldBe true
     source.hasPrevious shouldBe false
 
     source.forwardStages()
-    state.onCount shouldEqual 5
-    testIdsMatchForRange(state.onEvents, fileEvents, 0 to 4)
-    state.unCount shouldEqual 0
+    stateManager.onCount shouldEqual 5
+    testIdsMatchForRange(stateManager.onEvents, fileEvents, 0 to 4)
+    stateManager.unCount shouldEqual 0
     source.hasNext shouldBe true
     source.hasPrevious shouldBe true
 
     source.forwardStages(count = 2)
-    state.onCount shouldEqual 15
-    testIdsMatchForRange(state.onEvents, fileEvents, 0 to 14)
-    state.unCount shouldEqual 0
+    stateManager.onCount shouldEqual 15
+    testIdsMatchForRange(stateManager.onEvents, fileEvents, 0 to 14)
+    stateManager.unCount shouldEqual 0
     source.hasNext shouldBe true
     source.hasPrevious shouldBe true
 
     source.rewindStages()
-    state.onCount shouldEqual 15
-    testIdsMatchForRange(state.onEvents, fileEvents, 0 to 14)
-    state.unCount shouldEqual 4
-    testIdsMatchForRange(state.unEvents, fileEvents, 0 to 3, 14 to 11 by -1)
+    stateManager.onCount shouldEqual 15
+    testIdsMatchForRange(stateManager.onEvents, fileEvents, 0 to 14)
+    stateManager.unCount shouldEqual 4
+    testIdsMatchForRange(stateManager.unEvents, fileEvents, 0 to 3, 14 to 11 by -1)
     source.hasNext shouldBe true
     source.hasPrevious shouldBe true
 
     source.rewindStages(count = 2)
-    state.onCount shouldEqual 15
-    testIdsMatchForRange(state.onEvents, fileEvents, 0 to 14)
-    state.unCount shouldEqual 14
-    testIdsMatchForRange(state.unEvents, fileEvents, 0 to 13, 14 to 2 by -1)
+    stateManager.onCount shouldEqual 15
+    testIdsMatchForRange(stateManager.onEvents, fileEvents, 0 to 14)
+    stateManager.unCount shouldEqual 14
+    testIdsMatchForRange(stateManager.unEvents, fileEvents, 0 to 13, 14 to 2 by -1)
     source.hasNext shouldBe true
     source.hasPrevious shouldBe true
   }
 
   it should "allow two way job iteration through file content" in {
     val fileEvents = testEvents(testFileWithNavEvents)
-    val source = FileEventSource(testFileWithNavEvents, progress, state)
+    val source = FileEventSource(testFileWithNavEvents, progressTracker, stateManager)
 
     source.appId shouldEqual "file_event_log_test_nav_events"
-    state.eventCount shouldEqual 16
-    state.preprocCount shouldEqual 16
-    state.onCount shouldEqual 0
-    state.unCount shouldEqual 0
+    stateManager.eventCount shouldEqual 16
+    stateManager.preprocCount shouldEqual 16
+    stateManager.onCount shouldEqual 0
+    stateManager.unCount shouldEqual 0
     source.hasNext shouldBe true
     source.hasPrevious shouldBe false
 
     source.forwardJobs()
-    state.onCount shouldEqual 6
-    testIdsMatchForRange(state.onEvents, fileEvents, 0 to 5)
-    state.unCount shouldEqual 0
+    stateManager.onCount shouldEqual 6
+    testIdsMatchForRange(stateManager.onEvents, fileEvents, 0 to 5)
+    stateManager.unCount shouldEqual 0
     source.hasNext shouldBe true
     source.hasPrevious shouldBe true
 
     source.forwardJobs()
-    state.onCount shouldEqual 16
-    testIdsMatchForRange(state.onEvents, fileEvents, 0 to 15)
-    state.unCount shouldEqual 0
+    stateManager.onCount shouldEqual 16
+    testIdsMatchForRange(stateManager.onEvents, fileEvents, 0 to 15)
+    stateManager.unCount shouldEqual 0
     source.hasNext shouldBe false
     source.hasPrevious shouldBe true
 
     source.rewindJobs(count = 2)
-    state.onCount shouldEqual 16
-    testIdsMatchForRange(state.onEvents, fileEvents, 0 to 15)
-    state.unCount shouldEqual 16
-    testIdsMatchForRange(state.unEvents, fileEvents, 0 to 15, 15 to 0 by -1)
+    stateManager.onCount shouldEqual 16
+    testIdsMatchForRange(stateManager.onEvents, fileEvents, 0 to 15)
+    stateManager.unCount shouldEqual 16
+    testIdsMatchForRange(stateManager.unEvents, fileEvents, 0 to 15, 15 to 0 by -1)
     source.hasNext shouldBe true
     source.hasPrevious shouldBe false
   }

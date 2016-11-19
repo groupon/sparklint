@@ -60,7 +60,7 @@ class SparklintServer(eventSourceManager: EventSourceManagerLike,
       logError("historySource unsupported.")
     } else if (config.directorySource) {
       logInfo(s"Loading data from directory source $config.directorySource")
-      val directoryEventSource = EventSourceDirectory(eventSourceManager, config.directorySource.get, runImmediately)
+      val directoryEventSource = new EventSourceDirectory(eventSourceManager, config.directorySource.get, runImmediately)
       scheduleDirectoryPolling(directoryEventSource)
     } else if (config.fileSource) {
       logInfo(s"Loading data from file source ${config.fileSource}")

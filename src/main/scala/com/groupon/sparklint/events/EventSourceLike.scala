@@ -48,11 +48,11 @@ trait EventSourceLike {
 
   def nameOrId: String = if (missingName) appId else appName
 
-  def progress: EventSourceProgress
+  def progressTracker: EventSourceProgressTracker
 
   def stateManager: EventStateManagerLike
 
-  lazy val receivers: Seq[EventReceiverLike] = Seq(progress, stateManager)
+  lazy val receivers: Seq[EventReceiverLike] = Seq(progressTracker, stateManager)
 
   private def missingName = appName.isEmpty || appName == Utils.UNKNOWN_STRING
 

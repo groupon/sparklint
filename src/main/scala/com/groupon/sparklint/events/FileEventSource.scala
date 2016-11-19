@@ -30,7 +30,7 @@ import scala.util.{Failure, Success, Try}
   * @since 8/18/16.
   */
 @throws[IllegalArgumentException]
-case class FileEventSource(fileSource: File, progress: EventSourceProgress, stateManager: EventStateManagerLike)
+case class FileEventSource(fileSource: File, progressTracker: EventSourceProgressTracker, stateManager: EventStateManagerLike)
   extends EventSourceBase with FreeScrollEventSource with Logging {
 
   // important to declare this before the buffer is filled
@@ -138,9 +138,9 @@ case class FileEventSource(fileSource: File, progress: EventSourceProgress, stat
 object FileEventSource {
   def apply(sourceFile: File): Option[FileEventSource] = {
     Try {
-      val progressReceiver = new EventSourceProgress()
-      val stateReceiver = new LosslessEventStateManager()
-      FileEventSource(sourceFile, progressReceiver, stateReceiver)
+      val progressTracker = new EventSourceProgressTracker()
+      val stateManager = new LosslessEventStateManager()
+      FileEventSource(sourceFile, progressTracker, stateManager)
     } match {
       case Success(eventSource) =>
         logInfo(s"Successfully created file source ${sourceFile.getName}")

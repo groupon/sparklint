@@ -29,8 +29,9 @@ import scala.util.Try
   * @param source the source to analyze
   * @param state  the state to analyze
   */
-class SparklintStateAnalyzer(source: EventSourceLike, state: SparklintStateLike)
+class SparklintStateAnalyzer(val source: EventSourceLike)
   extends SparklintAnalyzerLike {
+  val state = source.stateManager.getState
 
   override lazy val getCurrentCores: Option[Int] = getRunningTasks
 

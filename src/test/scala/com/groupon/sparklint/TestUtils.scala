@@ -54,7 +54,7 @@ object TestUtils {
   }
 
   def stubEventSource(appId: String): EventSourceLike = {
-    StubEventSource(appId, new EventSourceProgress(), new StubEventStateManager())
+    StubEventSource(appId, new EventSourceProgressTracker(), new StubEventStateManager())
   }
 
   def sparkAppStart(name: String = TEST_NAME,

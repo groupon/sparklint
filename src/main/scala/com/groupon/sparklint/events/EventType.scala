@@ -29,18 +29,18 @@ object EventType {
   val ALL_TYPES = Seq(EVENTS, TASKS, STAGES, JOBS)
 
   def fromString(eventType: String): EventType = eventType match {
-    case EVENTS => Events()
-    case TASKS  => Tasks()
-    case STAGES => Stages()
-    case JOBS   => Jobs()
+    case EVENTS => Events
+    case TASKS  => Tasks
+    case STAGES => Stages
+    case JOBS   => Jobs
   }
 }
 
-case class Events() extends EventType(EventType.EVENTS)
+case object Events extends EventType(EventType.EVENTS)
 
-case class Tasks() extends EventType(EventType.EVENTS)
+case object Tasks extends EventType(EventType.EVENTS)
 
-case class Stages() extends EventType(EventType.EVENTS)
+case object Stages extends EventType(EventType.EVENTS)
 
-case class Jobs() extends EventType(EventType.EVENTS)
+case object Jobs extends EventType(EventType.EVENTS)
 

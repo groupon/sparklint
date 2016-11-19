@@ -25,11 +25,11 @@ import scala.collection.mutable
   * @since 9/12/16.
   */
 @throws[IllegalArgumentException]
-class EventSourceProgress(val eventProgress: EventProgress = EventProgress.empty(),
-                          val taskProgress: EventProgress = EventProgress.empty(),
-                          val stageProgress: EventProgress = EventProgress.empty(),
-                          val  jobProgress: EventProgress = EventProgress.empty())
-  extends EventSourceProgressLike with EventReceiverLike {
+class EventSourceProgressTracker(val eventProgress: EventProgress = EventProgress.empty(),
+                                 val taskProgress: EventProgress = EventProgress.empty(),
+                                 val stageProgress: EventProgress = EventProgress.empty(),
+                                 val  jobProgress: EventProgress = EventProgress.empty())
+  extends EventSourceProgressTrackerLike with EventReceiverLike {
 
   require(eventProgress != null)
   require(taskProgress != null)
@@ -142,7 +142,7 @@ class EventSourceProgress(val eventProgress: EventProgress = EventProgress.empty
   }
 }
 
-trait EventSourceProgressLike {
+trait EventSourceProgressTrackerLike {
   val eventProgress: EventProgress
   val taskProgress : EventProgress
   val stageProgress: EventProgress

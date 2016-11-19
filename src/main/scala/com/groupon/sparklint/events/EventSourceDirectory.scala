@@ -20,7 +20,7 @@ import com.groupon.sparklint.common.Logging
   * @author rxue
   * @since 9/22/16.
   */
-case class EventSourceDirectory(eventSourceManager: EventSourceManagerLike, dir: File, runImmediately: Boolean)
+class EventSourceDirectory(eventSourceManager: EventSourceManagerLike, val dir: File, runImmediately: Boolean)
   extends Logging {
 
   implicit val logger: Logging = this

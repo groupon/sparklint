@@ -56,14 +56,14 @@ class SparklintHomepage(sourceManager: EventSourceManagerLike) extends UITemplat
       <div class="navbar-default sidebar" role="navigation">
         <div class="sidebar-nav navbar-collapse">
           <ul class="nav" id="side-menu">
-            {for (source <- sourceManager.eventSources) yield navbarItem(source, source.progress)}
+            {for (source <- sourceManager.eventSources) yield navbarItem(source, source.progressTracker)}
             {navbarReplayControl}
           </ul>
         </div>
       </div>
     </nav>
 
-  def navbarItem(source: EventSourceLike, progress: EventSourceProgressLike): Seq[Node] =
+  def navbarItem(source: EventSourceLike, progress: EventSourceProgressTrackerLike): Seq[Node] =
     <li data-value={source.appId}>
       <a href="#" class="sparklintApp" data-value={source.appId}>
         <strong>App: </strong>{source.nameOrId}
