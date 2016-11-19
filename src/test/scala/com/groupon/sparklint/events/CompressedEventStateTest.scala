@@ -29,11 +29,13 @@ class CompressedEventStateTest extends FlatSpec with Matchers with BeforeAndAfte
   var eventSource: FileEventSource      = _
   var eventState : CompressedEventState = _
   var file       : File                 = _
+  var progress   : EventSourceProgress  = _
 
   override protected def beforeEach(): Unit = {
     eventState = new CompressedEventState()
     file = new File(resource("spark_event_log_example"))
-    eventSource = FileEventSource(file, Seq(eventState))
+    progress = new EventSourceProgress()
+    eventSource = FileEventSource(file, progress, eventState)
   }
 
   it should "accumulate core usage correctly" in {
@@ -78,8 +80,10 @@ class CompressedEventStateTest extends FlatSpec with Matchers with BeforeAndAfte
   }
 
   it should "undo events correctly" in {
+    eventSource.forwardEvents(300)
+
     val eventState2 = new CompressedEventState()
-    val eventSource2 = FileEventSource(file, Seq(eventState))
+    val eventSource2 = FileEventSource(file, new EventSourceProgress(), eventState2)
 
     val expected = eventState.state
     eventSource2.forwardEvents(350)

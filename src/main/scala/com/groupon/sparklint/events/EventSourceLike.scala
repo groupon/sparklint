@@ -48,7 +48,18 @@ trait EventSourceLike {
 
   def nameOrId: String = if (missingName) appId else appName
 
+  def progress: EventSourceProgress
+
+  def state: EventStateLike
+
+  lazy val receivers: Seq[EventReceiverLike] = Seq(progress, state)
+
   private def missingName = appName.isEmpty || appName == Utils.UNKNOWN_STRING
+
+  def forwardIfPossible() = this match {
+    case scrollable: FreeScrollEventSource => scrollable.toEnd()
+    case _                                 =>
+  }
 }
 
 

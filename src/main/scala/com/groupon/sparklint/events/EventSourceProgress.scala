@@ -25,10 +25,10 @@ import scala.collection.mutable
   * @since 9/12/16.
   */
 @throws[IllegalArgumentException]
-class EventSourceProgress(val eventProgress: EventProgressLike = EventProgress.empty(),
-                          val taskProgress: EventProgressLike = EventProgress.empty(),
-                          val stageProgress: EventProgressLike = EventProgress.empty(),
-                          val  jobProgress: EventProgressLike = EventProgress.empty())
+class EventSourceProgress(val eventProgress: EventProgress = EventProgress.empty(),
+                          val taskProgress: EventProgress = EventProgress.empty(),
+                          val stageProgress: EventProgress = EventProgress.empty(),
+                          val  jobProgress: EventProgress = EventProgress.empty())
   extends EventSourceProgressLike with EventReceiverLike {
 
   require(eventProgress != null)
@@ -143,14 +143,13 @@ class EventSourceProgress(val eventProgress: EventProgressLike = EventProgress.e
 }
 
 trait EventSourceProgressLike {
-  val eventProgress: EventProgressLike
-  val taskProgress : EventProgressLike
-  val stageProgress: EventProgressLike
-  val jobProgress  : EventProgressLike
+  val eventProgress: EventProgress
+  val taskProgress : EventProgress
+  val stageProgress: EventProgress
+  val jobProgress  : EventProgress
 }
 
-class EventProgress(var count: Int, var started: Int, var complete: Int, var active: Set[String])
-  extends EventProgressLike {
+class EventProgress(var count: Int, var started: Int, var complete: Int, var active: Set[String]) {
   require(count >= 0)
   require(started >= 0 && started <= count)
   require(complete >= 0 && complete <= count)
@@ -163,24 +162,6 @@ class EventProgress(var count: Int, var started: Int, var complete: Int, var act
 
   def description = s"Completed $complete / $count ($percent%) with $inFlightCount active$activeString."
 
-  private def activeString = if (active.isEmpty) "" else s" (${active.mkString(", ")})"
-}
-
-object EventProgress {
-  def empty(): EventProgress = new EventProgress(0, 0, 0, Set.empty)
-}
-
-trait EventProgressLike {
-
-  var count   : Int
-  var started : Int
-  var complete: Int
-  var active  : Set[String]
-
-  def percent: Long
-
-  def description: String
-
   def hasNext = complete < count
 
   def hasPrevious = complete > 0
@@ -189,4 +170,9 @@ trait EventProgressLike {
 
   override def toString: String = s"$complete of $count with $inFlightCount active"
 
+  private def activeString = if (active.isEmpty) "" else s" (${active.mkString(", ")})"
+}
+
+object EventProgress {
+  def empty(): EventProgress = new EventProgress(0, 0, 0, Set.empty)
 }

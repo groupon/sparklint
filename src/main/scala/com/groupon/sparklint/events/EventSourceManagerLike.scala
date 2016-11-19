@@ -12,12 +12,6 @@
 */
 package com.groupon.sparklint.events
 
-import java.io.File
-
-import com.groupon.sparklint.SparklintServer._
-
-import scala.util.{Failure, Success, Try}
-
 /**
   * Implementations of this trait are capable of managing the list of event sources for a specific configuration of
   * Sparklint.
@@ -32,7 +26,7 @@ trait EventSourceManagerLike {
     *
     * @param eventSource the EventSourceDetail instance to add.
     */
-  def addEventSource(eventSource: EventSourceDetail): Unit
+  def addEventSource(eventSource: EventSourceLike): Unit
 
   /**
     * The number of sources currently in the manager.
@@ -46,7 +40,7 @@ trait EventSourceManagerLike {
     *
     * @return
     */
-  def eventSources: Iterable[EventSourceDetail]
+  def eventSources: Iterable[EventSourceLike]
 
   /** True if the current set of managed EventSourceLike instances contains the specified appId.
     *
@@ -63,16 +57,9 @@ trait EventSourceManagerLike {
     * @return The specified EventSourceLike instance.
     */
   @throws[NoSuchElementException]
-  def getSource(appId: String): EventSourceDetail
+  def getSource(appId: String): EventSourceLike
 
   @throws[NoSuchElementException]
   def getScrollingSource(appId: String): FreeScrollEventSource
 
-}
-
-case class EventSourceDetail(source: EventSourceLike, state: EventStateLike, progress: EventSourceProgressLike) {
-  def forwardIfPossible() = source match {
-    case scrollable: FreeScrollEventSource => scrollable.toEnd()
-    case _ =>
-  }
 }

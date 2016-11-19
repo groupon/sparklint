@@ -14,6 +14,7 @@ package com.groupon.sparklint.events
 
 import java.util.concurrent.{BlockingQueue, LinkedBlockingDeque}
 
+import com.groupon.sparklint.SparklintServer._
 import org.apache.spark.scheduler.SparkListenerEvent
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -21,10 +22,11 @@ import scala.concurrent.Future
 
 /**
   * An EventSource that uses an intermediary queue to buffer live events before updating receivers.
+  *
   * @author swhitear 
   * @since 8/18/16.
   */
-case class BufferedEventSource(appId: String, receivers: Seq[EventReceiverLike])
+case class BufferedEventSource(appId: String, progress: EventSourceProgress, state: EventStateLike)
   extends EventSourceBase {
 
   val buffer: BlockingQueue[SparkListenerEvent] = new LinkedBlockingDeque()
@@ -33,8 +35,6 @@ case class BufferedEventSource(appId: String, receivers: Seq[EventReceiverLike])
     buffer.add(event)
   }
 
-  private var processed: Int = 0
-
   def startConsuming() = Future {
     while (true) {
       val event = buffer.take()
@@ -42,9 +42,18 @@ case class BufferedEventSource(appId: String, receivers: Seq[EventReceiverLike])
         r.preprocess(event)
         r.onEvent(event)
       })
-      processed += 1
     }
     // TODO make cancelable
   }
+}
 
+object BufferedEventSource {
+  def apply(sourceId: String): BufferedEventSource = {
+    val progressReceiver = new EventSourceProgress()
+    val stateReceiver = new CompressedEventState()
+    val eventSource = BufferedEventSource(sourceId, progressReceiver, stateReceiver)
+    eventSource.startConsuming()
+    logInfo(s"Successfully created buffered source $sourceId")
+    eventSource
+  }
 }

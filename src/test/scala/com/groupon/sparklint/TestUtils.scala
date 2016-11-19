@@ -53,12 +53,8 @@ object TestUtils {
     SparkListenerStageSubmitted(new StageInfo(id, 42, name, 42, Seq.empty, Seq.empty, "details"))
   }
 
-  def stubEventDetails(appId: String): EventSourceDetail = {
-    EventSourceDetail(StubEventSource(appId), StubEventState(), new EventSourceProgress())
-  }
-
-  def stubEventDetails(eventSource: EventSourceLike): EventSourceDetail = {
-    EventSourceDetail(eventSource, StubEventState(), new EventSourceProgress())
+  def stubEventDetails(appId: String): EventSourceLike = {
+    StubEventSource(appId, new EventSourceProgress(), new StubEventState())
   }
 
   def sparkAppStart(name: String = TEST_NAME,

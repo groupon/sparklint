@@ -30,7 +30,7 @@ import scala.util.{Failure, Success, Try}
   * @since 8/18/16.
   */
 @throws[IllegalArgumentException]
-case class FileEventSource(fileSource: File, receivers: Seq[EventReceiverLike])
+case class FileEventSource(fileSource: File, progress: EventSourceProgress, state: EventStateLike)
   extends EventSourceBase with FreeScrollEventSource with Logging {
 
   // important to declare this before the buffer is filled
@@ -90,7 +90,7 @@ case class FileEventSource(fileSource: File, receivers: Seq[EventReceiverLike])
       case event: SparkListenerEnvironmentUpdate => setEnvironmentState(event)
       case event: SparkListenerApplicationStart  => setAppStartState(event)
       case event: SparkListenerApplicationEnd    => setAppEndState(event)
-      case default                               => prepreocessEvent(default)
+      case default                               => preprocessEvent(default)
     }
   }
 
@@ -116,15 +116,15 @@ case class FileEventSource(fileSource: File, receivers: Seq[EventReceiverLike])
     appNameOpt = Some(event.appName)
     userOpt = Some(event.sparkUser)
     startTimeOpt = Some(event.time)
-    prepreocessEvent(event)  // include the event in the buffer
+    preprocessEvent(event)  // include the event in the buffer
   }
 
   private def setAppEndState(event: SparkListenerApplicationEnd): Option[SparkListenerEvent] = {
     endTimeOpt = Some(event.time)
-    prepreocessEvent(event) // include the event in the buffer
+    preprocessEvent(event) // include the event in the buffer
   }
 
-  private def prepreocessEvent(event: SparkListenerEvent) = {
+  private def preprocessEvent(event: SparkListenerEvent) = {
     receivers.foreach(_.preprocess(event))
     Some(event)
   }
@@ -133,6 +133,23 @@ case class FileEventSource(fileSource: File, receivers: Seq[EventReceiverLike])
 
   private def unEvent(event: SparkListenerEvent) = receivers.foreach(_.unEvent(event))
 
+}
+
+object FileEventSource {
+  def apply(sourceFile: File): Option[FileEventSource] = {
+    Try {
+      val progressReceiver = new EventSourceProgress()
+      val stateReceiver = new LosslessEventState()
+      FileEventSource(sourceFile, progressReceiver, stateReceiver)
+    } match {
+      case Success(eventSource) =>
+        logInfo(s"Successfully created file source ${sourceFile.getName}")
+        Some(eventSource)
+      case Failure(ex)          =>
+        logWarn(s"Failure creating file source from ${sourceFile.getName}: ${ex.getMessage}")
+        None
+    }
+  }
 }
 
 private class ScrollHandler(movefn: () => SparkListenerEvent,

@@ -28,8 +28,6 @@ trait EventSourceBase extends EventSourceLike {
 
   type EnvironmentData = Map[String, Seq[(String, String)]]
 
-  val appId: String // still abstract here
-
   var appNameOpt: Option[String] = None
 
   def appName: String = appNameOpt.getOrElse(UNKNOWN_STRING)

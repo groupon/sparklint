@@ -20,7 +20,7 @@ class UIWithFullDirectoryReplay extends FlatSpec {
     val args = Array("--directory", "src/test/resources/directory_source")
     val config =SparklintConfig(exitOnError = false).parseCliArgs(args)
     val ui = new SparklintServer(evSourceManager, scheduler, config)
-    ui.run()
+    ui.startUI()
     SparklintServer.waitForever
   }
 

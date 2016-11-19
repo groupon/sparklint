@@ -56,7 +56,7 @@ class SparklintHomepage(sourceManager: EventSourceManagerLike) extends UITemplat
       <div class="navbar-default sidebar" role="navigation">
         <div class="sidebar-nav navbar-collapse">
           <ul class="nav" id="side-menu">
-            {for (source <- sourceManager.eventSources) yield navbarItem(source.source, source.progress)}
+            {for (source <- sourceManager.eventSources) yield navbarItem(source, source.progress)}
             {navbarReplayControl}
           </ul>
         </div>
@@ -292,7 +292,7 @@ class SparklintHomepage(sourceManager: EventSourceManagerLike) extends UITemplat
       <!-- /.panel-body -->
     </div>
 
-  private def widthStyle(esp: EventProgressLike) = s"width: ${esp.percent}%"
+  private def widthStyle(esp: EventProgress) = s"width: ${esp.percent}%"
 
   private def uniqueId(appId: String, idType: String) = s"$appId-$idType"
 }

@@ -33,8 +33,7 @@ class SparklintStateAnalyzerTest extends FlatSpec with Matchers with BeforeAndAf
   override protected def beforeEach(): Unit = {
     eventState = new CompressedEventState()
     val file = new File(TestUtils.resource("spark_event_log_example"))
-    eventSource = FileEventSource(file, Seq(eventState))
-    val eventDetail = stubEventDetails(eventSource)
+    eventSource = FileEventSource(file, new EventSourceProgress(), eventState)
   }
 
   it should "getTimeUntilFirstTask correctly" in {

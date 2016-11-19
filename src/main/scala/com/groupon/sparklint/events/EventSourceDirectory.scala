@@ -26,13 +26,12 @@ case class EventSourceDirectory(eventSourceManager: EventSourceManagerLike, dir:
   implicit val logger: Logging = this
 
   private var loadedFileNames = Set.empty[String]
-  private val factory         = new FileEventSourceFactory
 
   def poll(eventSourceManager: EventSourceManagerLike): Unit = {
     newFiles.foreach(file => {
-      val loadedDetail = factory.buildEventSourceDetail(file) match {
+      FileEventSource(file) match {
         case Some(detail) =>
-          if (runImmediately) detail.forwardIfPossible
+          if (runImmediately) detail.forwardIfPossible()
           eventSourceManager.addEventSource(detail)
           loadedFileNames = loadedFileNames + file.getName
         case None         =>

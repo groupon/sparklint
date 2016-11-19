@@ -12,8 +12,9 @@
 */
 package com.groupon.sparklint
 
-import com.groupon.sparklint.common.{Scheduler, SparklintConfig}
+import com.groupon.sparklint.common.SparklintConfig
 import com.groupon.sparklint.events._
+import com.groupon.sparklint.ui.UIServer
 import org.apache.spark.scheduler.SparkListenerEvent
 import org.apache.spark.{SparkConf, SparkFirehoseListener}
 
@@ -34,26 +35,11 @@ class SparklintListener(appId: String, appName: String) extends SparkFirehoseLis
     buffer.push(event)
   }
 
-  private val factory                     = new ListenerEventSourceFactory()
-  private val sourceManager               = new EventSourceManager()
-  private val eventSource                 = factory.buildEventSourceDetail(appId) match {
-    case Some(detail) => startListening(detail)
-    case None         => throw new Exception(s"Unable to construct buffered source from $appId:$appName")
-  }
-  private var buffer: BufferedEventSource = _
+  val buffer             = BufferedEventSource(appId)
+  val eventSourceManager = new EventSourceManager(buffer)
+  //TODO: support sparkConf based config
+  val config             = SparklintConfig()
+  val uiServer           = new UIServer(eventSourceManager)
 
-  private def startListening(detail: EventSourceDetail) = detail.source match {
-    case bufferedSource: BufferedEventSource => setAndRun(bufferedSource)
-    case _                                   => throw new Exception("Created EventSource cannot act as a buffer")
-  }
-
-  private def setAndRun(bufferedSource: BufferedEventSource) = {
-    buffer = bufferedSource
-    val scheduler = new Scheduler()
-    val config = SparklintConfig()
-    val server = new SparklintServer(sourceManager, scheduler, config)
-    server.run()
-  }
-
-
+  uiServer.startServer()
 }

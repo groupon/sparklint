@@ -39,16 +39,19 @@ class SparklintServer(eventSourceManager: EventSourceManagerLike,
   /**
     * Main entry point for the server based version of SparkLint.
     */
-  def run() = {
+  def startUI() = {
+    shutdownUI()
     // wire up the front end server using the analyzer to adapt state via models
-    val newServer = new UIServer(eventSourceManager)
-    ui = Some(newServer)
-    newServer.startServer()
+    val uiServer = new UIServer(eventSourceManager)
+    ui = Some(uiServer)
+    uiServer.startServer()
   }
 
-  def shutdown() = {
-    logInfo(s"Shutting down...")
-    if (ui.isDefined) ui.get.stopServer()
+  def shutdownUI() = {
+    if (ui.isDefined) {
+      logInfo(s"Shutting down...")
+      ui.get.stopServer()
+    }
   }
 
   def buildEventSources() = {
@@ -61,10 +64,9 @@ class SparklintServer(eventSourceManager: EventSourceManagerLike,
       scheduleDirectoryPolling(directoryEventSource)
     } else if (config.fileSource) {
       logInfo(s"Loading data from file source ${config.fileSource}")
-      val factory = new FileEventSourceFactory
-      factory.buildEventSourceDetail(config.fileSource.get) match {
+      FileEventSource(config.fileSource.get) match {
         case Some(detail) =>
-          if(runImmediately) detail.forwardIfPossible
+          if (runImmediately) detail.forwardIfPossible()
           eventSourceManager.addEventSource(detail)
         case None         =>
           logger.logWarn(s"Failed to construct source from ${config.fileSource}")
@@ -90,7 +92,7 @@ object SparklintServer extends Logging with OptParse {
     val scheduler = new Scheduler()
     val config = SparklintConfig().parseCliArgs(args)
     val server = new SparklintServer(eventSourceManager, scheduler, config)
-    server.run()
+    server.startUI()
     waitForever
   }
 
