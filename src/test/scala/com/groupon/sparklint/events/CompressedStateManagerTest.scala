@@ -26,16 +26,14 @@ import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
   */
 class CompressedStateManagerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
 
-  var eventSource    : FileEventSource            = _
-  var eventState     : CompressedStateManager     = _
-  var file           : File                       = _
-  var progressTracker: EventSourceProgressTracker = _
+  var eventSource    : FileEventSource        = _
+  var eventState     : CompressedStateManager = _
+  var file           : File                   = _
 
   override protected def beforeEach(): Unit = {
     eventState = new CompressedStateManager()
     file = new File(resource("spark_event_log_example"))
-    progressTracker = new EventSourceProgressTracker()
-    eventSource = FileEventSource(file, progressTracker, eventState)
+    eventSource = FileEventSource(file, Seq(eventState))
   }
 
   it should "accumulate core usage correctly" in {
@@ -83,7 +81,7 @@ class CompressedStateManagerTest extends FlatSpec with Matchers with BeforeAndAf
     eventSource.forwardEvents(300)
 
     val eventState2 = new CompressedStateManager()
-    val eventSource2 = FileEventSource(file, new EventSourceProgressTracker(), eventState2)
+    val eventSource2 = FileEventSource(file, Seq(eventState2))
 
     val expected = eventState.getState
     eventSource2.forwardEvents(350)

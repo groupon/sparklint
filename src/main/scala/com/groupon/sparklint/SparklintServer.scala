@@ -24,7 +24,7 @@ import scala.concurrent.{Await, Promise}
   * @author rxue, swhitear
   * @since 8/15/16.
   */
-class SparklintServer(eventSourceManager: EventSourceManagerLike,
+class SparklintServer(eventSourceManager: FileEventSourceManager,
                       scheduler: SchedulerLike,
                       config: SparklintConfig)
   extends Logging {
@@ -64,17 +64,15 @@ class SparklintServer(eventSourceManager: EventSourceManagerLike,
       scheduleDirectoryPolling(directoryEventSource)
     } else if (config.fileSource) {
       logInfo(s"Loading data from file source ${config.fileSource}")
-      FileEventSource(config.fileSource.get) match {
-        case Some(eventSource) =>
-          if (runImmediately) eventSource.forwardIfPossible()
-          eventSourceManager.addEventSource(eventSource)
-        case None         =>
-          logger.logWarn(s"Failed to construct source from ${config.fileSource}")
+      eventSourceManager.addEventSource(config.fileSource.get) match {
+        case Some(source) if runImmediately => source.forwardIfPossible()
+        case _ => logger.logError(s"Failed to create file source from ${config.fileSource}")
       }
     } else {
       logWarn("No source specified, require one of fileSource, directorySource or historySource to be set.")
     }
   }
+
 
   private def scheduleDirectoryPolling(directoryEventSource: EventSourceDirectory) = {
     val taskName = s"Directory source poller [${directoryEventSource.dir}]"
@@ -88,7 +86,7 @@ class SparklintServer(eventSourceManager: EventSourceManagerLike,
 
 object SparklintServer extends Logging with OptParse {
   def main(args: Array[String]): Unit = {
-    val eventSourceManager = new EventSourceManager()
+    val eventSourceManager = new FileEventSourceManager()
     val scheduler = new Scheduler()
     val config = SparklintConfig().parseCliArgs(args)
     val server = new SparklintServer(eventSourceManager, scheduler, config)

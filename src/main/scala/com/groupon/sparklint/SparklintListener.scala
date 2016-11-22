@@ -35,11 +35,23 @@ class SparklintListener(appId: String, appName: String) extends SparkFirehoseLis
     buffer.push(event)
   }
 
-  val buffer             = BufferedEventSource(appId)
-  val eventSourceManager = new EventSourceManager(buffer)
-  //TODO: support sparkConf based config
-  val config             = SparklintConfig()
-  val uiServer           = new UIServer(eventSourceManager)
+  val progress = new EventProgressTracker()
+  val stateManager =  new CompressedStateManager()
+  val buffer = BufferedEventSource(appId, Seq(progress, stateManager))
 
+  val eventSourceManager = new EventSourceManager[String] {
+    override def constructDetails(eventSourceCtor: String): Option[EventSourceDetail] = {
+      Some(EventSourceDetail(buffer, progress, stateManager))
+    }
+  }
+  eventSourceManager.addEventSource(appId)   // still a little bit nasty, but this is the extent of the hacking
+
+  //TODO: support sparkConf based config
+  val config   = SparklintConfig()
+  val uiServer = new UIServer(eventSourceManager)
+
+  // ATTN: ordering?
   uiServer.startServer()
+  buffer.startConsuming()
+
 }

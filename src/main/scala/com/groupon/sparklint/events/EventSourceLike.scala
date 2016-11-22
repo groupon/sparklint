@@ -22,39 +22,21 @@ import com.groupon.sparklint.common.Utils
   */
 trait EventSourceLike {
 
-  private val STANDARD_APP_PREFIX = "application_"
-
-  lazy val trimmedId = appId.replace(STANDARD_APP_PREFIX, "")
-
-  def version: String
-
-  def host: String
-
-  def port: Int
-
-  def maxMemory: Long
-
-  def appId: String
+  val appId: String
 
   def appName: String
-
-  def user: String
 
   def startTime: Long
 
   def endTime: Long
 
-  def fullName: String
-
   def nameOrId: String = if (missingName) appId else appName
 
-  def progressTracker: EventSourceProgressTracker
-
-  def stateManager: EventStateManagerLike
-
-  lazy val receivers: Seq[EventReceiverLike] = Seq(progressTracker, stateManager)
+  lazy val trimmedId = appId.replace(Utils.STANDARD_APP_PREFIX, "")
 
   private def missingName = appName.isEmpty || appName == Utils.UNKNOWN_STRING
+
+  // TODO: move the above onto the metadata event receiver
 
   def forwardIfPossible() = this match {
     case scrollable: FreeScrollEventSource => scrollable.toEnd()

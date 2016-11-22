@@ -32,7 +32,7 @@ import scalaz.concurrent.Task
   * @author swhitear
   * @since 8/18/16.
   */
-class UIServer(esManager: EventSourceManagerLike)
+class UIServer(esManager: EventSourceManagerLike[_])
   extends AdhocServer with StaticFileService with Logging {
 
   routingMap("/") = sparklintService
@@ -68,13 +68,13 @@ class UIServer(esManager: EventSourceManagerLike)
   }
 
   private def state(appId: String): String = {
-    val source = esManager.getSource(appId)
-    val report = new SparklintStateAnalyzer(source)
-    pretty(UIServer.reportJson(report, source.progressTracker))
+    val detail = esManager.getSourceDetail(appId)
+    val report = new SparklintStateAnalyzer(detail.source, detail.state)
+    pretty(UIServer.reportJson(report, detail.progress))
   }
 
   private def eventSource(appId: String): String = {
-    pretty(UIServer.progressJson(esManager.getSource(appId).progressTracker))
+    pretty(UIServer.progressJson(esManager.getSourceDetail(appId).progress))
   }
 
   private def fwdApp(appId: String, count: String, evString: String): String = {
@@ -82,7 +82,7 @@ class UIServer(esManager: EventSourceManagerLike)
   }
 
   private def fwdApp(appId: String, count: String, evType: EventType): String = {
-    def progress() = esManager.getSource(appId).progressTracker
+    def progress() = esManager.getSourceDetail(appId).progress
     val mover = moveEventSource(count, appId, progress) _
     evType match {
       case Events => mover(esManager.getScrollingSource(appId).forwardEvents)
@@ -97,7 +97,7 @@ class UIServer(esManager: EventSourceManagerLike)
   }
 
   private def rwdApp(appId: String, count: String, evType: EventType): String = {
-    def progress() = esManager.getSource(appId).progressTracker
+    def progress() = esManager.getSourceDetail(appId).progress
     val mover = moveEventSource(count, appId, progress) _
     evType match {
       case Events => mover(esManager.getScrollingSource(appId).rewindEvents)
@@ -110,16 +110,16 @@ class UIServer(esManager: EventSourceManagerLike)
   private def endApp(appId: String): String = {
     endOfEventSource(appId,
       () => esManager.getScrollingSource(appId).toEnd(),
-      () => esManager.getSource(appId).progressTracker)
+      () => esManager.getSourceDetail(appId).progress)
   }
 
   private def startApp(appId: String): String = {
     endOfEventSource(appId,
       () => esManager.getScrollingSource(appId).toStart(),
-      () => esManager.getSource(appId).progressTracker)
+      () => esManager.getSourceDetail(appId).progress)
   }
 
-  private def moveEventSource(count: String, appId: String, progFn: () => EventSourceProgressTrackerLike)
+  private def moveEventSource(count: String, appId: String, progFn: () => EventProgressTrackerLike)
                              (moveFn: (Int) => Unit): String = {
     Try(moveFn(count.toInt)) match {
       case Success(progress) =>
@@ -132,7 +132,7 @@ class UIServer(esManager: EventSourceManagerLike)
 
   private def endOfEventSource(appId: String,
                                moveFn: () => Unit,
-                               progFn: () => EventSourceProgressTrackerLike): String = {
+                               progFn: () => EventProgressTrackerLike): String = {
     Try(moveFn()) match {
       case Success(unit) =>
         pretty(UIServer.progressJson(progFn()))
@@ -146,7 +146,7 @@ class UIServer(esManager: EventSourceManagerLike)
 object UIServer {
 
   def reportJson(report: SparklintStateAnalyzer,
-                 progress: EventSourceProgressTrackerLike): JObject = {
+                 progress: EventProgressTrackerLike): JObject = {
     implicit val formats = DefaultFormats
     val source = report.source
     ("appName" -> source.appName) ~
@@ -190,7 +190,7 @@ object UIServer {
       ("progress" -> progressJson(progress))
   }
 
-  def progressJson(progressTracker: EventSourceProgressTrackerLike) = {
+  def progressJson(progressTracker: EventProgressTrackerLike) = {
     ("percent" -> progressTracker.eventProgress.percent) ~
       ("description" -> progressTracker.eventProgress.description) ~
       ("has_next" -> progressTracker.eventProgress.hasNext) ~

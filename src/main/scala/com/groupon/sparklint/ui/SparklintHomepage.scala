@@ -20,7 +20,7 @@ import scala.xml.Node
   * @author rxue
   * @since 6/14/16.
   */
-class SparklintHomepage(sourceManager: EventSourceManagerLike) extends UITemplate {
+class SparklintHomepage(sourceManager: EventSourceManagerLike[_]) extends UITemplate {
   /**
     * These are all the frontend libraries used by Sparklint UI
     * jquery (dom operation, required by d3)
@@ -56,14 +56,14 @@ class SparklintHomepage(sourceManager: EventSourceManagerLike) extends UITemplat
       <div class="navbar-default sidebar" role="navigation">
         <div class="sidebar-nav navbar-collapse">
           <ul class="nav" id="side-menu">
-            {for (source <- sourceManager.eventSources) yield navbarItem(source, source.progressTracker)}
+            {for (source <- sourceManager.eventSourceDetails) yield navbarItem(source.source, source.progress)}
             {navbarReplayControl}
           </ul>
         </div>
       </div>
     </nav>
 
-  def navbarItem(source: EventSourceLike, progress: EventSourceProgressTrackerLike): Seq[Node] =
+  def navbarItem(source: EventSourceLike, progress: EventProgressTrackerLike): Seq[Node] =
     <li data-value={source.appId}>
       <a href="#" class="sparklintApp" data-value={source.appId}>
         <strong>App: </strong>{source.nameOrId}

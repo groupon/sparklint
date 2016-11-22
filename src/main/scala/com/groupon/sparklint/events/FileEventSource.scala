@@ -14,7 +14,6 @@ package com.groupon.sparklint.events
 
 import java.io.File
 
-import com.groupon.sparklint.SparklintServer._
 import com.groupon.sparklint.common.Logging
 import org.apache.spark.groupon.{SparkListenerLogStartShim, StringToSparkEvent}
 import org.apache.spark.scheduler.{SparkListenerEvent, SparkListenerTaskEnd, _}
@@ -30,7 +29,7 @@ import scala.util.{Failure, Success, Try}
   * @since 8/18/16.
   */
 @throws[IllegalArgumentException]
-case class FileEventSource(fileSource: File, progressTracker: EventSourceProgressTracker, stateManager: EventStateManagerLike)
+case class FileEventSource(fileSource: File, receivers: Seq[EventReceiverLike])
   extends EventSourceBase with FreeScrollEventSource with Logging {
 
   // important to declare this before the buffer is filled
@@ -116,7 +115,7 @@ case class FileEventSource(fileSource: File, progressTracker: EventSourceProgres
     appNameOpt = Some(event.appName)
     userOpt = Some(event.sparkUser)
     startTimeOpt = Some(event.time)
-    preprocessEvent(event)  // include the event in the buffer
+    preprocessEvent(event) // include the event in the buffer
   }
 
   private def setAppEndState(event: SparkListenerApplicationEnd): Option[SparkListenerEvent] = {
@@ -133,23 +132,6 @@ case class FileEventSource(fileSource: File, progressTracker: EventSourceProgres
 
   private def unEvent(event: SparkListenerEvent) = receivers.foreach(_.unEvent(event))
 
-}
-
-object FileEventSource {
-  def apply(sourceFile: File): Option[FileEventSource] = {
-    Try {
-      val progressTracker = new EventSourceProgressTracker()
-      val stateManager = new LosslessEventStateManager()
-      FileEventSource(sourceFile, progressTracker, stateManager)
-    } match {
-      case Success(eventSource) =>
-        logInfo(s"Successfully created file source ${sourceFile.getName}")
-        Some(eventSource)
-      case Failure(ex)          =>
-        logWarn(s"Failure creating file source from ${sourceFile.getName}: ${ex.getMessage}")
-        None
-    }
-  }
 }
 
 private class ScrollHandler(movefn: () => SparkListenerEvent,

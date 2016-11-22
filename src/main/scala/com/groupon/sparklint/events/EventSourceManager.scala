@@ -12,7 +12,13 @@
 */
 package com.groupon.sparklint.events
 
+import java.io.File
+
+import com.groupon.sparklint.SparklintServer._
+import com.groupon.sparklint.common.Logging
+
 import scala.collection.mutable
+import scala.util.{Failure, Success, Try}
 
 /**
   * The production implementation of EventSourceManagerLike. Manages and abstracts EventSourceLike instances
@@ -21,37 +27,64 @@ import scala.collection.mutable
   * @author swhitear 
   * @since 8/18/16.
   */
-class EventSourceManager(initialSources: EventSourceLike*) extends EventSourceManagerLike {
+abstract class EventSourceManager[CtorT] extends EventSourceManagerLike[CtorT] with Logging {
 
   // this sync'ed LinkedHashMap is necessary because we want to ensure ordering of items in the manager, not the UI.
   // insertion order works well enough here, we have no need for any other guarantees from the data structure.
-  private val eventSourcesByAppId = new mutable.LinkedHashMap[String, EventSourceLike]()
-    with mutable.SynchronizedMap[String, EventSourceLike]
-  initialSources.foreach(es => eventSourcesByAppId += (es.appId -> es))
+  private val eventSourcesByAppId = new mutable.LinkedHashMap[String, EventSourceDetail]()
+                                        with mutable.SynchronizedMap[String, EventSourceDetail]
 
-  override def addEventSource(eventSource: EventSourceLike): Unit = {
-    eventSourcesByAppId.put(eventSource.appId, eventSource)
+  def constructDetails(eventSourceCtor: CtorT): Option[EventSourceDetail]
+
+  override def addEventSource(eventSourceCtor: CtorT): Option[EventSourceLike] = {
+    constructDetails(eventSourceCtor) match {
+      case Some(detail) =>
+        eventSourcesByAppId.put(detail.id, detail)
+        detail.source
+      case None         => None
+    }
   }
 
   override def sourceCount: Int = eventSourcesByAppId.size
 
-  override def eventSources: Iterable[EventSourceLike] = eventSourcesByAppId.values
+  override def eventSourceDetails: Iterable[EventSourceDetail] = eventSourcesByAppId.values
 
   override def containsAppId(appId: String): Boolean = eventSourcesByAppId.contains(appId)
 
   @throws[NoSuchElementException]
-  override def getSource(appId: String): EventSourceLike = eventSourcesByAppId(appId)
+  override def getSourceDetail(appId: String): EventSourceDetail = eventSourcesByAppId(appId)
 
   @throws[NoSuchElementException]
   override def getScrollingSource(appId: String): FreeScrollEventSource = {
     eventSourcesByAppId.get(appId) match {
-      case Some(source: FreeScrollEventSource) => source
-      case Some(_)                             => scrollFail(appId)
-      case None                                => idFail(appId)
+      case Some(EventSourceDetail(source: FreeScrollEventSource, _, _)) => source
+      case Some(_)                                                      => scrollFail(appId)
+      case None                                                         => idFail(appId)
     }
   }
 
   private def scrollFail(appId: String) = throw new IllegalArgumentException(s"$appId cannot free scroll")
 
   private def idFail(appId: String) = throw new NoSuchElementException(s"Missing appId $appId")
+}
+
+
+class FileEventSourceManager extends EventSourceManager[File] {
+
+  lazy val progressTracker = new EventProgressTracker()
+
+  lazy val stateManager: EventStateManagerLike = new LosslessEventStateManager()
+
+  override def constructDetails(sourceFile: File): Option[EventSourceDetail] = {
+    Try {
+      FileEventSource(sourceFile, Seq(progressTracker, stateManager))
+    } match {
+      case Success(eventSource) =>
+        logInfo(s"Successfully created file source ${sourceFile.getName}")
+        Some(EventSourceDetail(eventSource, progressTracker, stateManager))
+      case Failure(ex)          =>
+        logWarn(s"Failure creating file source from ${sourceFile.getName}: ${ex.getMessage}")
+        None
+    }
+  }
 }

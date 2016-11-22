@@ -16,17 +16,19 @@ package com.groupon.sparklint.events
   * Implementations of this trait are capable of managing the list of event sources for a specific configuration of
   * Sparklint.
   *
-  * @author swhitear 
+  * @tparam CtorT A generic specification which allows extenders to define how new EventSources are constructed.
+  * @author swhitear
   * @since 9/13/16.
   */
-trait EventSourceManagerLike {
+trait EventSourceManagerLike[CtorT] {
 
   /**
-    * Adds an EventSourceDetail instance to the manager.
+    * Adds an EventSourceDetail instance to the manager using the appropriate construction method
     *
-    * @param eventSource the EventSourceDetail instance to add.
+    * @param eventSourceCtor the CtorT instance used to build an EventSourceLike instance in the manager.
+    * @return The EventSourceLike instance created and wrapped with the EventSourceDetail tuple.
     */
-  def addEventSource(eventSource: EventSourceLike): Unit
+  def addEventSource(eventSourceCtor: CtorT): Option[EventSourceLike]
 
   /**
     * The number of sources currently in the manager.
@@ -40,7 +42,7 @@ trait EventSourceManagerLike {
     *
     * @return
     */
-  def eventSources: Iterable[EventSourceLike]
+  def eventSourceDetails: Iterable[EventSourceDetail]
 
   /** True if the current set of managed EventSourceLike instances contains the specified appId.
     *
@@ -50,16 +52,29 @@ trait EventSourceManagerLike {
   def containsAppId(appId: String): Boolean
 
   /**
-    * Provides indexed access to the EventSourceLike instances by appId.
+    * Provides indexed access to the EventSourceDetail instances by appId.
     *
-    * @param appId The appId of the EventSourceLike instance to return.
+    * @param appId The appId of the EventSourceDetail instance to return.
     * @throws NoSuchElementException When the specified appId does not exist.
-    * @return The specified EventSourceLike instance.
+    * @return The specified EventSourceDetail instance wrapping hte EventSource and associated receivers.
     */
   @throws[NoSuchElementException]
-  def getSource(appId: String): EventSourceLike
+  def getSourceDetail(appId: String): EventSourceDetail
 
+  /**
+    * Provides indexed access to any wrapped EventSourceLike instances that extend FreeScrollEventSource.
+    *
+    * @param appId The appId of the EventSourceDetail instance to return.
+    * @throws NoSuchElementException When the specified appId does not exist.
+    * @return
+    */
   @throws[NoSuchElementException]
   def getScrollingSource(appId: String): FreeScrollEventSource
 
+}
+
+case class EventSourceDetail(source: EventSourceLike,
+                             progress: EventProgressTrackerLike,
+                             state: EventStateManagerLike) {
+  val id = source.appId
 }

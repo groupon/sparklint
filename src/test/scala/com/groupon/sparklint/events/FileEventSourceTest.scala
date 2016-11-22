@@ -16,22 +16,22 @@ import scala.io.Source
   */
 class FileEventSourceTest extends FlatSpec with Matchers with BeforeAndAfterEach {
 
-  var stateManager   : StubEventStateManager      = _
-  var progressTracker: EventSourceProgressTracker = _
+  var stateManager   : StubEventStateManager = _
+  //var progressTracker: EventProgressTracker  = _
 
   override protected def beforeEach(): Unit = {
     stateManager = new StubEventStateManager()
-    progressTracker = new EventSourceProgressTracker()
+    //progressTracker = new EventProgressTracker()
   }
 
   it should "throw up if the file does not exist" in {
     intercept[IllegalArgumentException] {
-      FileEventSource(new File("wherefore/art/though/filey"), progressTracker, stateManager)
+      FileEventSource(new File("wherefore/art/though/filey"), Seq(stateManager))
     }
   }
 
   it should "throw up if negative scroll count used" in {
-    val source = FileEventSource(testFileWithState, progressTracker, stateManager)
+    val source = FileEventSource(testFileWithState, Seq(stateManager))
 
     intercept[IllegalArgumentException] {
       source.forwardEvents(count = -1)
@@ -42,7 +42,7 @@ class FileEventSourceTest extends FlatSpec with Matchers with BeforeAndAfterEach
   }
 
   it should "handle an empty file just fine" in {
-    val source = FileEventSource(emptyFile, progressTracker, stateManager)
+    val source = FileEventSource(emptyFile, Seq(stateManager))
 
     source.appId shouldEqual "file_event_log_empty_test"
     source.appName shouldEqual Utils.UNKNOWN_STRING
@@ -64,7 +64,7 @@ class FileEventSourceTest extends FlatSpec with Matchers with BeforeAndAfterEach
   }
 
   it should "set initial state if events in source" in {
-    val source = FileEventSource(testFileWithState, progressTracker, stateManager)
+    val source = FileEventSource(testFileWithState, Seq(stateManager))
 
     source.version shouldEqual "1.5.2"
     source.appId shouldEqual "application_1462781278026_205691"
@@ -82,7 +82,7 @@ class FileEventSourceTest extends FlatSpec with Matchers with BeforeAndAfterEach
 
   it should "preprocess the source events" in {
     val fileEvents = testEvents(testFileNoState)
-    val source = FileEventSource(testFileNoState, progressTracker, stateManager)
+    val source = FileEventSource(testFileNoState, Seq(stateManager))
 
     source.appId shouldEqual "file_event_log_test_simple"
     stateManager.eventCount shouldEqual 5
@@ -96,7 +96,7 @@ class FileEventSourceTest extends FlatSpec with Matchers with BeforeAndAfterEach
 
   it should "allow two way iteration through file content" in {
     val fileEvents = testEvents(testFileNoState)
-    val source = FileEventSource(testFileNoState, progressTracker, stateManager)
+    val source = FileEventSource(testFileNoState, Seq(stateManager))
 
     source.appId shouldEqual "file_event_log_test_simple"
     stateManager.eventCount shouldEqual 5
@@ -124,7 +124,7 @@ class FileEventSourceTest extends FlatSpec with Matchers with BeforeAndAfterEach
 
   it should "allow two way task iteration through file content" in {
     val fileEvents = testEvents(testFileWithNavEvents)
-    val source = FileEventSource(testFileWithNavEvents, progressTracker, stateManager)
+    val source = FileEventSource(testFileWithNavEvents, Seq(stateManager))
 
     source.appId shouldEqual "file_event_log_test_nav_events"
     stateManager.eventCount shouldEqual 16
@@ -167,7 +167,7 @@ class FileEventSourceTest extends FlatSpec with Matchers with BeforeAndAfterEach
 
   it should "allow two way stage iteration through file content" in {
     val fileEvents = testEvents(testFileWithNavEvents)
-    val source = FileEventSource(testFileWithNavEvents, progressTracker, stateManager)
+    val source = FileEventSource(testFileWithNavEvents, Seq(stateManager))
 
     source.appId shouldEqual "file_event_log_test_nav_events"
     stateManager.eventCount shouldEqual 16
@@ -210,7 +210,7 @@ class FileEventSourceTest extends FlatSpec with Matchers with BeforeAndAfterEach
 
   it should "allow two way job iteration through file content" in {
     val fileEvents = testEvents(testFileWithNavEvents)
-    val source = FileEventSource(testFileWithNavEvents, progressTracker, stateManager)
+    val source = FileEventSource(testFileWithNavEvents, Seq(stateManager))
 
     source.appId shouldEqual "file_event_log_test_nav_events"
     stateManager.eventCount shouldEqual 16

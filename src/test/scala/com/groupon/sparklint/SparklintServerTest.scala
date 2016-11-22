@@ -16,7 +16,7 @@ import java.io.File
 
 import com.groupon.sparklint.TestUtils.resource
 import com.groupon.sparklint.common.{ScheduledTask, SchedulerLike, SparklintConfig}
-import com.groupon.sparklint.events.{EventSourceLike, EventSourceManagerLike, FreeScrollEventSource}
+import com.groupon.sparklint.events.FileEventSourceManager
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 
 import scala.collection.mutable.ArrayBuffer
@@ -31,14 +31,14 @@ class SparklintServerTest extends FlatSpec with BeforeAndAfterEach with Matchers
     """{"Event":"SparkListenerApplicationStart","App Name":"MyAppName","App ID":"temp_addded_in_test","Timestamp":1466087746466,"User":"johndoe"}|"""
 
   private var server            : SparklintServer        = _
-  private var eventSourceManager: StubEventSourceManager = _
+  private var eventSourceManager: FileEventSourceManager = _
   private var dirname           : String                 = _
   private var tempFile          : File                   = _
   private var scheduler         : StubScheduler          = _
   private var config            : SparklintConfig        = _
 
   override protected def beforeEach(): Unit = {
-    eventSourceManager = new StubEventSourceManager()
+    eventSourceManager = new FileEventSourceManager()
     scheduler = new StubScheduler()
     dirname = resource("directory_source")
     tempFile = resetTempFile(dirname)
@@ -57,13 +57,13 @@ class SparklintServerTest extends FlatSpec with BeforeAndAfterEach with Matchers
     server.buildEventSources()
     server.startUI()
 
-    eventSourceManager.eventSources.size shouldEqual 1
+    eventSourceManager.eventSourceDetails.size shouldEqual 1
     scheduler.scheduledTasks.isEmpty shouldBe true
 
-    val es = eventSourceManager.eventSources.head
+    val es = eventSourceManager.getScrollingSource("application_1462781278026_205691")
     es.appId shouldEqual "application_1462781278026_205691"
-    es.progressTracker.eventProgress.hasNext shouldEqual true
-    es.progressTracker.eventProgress.hasPrevious shouldEqual false
+    es.hasNext shouldEqual true
+    es.hasPrevious shouldEqual false
   }
 
   it should "load expected buffer from a file and replay when configured" in {
@@ -73,13 +73,13 @@ class SparklintServerTest extends FlatSpec with BeforeAndAfterEach with Matchers
     server.buildEventSources()
     server.startUI()
 
-    eventSourceManager.eventSources.size shouldEqual 1
+    eventSourceManager.eventSourceDetails.size shouldEqual 1
     scheduler.scheduledTasks.isEmpty shouldBe true
 
-    val es = eventSourceManager.eventSources.head
+    val es = eventSourceManager.getScrollingSource("application_1462781278026_205691")
     es.appId shouldEqual "application_1462781278026_205691"
-    es.progressTracker.eventProgress.hasNext shouldEqual false
-    es.progressTracker.eventProgress.hasPrevious shouldEqual true
+    es.hasNext shouldEqual false
+    es.hasPrevious shouldEqual true
   }
 
 
@@ -90,22 +90,22 @@ class SparklintServerTest extends FlatSpec with BeforeAndAfterEach with Matchers
     server.buildEventSources()
     server.startUI()
 
-    eventSourceManager.eventSources.size shouldEqual 0
+    eventSourceManager.eventSourceDetails.size shouldEqual 0
     scheduler.scheduledTasks.size shouldEqual 1
 
     // fire the timed event to load from directory
     scheduler.scheduledTasks.head.run()
-    eventSourceManager.eventSources.size shouldEqual 2
+    eventSourceManager.eventSourceDetails.size shouldEqual 2
 
-    var es = eventSourceManager.eventSources.filter(_.appId == "application_1462781278026_205691").head
+    var es = eventSourceManager.getScrollingSource("application_1462781278026_205691")
     es.appId shouldEqual "application_1462781278026_205691"
-    es.progressTracker.eventProgress.hasNext shouldEqual true
-    es.progressTracker.eventProgress.hasPrevious shouldEqual false
+    es.hasNext shouldEqual true
+    es.hasPrevious shouldEqual false
 
-    es = eventSourceManager.eventSources.filter(_.appId == "application_1472176676028_116806").head
+    es = eventSourceManager.getScrollingSource("application_1472176676028_116806")
     es.appId shouldEqual "application_1472176676028_116806"
-    es.progressTracker.eventProgress.hasNext shouldEqual true
-    es.progressTracker.eventProgress.hasPrevious shouldEqual false
+    es.hasNext shouldEqual true
+    es.hasPrevious shouldEqual false
   }
 
   it should "load expected buffer from a directory and replay when configured" in {
@@ -114,22 +114,22 @@ class SparklintServerTest extends FlatSpec with BeforeAndAfterEach with Matchers
     server.buildEventSources()
     server.startUI()
 
-    eventSourceManager.eventSources.size shouldEqual 0
+    eventSourceManager.eventSourceDetails.size shouldEqual 0
     scheduler.scheduledTasks.size shouldEqual 1
 
     // fire the timed event to load from directory
     scheduler.scheduledTasks.head.run()
-    eventSourceManager.eventSources.size shouldEqual 2
+    eventSourceManager.eventSourceDetails.size shouldEqual 2
 
-    var es = eventSourceManager.eventSources.filter(_.appId == "application_1462781278026_205691").head
+    var es = eventSourceManager.getScrollingSource("application_1462781278026_205691")
     es.appId shouldEqual "application_1462781278026_205691"
-    es.progressTracker.eventProgress.hasNext shouldEqual false
-    es.progressTracker.eventProgress.hasPrevious shouldEqual true
+    es.hasNext shouldEqual false
+    es.hasPrevious shouldEqual true
 
-    es = eventSourceManager.eventSources.filter(_.appId == "application_1472176676028_116806").head
+    es = eventSourceManager.getScrollingSource("application_1472176676028_116806")
     es.appId shouldEqual "application_1472176676028_116806"
-    es.progressTracker.eventProgress.hasNext shouldEqual false
-    es.progressTracker.eventProgress.hasPrevious shouldEqual true
+    es.hasNext shouldEqual false
+    es.hasPrevious shouldEqual true
   }
 
   it should "refresh with the latest new files when task fired" in {
@@ -138,26 +138,26 @@ class SparklintServerTest extends FlatSpec with BeforeAndAfterEach with Matchers
     server.buildEventSources()
     server.startUI()
 
-    eventSourceManager.eventSources.size shouldEqual 0
+    eventSourceManager.eventSourceDetails.size shouldEqual 0
     scheduler.scheduledTasks.size shouldEqual 1
 
     // fire the timed event to load from directory
     scheduler.scheduledTasks.head.run()
-    eventSourceManager.eventSources.size shouldEqual 2
+    eventSourceManager.eventSourceDetails.size shouldEqual 2
 
-    eventSourceManager.eventSources.count(_.appId == "application_1462781278026_205691") shouldEqual 1
-    eventSourceManager.eventSources.count(_.appId == "application_1472176676028_116806") shouldEqual 1
+    eventSourceManager.eventSourceDetails.count(_.source.appId == "application_1462781278026_205691") shouldEqual 1
+    eventSourceManager.eventSourceDetails.count(_.source.appId == "application_1472176676028_116806") shouldEqual 1
 
     // add a new file to the directory
     addInTempFile(tempFile)
 
-    eventSourceManager.eventSources.size shouldEqual 2
+    eventSourceManager.eventSourceDetails.size shouldEqual 2
     scheduler.scheduledTasks.head.run()
-    eventSourceManager.eventSources.size shouldEqual 3
+    eventSourceManager.eventSourceDetails.size shouldEqual 3
 
-    eventSourceManager.eventSources.count(_.appId == "application_1462781278026_205691") shouldEqual 1
-    eventSourceManager.eventSources.count(_.appId == "application_1472176676028_116806") shouldEqual 1
-    eventSourceManager.eventSources.count(_.appId == "temp_addded_in_test") shouldEqual 1
+    eventSourceManager.eventSourceDetails.count(_.source.appId == "application_1462781278026_205691") shouldEqual 1
+    eventSourceManager.eventSourceDetails.count(_.source.appId == "application_1472176676028_116806") shouldEqual 1
+    eventSourceManager.eventSourceDetails.count(_.source.appId == "temp_addded_in_test") shouldEqual 1
 
     // cleanup again
     cleanupTempFile(tempFile)
@@ -171,18 +171,18 @@ class SparklintServerTest extends FlatSpec with BeforeAndAfterEach with Matchers
 
     // fire the timed event to load from directory
     scheduler.scheduledTasks.head.run()
-    eventSourceManager.eventSources.size shouldEqual 2
+    eventSourceManager.eventSourceDetails.size shouldEqual 2
 
     // add a new file to the directory
     addInTempFile(tempFile)
 
     scheduler.scheduledTasks.head.run()
-    eventSourceManager.eventSources.size shouldEqual 3
+    eventSourceManager.eventSourceDetails.size shouldEqual 3
 
-    val es = eventSourceManager.eventSources.filter(_.appId == "temp_addded_in_test").head
+    val es = eventSourceManager.getScrollingSource("temp_addded_in_test")
     es.appId shouldEqual "temp_addded_in_test"
-    es.progressTracker.eventProgress.hasNext shouldEqual false
-    es.progressTracker.eventProgress.hasPrevious shouldEqual true
+    es.hasNext shouldEqual false
+    es.hasPrevious shouldEqual true
 
     // cleanup again
     cleanupTempFile(tempFile)
@@ -206,21 +206,8 @@ class SparklintServerTest extends FlatSpec with BeforeAndAfterEach with Matchers
   }
 }
 
-class StubEventSourceManager(val eventSources: ArrayBuffer[EventSourceLike] = ArrayBuffer[EventSourceLike]())
-  extends EventSourceManagerLike {
-
-  override def addEventSource(eventSource: EventSourceLike): Unit = eventSources += eventSource
-
-  override def sourceCount: Int = eventSources.size
-
-  override def containsAppId(appId: String): Boolean = eventSources.exists(_.appId == appId)
-
-  @throws[NoSuchElementException]
-  override def getSource(appId: String): EventSourceLike = ???
-
-  @throws[NoSuchElementException]
-  override def getScrollingSource(appId: String): FreeScrollEventSource = ???
-}
+//class StubEventSourceManager(override val eventSourceDetails: ArrayBuffer[EventSourceLike] = ArrayBuffer[EventSourceLike]())
+//  extends FileEventSourceManager
 
 class StubScheduler(val scheduledTasks: ArrayBuffer[ScheduledTask[_]] = ArrayBuffer[ScheduledTask[_]]())
   extends SchedulerLike {

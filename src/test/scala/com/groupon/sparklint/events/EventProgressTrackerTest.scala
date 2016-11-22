@@ -21,10 +21,10 @@ import org.scalatest.{FlatSpec, Matchers}
   * @author swhitear 
   * @since 9/14/16.
   */
-class EventSourceProgressTrackerTest extends FlatSpec with Matchers {
+class EventProgressTrackerTest extends FlatSpec with Matchers {
 
   it should "default to empty progress trackers" in {
-    val progressTracker = new EventSourceProgressTracker()
+    val progressTracker = new EventProgressTracker()
 
     testProgress(progressTracker.eventProgress, 0)
     testProgress(progressTracker.taskProgress, 0)
@@ -33,7 +33,7 @@ class EventSourceProgressTrackerTest extends FlatSpec with Matchers {
   }
 
   it should "preprocess as expected" in {
-    val progressTracker = new EventSourceProgressTracker()
+    val progressTracker = new EventProgressTracker()
 
     progressTracker.preprocess(sparkAppStart())
     testProgress(progressTracker.eventProgress, 1)
@@ -79,7 +79,7 @@ class EventSourceProgressTrackerTest extends FlatSpec with Matchers {
   }
 
   it should "process on events as expected" in {
-    val progressTracker = new EventSourceProgressTracker()
+    val progressTracker = new EventProgressTracker()
 
     progressTracker.onEvent(sparkAppStart())
     testProgress(progressTracker.eventProgress, 1, 1)
@@ -135,7 +135,7 @@ class EventSourceProgressTrackerTest extends FlatSpec with Matchers {
   }
 
   it should "process un events as expected" in {
-    val progressTracker = new EventSourceProgressTracker()
+    val progressTracker = new EventProgressTracker()
 
     progressTracker.onEvent(sparkAppStart())
     progressTracker.onEvent(sparkJobStartFromId(0))

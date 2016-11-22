@@ -15,7 +15,7 @@ package com.groupon.sparklint.ui
 import java.io.File
 
 import com.groupon.sparklint.TestUtils
-import com.groupon.sparklint.events.{FreeScrollEventSource, _}
+import com.groupon.sparklint.events._
 import org.http4s.client.blaze.PooledHttp1Client
 import org.json4s.JValue
 import org.json4s.jackson.JsonMethods._
@@ -26,19 +26,17 @@ import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
   * @since 8/23/16.
   */
 class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
-  var evSource       : EventSourceLike with FreeScrollEventSource = _
-  var evState        : EventStateManagerLike                      = _
-  var progressTracker: EventSourceProgressTracker                 = _
-  var evSourceManager: EventSourceManagerLike                     = _
-  var server         : UIServer                                   = _
+
+  var evSourceManager: FileEventSourceManager = _
+  var server         : UIServer               = _
 
   override protected def beforeEach(): Unit = {
     val file = new File(TestUtils.resource("spark_event_log_example"))
-    progressTracker = new EventSourceProgressTracker()
-    evState = new CompressedStateManager(30)
-    evSource = FileEventSource(file, progressTracker, evState)
-    evSourceManager = new EventSourceManager()
-    evSourceManager.addEventSource(evSource)
+    evSourceManager = new FileEventSourceManager() {
+      override lazy val stateManager = new CompressedStateManager(30)
+    }
+
+    evSourceManager.addEventSource(file)
     server = new UIServer(evSourceManager)
     server.startServer(Some(42424))
   }
