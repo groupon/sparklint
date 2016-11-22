@@ -12,6 +12,8 @@
 */
 package com.groupon.sparklint.events
 
+import com.groupon.sparklint.common.Logging
+
 import scala.collection.mutable
 
 /**
@@ -21,37 +23,43 @@ import scala.collection.mutable
   * @author swhitear 
   * @since 8/18/16.
   */
-class EventSourceManager(initialSources: EventSourceDetail*) extends EventSourceManagerLike {
+class EventSourceManager(sourceDetails: SourceAndDetail*) extends EventSourceManagerLike with Logging {
 
   // this sync'ed LinkedHashMap is necessary because we want to ensure ordering of items in the manager, not the UI.
   // insertion order works well enough here, we have no need for any other guarantees from the data structure.
-  private val eventSourcesByAppId = new mutable.LinkedHashMap[String, EventSourceDetail]()
-                                        with mutable.SynchronizedMap[String, EventSourceDetail]
-  initialSources.foreach(es => eventSourcesByAppId += (es.source.appId -> es))
+  private val eventSourcesByAppId = new mutable.LinkedHashMap[String, SourceAndDetail]()
+    with mutable.SynchronizedMap[String, SourceAndDetail]
 
-  override def addEventSource(eventDetail: EventSourceDetail): Unit = {
-    eventSourcesByAppId.put(eventDetail.source.appId, eventDetail)
+  sourceDetails.foreach(addEventSourceAndDetail)
+
+  private[events] def addEventSourceAndDetail(sourceAndDetail: SourceAndDetail): EventSourceLike = {
+    eventSourcesByAppId.put(sourceAndDetail.id, sourceAndDetail)
+    sourceAndDetail.source
   }
 
   override def sourceCount: Int = eventSourcesByAppId.size
 
-  override def eventSources: Iterable[EventSourceDetail] = eventSourcesByAppId.values
+  override def eventSourceDetails: Iterable[EventSourceDetail] = eventSourcesByAppId.values.map(_.detail)
 
-  override def containsAppId(appId: String): Boolean = eventSourcesByAppId.contains(appId)
+  override def containsEventSourceId(eventSourceId: String): Boolean = eventSourcesByAppId.contains(eventSourceId)
 
   @throws[NoSuchElementException]
-  override def getSource(appId: String): EventSourceDetail = eventSourcesByAppId(appId)
+  override def getSourceDetail(appId: String): EventSourceDetail = eventSourcesByAppId(appId).detail
 
   @throws[NoSuchElementException]
   override def getScrollingSource(appId: String): FreeScrollEventSource = {
     eventSourcesByAppId.get(appId) match {
-      case Some(EventSourceDetail(source: FreeScrollEventSource, s: Any, p: Any)) => source
-      case Some(_)                                                                => scrollFail(appId)
-      case None                                                                   => idFail(appId)
+      case Some(SourceAndDetail(source: FreeScrollEventSource, _)) => source
+      case Some(_)                                                 => scrollFail(appId)
+      case None                                                    => idFail(appId)
     }
   }
 
   private def scrollFail(appId: String) = throw new IllegalArgumentException(s"$appId cannot free scroll")
 
   private def idFail(appId: String) = throw new NoSuchElementException(s"Missing appId $appId")
+}
+
+case class SourceAndDetail(source: EventSourceLike, detail: EventSourceDetail) {
+  val id = source.eventSourceId
 }

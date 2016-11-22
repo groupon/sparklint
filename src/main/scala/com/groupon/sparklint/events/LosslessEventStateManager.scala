@@ -21,13 +21,13 @@ import org.apache.spark.scheduler._
   * @author rxue
   * @since 9/22/16.
   */
-class LosslessEventState(metricsBuckets: Int = 1000) extends EventStateLike {
+class LosslessEventStateManager(metricsBuckets: Int = 1000) extends EventStateManagerLike {
 
   var state: LosslessState = LosslessState.empty
 
   override def getState: SparklintStateLike = state
 
-  override def addApp(event: SparkListenerApplicationStart): Unit = {
+  override def onAddApp(event: SparkListenerApplicationStart): Unit = {
     state = state.copy(
       appStart = Some(event),
       lastUpdatedAt = event.time
@@ -41,7 +41,7 @@ class LosslessEventState(metricsBuckets: Int = 1000) extends EventStateLike {
     )
   }
 
-  override def addExecutor(event: SparkListenerExecutorAdded): Unit = {
+  override def onAddExecutor(event: SparkListenerExecutorAdded): Unit = {
     val executorId = event.executorId
     state = state.copy(
       executorInfo = state.executorInfo + (executorId -> SparklintExecutorInfo(event.executorInfo.totalCores, event.time, None)),
@@ -55,7 +55,7 @@ class LosslessEventState(metricsBuckets: Int = 1000) extends EventStateLike {
       lastUpdatedAt = event.time)
   }
 
-  override def removeExecutor(event: SparkListenerExecutorRemoved): Unit = {
+  override def onRemoveExecutor(event: SparkListenerExecutorRemoved): Unit = {
     val executorId = event.executorId
     state = state.copy(
       executorInfo = state.executorInfo + (executorId -> state.executorInfo(executorId).copy(endTime = Some(event.time))),
@@ -69,15 +69,15 @@ class LosslessEventState(metricsBuckets: Int = 1000) extends EventStateLike {
       lastUpdatedAt = event.time)
   }
 
-  override def addBlockManager(event: SparkListenerBlockManagerAdded): Unit = {}
+  override def onAddBlockManager(event: SparkListenerBlockManagerAdded): Unit = {}
 
   override def unAddBlockManager(event: SparkListenerBlockManagerAdded): Unit = {}
 
-  override def jobStart(event: SparkListenerJobStart): Unit = {}
+  override def onJobStart(event: SparkListenerJobStart): Unit = {}
 
   override def unJobStart(event: SparkListenerJobStart): Unit = {}
 
-  override def stageSubmitted(event: SparkListenerStageSubmitted): Unit = {
+  override def onStageSubmitted(event: SparkListenerStageSubmitted): Unit = {
     val stageId = event.stageInfo.stageId
     val stageIdentifier = StageIdentifier.fromStageInfo(event.stageInfo, event.properties)
     state = state.copy(
@@ -92,11 +92,11 @@ class LosslessEventState(metricsBuckets: Int = 1000) extends EventStateLike {
       lastUpdatedAt = event.stageInfo.submissionTime.getOrElse(state.lastUpdatedAt))
   }
 
-  override def stageCompleted(event: SparkListenerStageCompleted): Unit = {}
+  override def onStageCompleted(event: SparkListenerStageCompleted): Unit = {}
 
   override def unStageCompleted(event: SparkListenerStageCompleted): Unit = {}
 
-  override def taskStart(event: SparkListenerTaskStart): Unit = {
+  override def onTaskStart(event: SparkListenerTaskStart): Unit = {
     val startTime = event.taskInfo.launchTime
     if (state.firstTaskAt.isEmpty) {
       state = state.copy(
@@ -128,7 +128,7 @@ class LosslessEventState(metricsBuckets: Int = 1000) extends EventStateLike {
     }
   }
 
-  override def taskEnd(event: SparkListenerTaskEnd): Unit = {
+  override def onTaskEnd(event: SparkListenerTaskEnd): Unit = {
     val stageId = state.stageIdLookup(event.stageId)
     val locality = event.taskInfo.taskLocality
     state = state.copy(
@@ -155,15 +155,15 @@ class LosslessEventState(metricsBuckets: Int = 1000) extends EventStateLike {
       lastUpdatedAt = event.taskInfo.finishTime)
   }
 
-  override def jobEnd(event: SparkListenerJobEnd): Unit = {}
+  override def onJobEnd(event: SparkListenerJobEnd): Unit = {}
 
   override def unJobEnd(event: SparkListenerJobEnd): Unit = {}
 
-  override def unpersistRDD(event: SparkListenerUnpersistRDD): Unit = {}
+  override def onUnpersistRDD(event: SparkListenerUnpersistRDD): Unit = {}
 
   override def unUnpersistRDD(event: SparkListenerUnpersistRDD): Unit = {}
 
-  override def endApp(event: SparkListenerApplicationEnd): Unit = {
+  override def onEndApp(event: SparkListenerApplicationEnd): Unit = {
     state = state.copy(
       executorInfo = state.executorInfo.map(pair => {
         val executorInfo = if (pair._2.endTime.isEmpty) pair._2.copy(endTime = Some(event.time)) else pair._2

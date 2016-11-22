@@ -39,7 +39,7 @@ class UIServer(esManager: EventSourceManagerLike)
 
   private def sparklintService = HttpService {
     case GET -> Root                                                            => tryit(homepage, htmlResponse)
-    case GET -> Root / appId / "state" if appExists(appId)                      => tryit(progress(appId))
+    case GET -> Root / appId / "state" if appExists(appId)                      => tryit(state(appId))
     case GET -> Root / appId / "eventSource" if appExists(appId)                => tryit(eventSource(appId))
     case GET -> Root / appId / "forward" / count / evString if appExists(appId) => tryit(fwdApp(appId, count, evString))
     case GET -> Root / appId / "rewind" / count / evString if appExists(appId)  => tryit(rwdApp(appId, count, evString))
@@ -59,7 +59,7 @@ class UIServer(esManager: EventSourceManagerLike)
   }
 
   private def appExists(appId: String): Boolean = {
-    esManager.containsAppId(appId)
+    esManager.containsEventSourceId(appId)
   }
 
   private def homepage: String = {
@@ -67,14 +67,14 @@ class UIServer(esManager: EventSourceManagerLike)
     page.HTML.toString
   }
 
-  private def progress(appId: String): String = {
-    val detail = esManager.getSource(appId)
-    val report = SparklintStateAnalyzer(detail.source, detail.state)
-    pretty(UIServer.reportJson(report, detail.source, detail.progress))
+  private def state(appId: String): String = {
+    val detail = esManager.getSourceDetail(appId)
+    val report = new SparklintStateAnalyzer(detail.meta, detail.state)
+    pretty(UIServer.reportJson(report, detail.progress))
   }
 
   private def eventSource(appId: String): String = {
-    pretty(UIServer.progressJson(esManager.getSource(appId).progress))
+    pretty(UIServer.progressJson(esManager.getSourceDetail(appId).progress))
   }
 
   private def fwdApp(appId: String, count: String, evString: String): String = {
@@ -82,13 +82,14 @@ class UIServer(esManager: EventSourceManagerLike)
   }
 
   private def fwdApp(appId: String, count: String, evType: EventType): String = {
-    def progress() = esManager.getSource(appId).progress
+    def progress() = esManager.getSourceDetail(appId).progress
     val mover = moveEventSource(count, appId, progress) _
+    val eventSource = esManager.getScrollingSource(appId)
     evType match {
-      case Events() => mover(esManager.getScrollingSource(appId).forwardEvents)
-      case Tasks()  => mover(esManager.getScrollingSource(appId).forwardTasks)
-      case Stages() => mover(esManager.getScrollingSource(appId).forwardStages)
-      case Jobs()   => mover(esManager.getScrollingSource(appId).forwardJobs)
+      case Events => mover(eventSource.forwardEvents)
+      case Tasks  => mover(eventSource.forwardTasks)
+      case Stages => mover(eventSource.forwardStages)
+      case Jobs   => mover(eventSource.forwardJobs)
     }
   }
 
@@ -97,29 +98,30 @@ class UIServer(esManager: EventSourceManagerLike)
   }
 
   private def rwdApp(appId: String, count: String, evType: EventType): String = {
-    def progress() = esManager.getSource(appId).progress
+    def progress() = esManager.getSourceDetail(appId).progress
     val mover = moveEventSource(count, appId, progress) _
+    val eventSource = esManager.getScrollingSource(appId)
     evType match {
-      case Events() => mover(esManager.getScrollingSource(appId).rewindEvents)
-      case Tasks()  => mover(esManager.getScrollingSource(appId).rewindTasks)
-      case Stages() => mover(esManager.getScrollingSource(appId).rewindStages)
-      case Jobs()   => mover(esManager.getScrollingSource(appId).rewindJobs)
+      case Events => mover(eventSource.rewindEvents)
+      case Tasks  => mover(eventSource.rewindTasks)
+      case Stages => mover(eventSource.rewindStages)
+      case Jobs   => mover(eventSource.rewindJobs)
     }
   }
 
   private def endApp(appId: String): String = {
     endOfEventSource(appId,
-      (appid) => esManager.getScrollingSource(appid).toEnd(),
-      (appid) => esManager.getSource(appid).progress)
+      () => esManager.getScrollingSource(appId).toEnd(),
+      () => esManager.getSourceDetail(appId).progress)
   }
 
   private def startApp(appId: String): String = {
     endOfEventSource(appId,
-      (appid) => esManager.getScrollingSource(appId).toStart(),
-      (appid) => esManager.getSource(appid).progress)
+      () => esManager.getScrollingSource(appId).toStart(),
+      () => esManager.getSourceDetail(appId).progress)
   }
 
-  private def moveEventSource(count: String, appId: String, progFn: () => EventSourceProgressLike)
+  private def moveEventSource(count: String, appId: String, progFn: () => EventProgressTrackerLike)
                              (moveFn: (Int) => Unit): String = {
     Try(moveFn(count.toInt)) match {
       case Success(progress) =>
@@ -131,11 +133,11 @@ class UIServer(esManager: EventSourceManagerLike)
   }
 
   private def endOfEventSource(appId: String,
-                               moveFn: (String) => Unit,
-                               progFn: (String) => EventSourceProgressLike): String = {
-    Try(moveFn(appId)) match {
+                               moveFn: () => Unit,
+                               progFn: () => EventProgressTrackerLike): String = {
+    Try(moveFn()) match {
       case Success(unit) =>
-        pretty(UIServer.progressJson(progFn(appId)))
+        pretty(UIServer.progressJson(progFn()))
       case Failure(ex)   =>
         logError(s"Failure to end of appId $appId: ${ex.getMessage}")
         eventSource(appId)
@@ -146,10 +148,9 @@ class UIServer(esManager: EventSourceManagerLike)
 object UIServer {
 
   def reportJson(report: SparklintStateAnalyzer,
-                 source: EventSourceLike,
-                 progress: EventSourceProgressLike): JObject = {
+                 progress: EventProgressTrackerLike): JObject = {
     implicit val formats = DefaultFormats
-
+    val source = report.source
     ("appName" -> source.appName) ~
       ("appId" -> source.appId) ~
       ("allocatedCores" -> report.getExecutorInfo.map(_.values.map(_.cores).sum)) ~
@@ -191,10 +192,10 @@ object UIServer {
       ("progress" -> progressJson(progress))
   }
 
-  def progressJson(progress: EventSourceProgressLike) = {
-    ("percent" -> progress.eventProgress.percent) ~
-      ("description" -> progress.eventProgress.description) ~
-      ("has_next" -> progress.eventProgress.hasNext) ~
-      ("has_previous" -> progress.eventProgress.hasPrevious)
+  def progressJson(progressTracker: EventProgressTrackerLike) = {
+    ("percent" -> progressTracker.eventProgress.percent) ~
+      ("description" -> progressTracker.eventProgress.description) ~
+      ("has_next" -> progressTracker.eventProgress.hasNext) ~
+      ("has_previous" -> progressTracker.eventProgress.hasPrevious)
   }
 }

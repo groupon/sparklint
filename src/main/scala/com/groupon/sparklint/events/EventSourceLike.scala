@@ -12,8 +12,6 @@
 */
 package com.groupon.sparklint.events
 
-import com.groupon.sparklint.common.Utils
-
 /**
   * The EventSourceLike provides a set of Spark events from a specific source.
   *
@@ -22,33 +20,12 @@ import com.groupon.sparklint.common.Utils
   */
 trait EventSourceLike {
 
-  private val STANDARD_APP_PREFIX = "application_"
+  val eventSourceId: String
 
-  lazy val trimmedId = appId.replace(STANDARD_APP_PREFIX, "")
-
-  def version: String
-
-  def host: String
-
-  def port: Int
-
-  def maxMemory: Long
-
-  def appId: String
-
-  def appName: String
-
-  def user: String
-
-  def startTime: Long
-
-  def endTime: Long
-
-  def fullName: String
-
-  def nameOrId: String = if (missingName) appId else appName
-
-  private def missingName = appName.isEmpty || appName == Utils.UNKNOWN_STRING
+  def forwardIfPossible() = this match {
+    case scrollable: FreeScrollEventSource => scrollable.toEnd()
+    case _                                 =>
+  }
 }
 
 

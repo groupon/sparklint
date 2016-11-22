@@ -21,19 +21,18 @@ import scala.concurrent.Future
 
 /**
   * An EventSource that uses an intermediary queue to buffer live events before updating receivers.
+  *
   * @author swhitear 
   * @since 8/18/16.
   */
-case class BufferedEventSource(appId: String, receivers: Seq[EventReceiverLike])
-  extends EventSourceBase {
+case class BufferedEventSource(eventSourceId: String, receivers: Seq[EventReceiverLike])
+  extends EventSourceLike {
 
   val buffer: BlockingQueue[SparkListenerEvent] = new LinkedBlockingDeque()
 
   def push(event: SparkListenerEvent): Unit = {
     buffer.add(event)
   }
-
-  private var processed: Int = 0
 
   def startConsuming() = Future {
     while (true) {
@@ -42,9 +41,7 @@ case class BufferedEventSource(appId: String, receivers: Seq[EventReceiverLike])
         r.preprocess(event)
         r.onEvent(event)
       })
-      processed += 1
     }
     // TODO make cancelable
   }
-
 }
