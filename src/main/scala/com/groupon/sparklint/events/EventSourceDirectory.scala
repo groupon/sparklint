@@ -27,9 +27,9 @@ class EventSourceDirectory(eventSourceManager: FileEventSourceManager, val dir: 
 
   private var loadedFileNames = Set.empty[String]
 
-  def poll(eventSourceManager: EventSourceManagerLike[File]): Unit = {
+  def poll(): Unit = {
     newFiles.foreach(file => {
-      eventSourceManager.addEventSource(file) match {
+      eventSourceManager.addFile(file) match {
         case Some(fileSource) =>
           if (runImmediately) fileSource.forwardIfPossible()
           loadedFileNames = loadedFileNames + file.getName

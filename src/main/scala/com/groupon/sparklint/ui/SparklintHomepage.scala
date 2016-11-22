@@ -20,7 +20,7 @@ import scala.xml.Node
   * @author rxue
   * @since 6/14/16.
   */
-class SparklintHomepage(sourceManager: EventSourceManagerLike[_]) extends UITemplate {
+class SparklintHomepage(sourceManager: EventSourceManagerLike) extends UITemplate {
   /**
     * These are all the frontend libraries used by Sparklint UI
     * jquery (dom operation, required by d3)

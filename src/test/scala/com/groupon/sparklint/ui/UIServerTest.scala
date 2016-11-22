@@ -36,7 +36,7 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
       override def newStateManager = new CompressedStateManager(30)
     }
 
-    evSourceManager.addEventSource(file)
+    evSourceManager.addFile(file)
     server = new UIServer(evSourceManager)
     server.startServer(Some(42424))
   }

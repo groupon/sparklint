@@ -32,7 +32,7 @@ import scalaz.concurrent.Task
   * @author swhitear
   * @since 8/18/16.
   */
-class UIServer(esManager: EventSourceManagerLike[_])
+class UIServer(esManager: EventSourceManagerLike)
   extends AdhocServer with StaticFileService with Logging {
 
   routingMap("/") = sparklintService

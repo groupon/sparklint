@@ -10,11 +10,11 @@ import scala.util.{Failure, Success, Try}
   * @author swhitear 
   * @since 11/21/16.
   */
-class FileEventSourceManager extends EventSourceManager[File] {
+class FileEventSourceManager extends EventSourceManager {
 
   def newStateManager: EventStateManagerLike = new LosslessEventStateManager()
 
-  override def constructDetails(sourceFile: File): Option[SourceAndDetail] = {
+  def addFile(sourceFile: File): Option[EventSourceLike] = {
     val meta = new EventSourceMeta()
     val progress = new EventProgressTracker()
     val stateManager = newStateManager
@@ -25,7 +25,7 @@ class FileEventSourceManager extends EventSourceManager[File] {
       case Success(eventSource) =>
         logInfo(s"Successfully created file source ${sourceFile.getName}")
         val detail = EventSourceDetail(eventSource.eventSourceId, meta, progress, stateManager)
-        Some(SourceAndDetail(eventSource, detail))
+        Some(addEventSource(SourceAndDetail(eventSource, detail)))
       case Failure(ex)          =>
         logWarn(s"Failure creating file source from ${sourceFile.getName}: ${ex.getMessage}")
         None

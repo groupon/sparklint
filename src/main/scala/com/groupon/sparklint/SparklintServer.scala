@@ -64,7 +64,7 @@ class SparklintServer(eventSourceManager: FileEventSourceManager,
       scheduleDirectoryPolling(directoryEventSource)
     } else if (config.fileSource) {
       logInfo(s"Loading data from file source ${config.fileSource}")
-      eventSourceManager.addEventSource(config.fileSource.get) match {
+      eventSourceManager.addFile(config.fileSource.get) match {
         case Some(source) if runImmediately => source.forwardIfPossible()
         case _ => logger.logError(s"Failed to create file source from ${config.fileSource}")
       }
@@ -77,7 +77,7 @@ class SparklintServer(eventSourceManager: FileEventSourceManager,
   private def scheduleDirectoryPolling(directoryEventSource: EventSourceDirectory) = {
     val taskName = s"Directory source poller [${directoryEventSource.dir}]"
     val pollRate = config.pollRate.getOrElse(DEFAULT_POLL)
-    val task = ScheduledTask(taskName, eventSourceManager, directoryEventSource.poll, periodSeconds = pollRate)
+    val task = ScheduledTask(taskName, directoryEventSource.poll, periodSeconds = pollRate)
     scheduler.scheduleTask(task)
   }
 

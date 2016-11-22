@@ -1,6 +1,5 @@
-package com.groupon.sparklint.analyzer
+package com.groupon.sparklint.events
 
-import com.groupon.sparklint.events._
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 
 /**
@@ -9,17 +8,17 @@ import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
   */
 class EventSourceManagerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
 
-  private var manager: EventSourceManager[String] = _
+  private var manager: EventSourceManager = _
 
   override protected def beforeEach(): Unit = {
-    manager = new EventSourceManager[String] {
-      override def constructDetails(eventSourceCtor: String): Option[SourceAndDetail] = {
-        val es = StubEventSource(eventSourceCtor, Seq.empty)
-        val detail = EventSourceDetail(eventSourceCtor, new EventSourceMeta(),
-          new EventProgressTracker(), new StubEventStateManager())
-        Some(SourceAndDetail(es, detail))
-      }
-    }
+    manager = new EventSourceManager()
+  }
+
+  private def constructDetails(eventSourceCtor: String): SourceAndDetail = {
+    val es = StubEventSource(eventSourceCtor, Seq.empty)
+    val detail = EventSourceDetail(eventSourceCtor, new EventSourceMeta(),
+      new EventProgressTracker(), new StubEventStateManager())
+    SourceAndDetail(es, detail)
   }
 
   it should "initialize empty" in {
@@ -28,8 +27,8 @@ class EventSourceManagerTest extends FlatSpec with Matchers with BeforeAndAfterE
   }
 
   it should "add the event sources as expected and remain in order" in {
-    manager.addEventSource("test_app_id_2")
-    manager.addEventSource("test_app_id_1")
+    manager.addEventSource(constructDetails("test_app_id_2"))
+    manager.addEventSource(constructDetails("test_app_id_1"))
 
     manager.sourceCount shouldEqual 2
     manager.containsEventSourceId("test_app_id_1") shouldBe true
@@ -39,7 +38,7 @@ class EventSourceManagerTest extends FlatSpec with Matchers with BeforeAndAfterE
   }
 
   it should "throw up when invalid appId specified for indexer" in {
-    manager.addEventSource("test_app_id")
+    manager.addEventSource(constructDetails("test_app_id"))
 
     intercept[NoSuchElementException] {
       manager.getSourceDetail("invalid_app_id")

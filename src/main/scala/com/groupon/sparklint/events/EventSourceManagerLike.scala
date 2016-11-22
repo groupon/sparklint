@@ -16,19 +16,10 @@ package com.groupon.sparklint.events
   * Implementations of this trait are capable of managing the list of event sources for a specific configuration of
   * Sparklint.
   *
-  * @tparam CtorT A generic specification which allows extenders to define how new EventSources are constructed.
   * @author swhitear
   * @since 9/13/16.
   */
-trait EventSourceManagerLike[CtorT] {
-
-  /**
-    * Adds an EventSourceDetail instance to the manager using the appropriate construction method
-    *
-    * @param eventSourceCtor the CtorT instance used to build an EventSourceLike instance in the manager.
-    * @return The EventSourceLike instance created and wrapped with the EventSourceDetail tuple.
-    */
-  def addEventSource(eventSourceCtor: CtorT): Option[EventSourceLike]
+trait EventSourceManagerLike {
 
   /**
     * The number of sources currently in the manager.

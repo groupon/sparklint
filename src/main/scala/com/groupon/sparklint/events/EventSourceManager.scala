@@ -12,7 +12,6 @@
 */
 package com.groupon.sparklint.events
 
-import com.groupon.sparklint.SparklintServer._
 import com.groupon.sparklint.common.Logging
 
 import scala.collection.mutable
@@ -24,22 +23,18 @@ import scala.collection.mutable
   * @author swhitear 
   * @since 8/18/16.
   */
-abstract class EventSourceManager[CtorT] extends EventSourceManagerLike[CtorT] with Logging {
+class EventSourceManager(sourceDetails: SourceAndDetail*) extends EventSourceManagerLike with Logging {
 
   // this sync'ed LinkedHashMap is necessary because we want to ensure ordering of items in the manager, not the UI.
   // insertion order works well enough here, we have no need for any other guarantees from the data structure.
   private val eventSourcesByAppId = new mutable.LinkedHashMap[String, SourceAndDetail]()
-                                        with mutable.SynchronizedMap[String, SourceAndDetail]
+    with mutable.SynchronizedMap[String, SourceAndDetail]
 
-  def constructDetails(eventSourceCtor: CtorT): Option[SourceAndDetail]
+  sourceDetails.foreach(addEventSource)
 
-  override def addEventSource(eventSourceCtor: CtorT): Option[EventSourceLike] = {
-    constructDetails(eventSourceCtor) match {
-      case Some(sourceAndDetail) =>
-        eventSourcesByAppId.put(sourceAndDetail.id, sourceAndDetail)
-        sourceAndDetail.source
-      case None                  => None
-    }
+  private[events] def addEventSource(sourceAndDetail: SourceAndDetail): EventSourceLike = {
+    eventSourcesByAppId.put(sourceAndDetail.id, sourceAndDetail)
+    sourceAndDetail.source
   }
 
   override def sourceCount: Int = eventSourcesByAppId.size
