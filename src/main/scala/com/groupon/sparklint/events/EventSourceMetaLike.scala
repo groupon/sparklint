@@ -8,7 +8,7 @@ import com.groupon.sparklint.common.Utils
   * @author swhitear 
   * @since 11/21/16.
   */
-trait EventSourceMetaLike extends EventReceiverLike {
+trait EventSourceMetaLike {
   private val STANDARD_APP_PREFIX = "application_"
 
   lazy val trimmedId = appId.replace(STANDARD_APP_PREFIX, "")

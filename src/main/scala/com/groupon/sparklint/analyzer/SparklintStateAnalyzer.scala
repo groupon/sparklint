@@ -139,9 +139,7 @@ class SparklintStateAnalyzer(val source: EventSourceMetaLike, val stateManager: 
     * @return the metricsSink that stores the number of CPU millis allocated for each interval
     */
   private[analyzer] def getAllocatedCores(numBuckets: Int): MetricsSink = {
-    // TODO: shoud this not be specific to the Lossless / Compressed manager?
     var sink = CompressedMetricsSink.empty(source.startTime, numBuckets)
-    //var sink = LosslessMetricsSink.empty(source.startTime, numBuckets)
     state.executorInfo.values.foreach(executorInfo => {
       sink = sink.addUsage(executorInfo.startTime, executorInfo.endTime.getOrElse(state.lastUpdatedAt), executorInfo.cores)
     })

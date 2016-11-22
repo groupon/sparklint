@@ -64,7 +64,7 @@ class EventProgressTracker(val eventProgress: EventProgress = EventProgress.empt
     eventProgress.complete -= 1
   }
 
-  override def inTaskStart(event: SparkListenerTaskStart): Unit = {
+  override def onTaskStart(event: SparkListenerTaskStart): Unit = {
     taskProgress.started += 1
     taskProgress.active = taskProgress.active + taskNameFromInfo(event.taskInfo)
   }

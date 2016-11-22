@@ -41,7 +41,7 @@ object TestUtils {
     ResourceHelper.convertResourcePathToFilePath(getClass.getClassLoader, name)
   }
 
-  def replay(eventSource: EventSourceLike with FreeScrollEventSource, count: Long = Long.MaxValue) = {
+  def replay(eventSource: FreeScrollEventSource, count: Long = Long.MaxValue) = {
     var counter = 0
     while (counter < count && eventSource.hasNext) {
       eventSource.forwardEvents()

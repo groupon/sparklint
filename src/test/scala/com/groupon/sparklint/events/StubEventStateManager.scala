@@ -68,7 +68,7 @@ class StubEventStateManager(val onEvents: ArrayBuffer[SparkListenerEvent] = Arra
 
   override def onStageSubmitted(event: SparkListenerStageSubmitted): Unit = appendOn(event)
 
-  override def inTaskStart(event: SparkListenerTaskStart): Unit = appendOn(event)
+  override def onTaskStart(event: SparkListenerTaskStart): Unit = appendOn(event)
 
   override def onTaskEnd(event: SparkListenerTaskEnd): Unit = appendOn(event)
 

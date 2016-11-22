@@ -91,7 +91,7 @@ trait EventReceiverLike {
 
   protected def onStageSubmitted(event: SparkListenerStageSubmitted): Unit = {}
 
-  protected def inTaskStart(event: SparkListenerTaskStart): Unit = {}
+  protected def onTaskStart(event: SparkListenerTaskStart): Unit = {}
 
   protected def onTaskEnd(event: SparkListenerTaskEnd): Unit = {}
 
@@ -172,7 +172,7 @@ trait EventReceiverLike {
       case event: SparkListenerBlockManagerRemoved => onRemoveBlockManager(event)
       case event: SparkListenerJobStart            => onJobStart(event)
       case event: SparkListenerStageSubmitted      => onStageSubmitted(event)
-      case event: SparkListenerTaskStart           => inTaskStart(event)
+      case event: SparkListenerTaskStart           => onTaskStart(event)
       case event: SparkListenerTaskEnd             => onTaskEnd(event)
       case event: SparkListenerStageCompleted      => onStageCompleted(event)
       case event: SparkListenerJobEnd              => onJobEnd(event)

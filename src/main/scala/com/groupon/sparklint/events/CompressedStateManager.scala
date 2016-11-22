@@ -97,7 +97,7 @@ class CompressedStateManager(metricsBuckets: Int = 1000) extends EventStateManag
 
   override def unStageCompleted(event: SparkListenerStageCompleted): Unit = {}
 
-  override def inTaskStart(event: SparkListenerTaskStart): Unit = {
+  override def onTaskStart(event: SparkListenerTaskStart): Unit = {
     val startTime = event.taskInfo.launchTime
     if (state.firstTaskAt.isEmpty) {
       state = state.copy(

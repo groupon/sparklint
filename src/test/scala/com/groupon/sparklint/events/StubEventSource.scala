@@ -5,7 +5,7 @@ package com.groupon.sparklint.events
   * @since 11/16/16.
   */
 case class StubEventSource(eventSourceId: String, receivers: Seq[EventReceiverLike])
-  extends EventSourceLike with FreeScrollEventSource {
+  extends FreeScrollEventSource {
 
   @throws[IllegalArgumentException]
   override def forwardEvents(count: Int): Unit = ???

@@ -35,6 +35,9 @@ class SparklintListener(appId: String, appName: String) extends SparkFirehoseLis
     buffer.push(event)
   }
 
+  //TODO: support sparkConf based config
+  val config   = SparklintConfig()
+
   val meta = new EventSourceMeta()
   val progress = new EventProgressTracker()
   val stateManager =  new CompressedStateManager()
@@ -42,9 +45,6 @@ class SparklintListener(appId: String, appName: String) extends SparkFirehoseLis
 
   val detail = SourceAndDetail(buffer, EventSourceDetail(appId, meta, progress, stateManager))
   val eventSourceManager = new EventSourceManager(detail)
-
-  //TODO: support sparkConf based config
-  val config   = SparklintConfig()
   val uiServer = new UIServer(eventSourceManager)
 
   // ATTN: ordering?

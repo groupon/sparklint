@@ -25,7 +25,7 @@ class FileEventSourceManager extends EventSourceManager {
       case Success(eventSource) =>
         logInfo(s"Successfully created file source ${sourceFile.getName}")
         val detail = EventSourceDetail(eventSource.eventSourceId, meta, progress, stateManager)
-        Some(addEventSource(SourceAndDetail(eventSource, detail)))
+        Some(addEventSourceAndDetail(SourceAndDetail(eventSource, detail)))
       case Failure(ex)          =>
         logWarn(s"Failure creating file source from ${sourceFile.getName}: ${ex.getMessage}")
         None

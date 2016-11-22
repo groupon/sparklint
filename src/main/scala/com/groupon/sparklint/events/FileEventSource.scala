@@ -30,7 +30,7 @@ import scala.util.{Failure, Success, Try}
   */
 @throws[IllegalArgumentException]
 case class FileEventSource(fileSource: File, receivers: Seq[EventReceiverLike])
-  extends EventSourceLike with FreeScrollEventSource with Logging {
+  extends FreeScrollEventSource with Logging {
 
   private val buffer    = new EventBuffer(fillBuffer())
   private val fwdScroll = new ScrollHandler(buffer.next, onEvent, !buffer.hasNext)

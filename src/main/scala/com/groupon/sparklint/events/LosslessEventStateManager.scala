@@ -96,7 +96,7 @@ class LosslessEventStateManager(metricsBuckets: Int = 1000) extends EventStateMa
 
   override def unStageCompleted(event: SparkListenerStageCompleted): Unit = {}
 
-  override def inTaskStart(event: SparkListenerTaskStart): Unit = {
+  override def onTaskStart(event: SparkListenerTaskStart): Unit = {
     val startTime = event.taskInfo.launchTime
     if (state.firstTaskAt.isEmpty) {
       state = state.copy(

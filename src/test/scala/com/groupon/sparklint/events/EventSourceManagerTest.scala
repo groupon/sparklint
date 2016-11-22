@@ -27,8 +27,8 @@ class EventSourceManagerTest extends FlatSpec with Matchers with BeforeAndAfterE
   }
 
   it should "add the event sources as expected and remain in order" in {
-    manager.addEventSource(constructDetails("test_app_id_2"))
-    manager.addEventSource(constructDetails("test_app_id_1"))
+    manager.addEventSourceAndDetail(constructDetails("test_app_id_2"))
+    manager.addEventSourceAndDetail(constructDetails("test_app_id_1"))
 
     manager.sourceCount shouldEqual 2
     manager.containsEventSourceId("test_app_id_1") shouldBe true
@@ -38,7 +38,7 @@ class EventSourceManagerTest extends FlatSpec with Matchers with BeforeAndAfterE
   }
 
   it should "throw up when invalid appId specified for indexer" in {
-    manager.addEventSource(constructDetails("test_app_id"))
+    manager.addEventSourceAndDetail(constructDetails("test_app_id"))
 
     intercept[NoSuchElementException] {
       manager.getSourceDetail("invalid_app_id")

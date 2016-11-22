@@ -65,8 +65,9 @@ class SparklintServer(eventSourceManager: FileEventSourceManager,
     } else if (config.fileSource) {
       logInfo(s"Loading data from file source ${config.fileSource}")
       eventSourceManager.addFile(config.fileSource.get) match {
-        case Some(source) if runImmediately => source.forwardIfPossible()
-        case _ => logger.logError(s"Failed to create file source from ${config.fileSource}")
+        case Some(source) =>
+          if (runImmediately) source.forwardIfPossible()
+        case _            => logger.logError(s"Failed to create file source from ${config.fileSource}")
       }
     } else {
       logWarn("No source specified, require one of fileSource, directorySource or historySource to be set.")

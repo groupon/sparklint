@@ -30,9 +30,9 @@ class EventSourceManager(sourceDetails: SourceAndDetail*) extends EventSourceMan
   private val eventSourcesByAppId = new mutable.LinkedHashMap[String, SourceAndDetail]()
     with mutable.SynchronizedMap[String, SourceAndDetail]
 
-  sourceDetails.foreach(addEventSource)
+  sourceDetails.foreach(addEventSourceAndDetail)
 
-  private[events] def addEventSource(sourceAndDetail: SourceAndDetail): EventSourceLike = {
+  private[events] def addEventSourceAndDetail(sourceAndDetail: SourceAndDetail): EventSourceLike = {
     eventSourcesByAppId.put(sourceAndDetail.id, sourceAndDetail)
     sourceAndDetail.source
   }
