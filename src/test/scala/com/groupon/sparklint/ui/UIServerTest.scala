@@ -33,7 +33,7 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
   override protected def beforeEach(): Unit = {
     val file = new File(TestUtils.resource("spark_event_log_example"))
     evSourceManager = new FileEventSourceManager() {
-      override lazy val stateManager = new CompressedStateManager(30)
+      override def newStateManager = new CompressedStateManager(30)
     }
 
     evSourceManager.addEventSource(file)
@@ -57,7 +57,7 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
         |  "applicationEndedAt" : 1466088058982,
         |  "progress" : {
         |    "percent" : 0,
-        |    "description" : "Completed 0 / 426 (0%) with 0 active.",
+        |    "description" : "Completed 0 / 431 (0%) with 0 active.",
         |    "has_next" : true,
         |    "has_previous" : false
         |  }
@@ -66,7 +66,7 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
 
   it should "return limited information after application was submitted" in {
 
-    forward(1)
+    forward(4)
 
     pretty(state) shouldBe
       """{
@@ -78,8 +78,8 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
         |  "applicationLaunchedAt" : 1466087746466,
         |  "applicationEndedAt" : 1466088058982,
         |  "progress" : {
-        |    "percent" : 0,
-        |    "description" : "Completed 1 / 426 (0%) with 0 active.",
+        |    "percent" : 1,
+        |    "description" : "Completed 4 / 431 (1%) with 0 active.",
         |    "has_next" : true,
         |    "has_previous" : true
         |  }
@@ -88,7 +88,7 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
 
   it should "return limited information after first task was submitted" in {
 
-    forward(6)
+    forward(11)
 
     pretty(state) shouldBe
       """{
@@ -134,8 +134,8 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
         |  "applicationLaunchedAt" : 1466087746466,
         |  "applicationEndedAt" : 1466088058982,
         |  "progress" : {
-        |    "percent" : 1,
-        |    "description" : "Completed 6 / 426 (1%) with 0 active.",
+        |    "percent" : 3,
+        |    "description" : "Completed 11 / 431 (3%) with 0 active.",
         |    "has_next" : true,
         |    "has_previous" : true
         |  }
@@ -144,7 +144,7 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
 
   it should "return full information after first task was finished" in {
 
-    forward(11)
+    forward(16)
 
     pretty(state) shouldBe
       """{
@@ -282,8 +282,8 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
         |  "applicationLaunchedAt" : 1466087746466,
         |  "applicationEndedAt" : 1466088058982,
         |  "progress" : {
-        |    "percent" : 3,
-        |    "description" : "Completed 11 / 426 (3%) with 0 active.",
+        |    "percent" : 4,
+        |    "description" : "Completed 16 / 431 (4%) with 0 active.",
         |    "has_next" : true,
         |    "has_previous" : true
         |  }
@@ -515,7 +515,7 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
         |  "applicationEndedAt" : 1466088058982,
         |  "progress" : {
         |    "percent" : 100,
-        |    "description" : "Completed 426 / 426 (100%) with 0 active.",
+        |    "description" : "Completed 431 / 431 (100%) with 0 active.",
         |    "has_next" : false,
         |    "has_previous" : true
         |  }
@@ -535,15 +535,15 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
   }
 
   private def forwardUrl(count: Int) = {
-    s"http://localhost:42424/application_1462781278026_205691/forward/$count/Events"
+    s"http://localhost:42424/spark_event_log_example/forward/$count/Events"
   }
 
   private def endUrl = {
-    s"http://localhost:42424/application_1462781278026_205691/to_end"
+    s"http://localhost:42424/spark_event_log_example/to_end"
   }
 
   private def stateUrl = {
-    s"http://localhost:42424/application_1462781278026_205691/state"
+    s"http://localhost:42424/spark_event_log_example/state"
   }
 
   private def request(url: String): String = {

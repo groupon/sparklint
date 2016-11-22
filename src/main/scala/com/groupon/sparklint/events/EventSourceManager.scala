@@ -12,13 +12,10 @@
 */
 package com.groupon.sparklint.events
 
-import java.io.File
-
 import com.groupon.sparklint.SparklintServer._
 import com.groupon.sparklint.common.Logging
 
 import scala.collection.mutable
-import scala.util.{Failure, Success, Try}
 
 /**
   * The production implementation of EventSourceManagerLike. Manages and abstracts EventSourceLike instances
@@ -31,35 +28,35 @@ abstract class EventSourceManager[CtorT] extends EventSourceManagerLike[CtorT] w
 
   // this sync'ed LinkedHashMap is necessary because we want to ensure ordering of items in the manager, not the UI.
   // insertion order works well enough here, we have no need for any other guarantees from the data structure.
-  private val eventSourcesByAppId = new mutable.LinkedHashMap[String, EventSourceDetail]()
-                                        with mutable.SynchronizedMap[String, EventSourceDetail]
+  private val eventSourcesByAppId = new mutable.LinkedHashMap[String, SourceAndDetail]()
+                                        with mutable.SynchronizedMap[String, SourceAndDetail]
 
-  def constructDetails(eventSourceCtor: CtorT): Option[EventSourceDetail]
+  def constructDetails(eventSourceCtor: CtorT): Option[SourceAndDetail]
 
   override def addEventSource(eventSourceCtor: CtorT): Option[EventSourceLike] = {
     constructDetails(eventSourceCtor) match {
-      case Some(detail) =>
-        eventSourcesByAppId.put(detail.id, detail)
-        detail.source
-      case None         => None
+      case Some(sourceAndDetail) =>
+        eventSourcesByAppId.put(sourceAndDetail.id, sourceAndDetail)
+        sourceAndDetail.source
+      case None                  => None
     }
   }
 
   override def sourceCount: Int = eventSourcesByAppId.size
 
-  override def eventSourceDetails: Iterable[EventSourceDetail] = eventSourcesByAppId.values
+  override def eventSourceDetails: Iterable[EventSourceDetail] = eventSourcesByAppId.values.map(_.detail)
 
-  override def containsAppId(appId: String): Boolean = eventSourcesByAppId.contains(appId)
+  override def containsEventSourceId(eventSourceId: String): Boolean = eventSourcesByAppId.contains(eventSourceId)
 
   @throws[NoSuchElementException]
-  override def getSourceDetail(appId: String): EventSourceDetail = eventSourcesByAppId(appId)
+  override def getSourceDetail(appId: String): EventSourceDetail = eventSourcesByAppId(appId).detail
 
   @throws[NoSuchElementException]
   override def getScrollingSource(appId: String): FreeScrollEventSource = {
     eventSourcesByAppId.get(appId) match {
-      case Some(EventSourceDetail(source: FreeScrollEventSource, _, _)) => source
-      case Some(_)                                                      => scrollFail(appId)
-      case None                                                         => idFail(appId)
+      case Some(SourceAndDetail(source: FreeScrollEventSource, _)) => source
+      case Some(_)                                                 => scrollFail(appId)
+      case None                                                    => idFail(appId)
     }
   }
 
@@ -68,23 +65,6 @@ abstract class EventSourceManager[CtorT] extends EventSourceManagerLike[CtorT] w
   private def idFail(appId: String) = throw new NoSuchElementException(s"Missing appId $appId")
 }
 
-
-class FileEventSourceManager extends EventSourceManager[File] {
-
-  lazy val progressTracker = new EventProgressTracker()
-
-  lazy val stateManager: EventStateManagerLike = new LosslessEventStateManager()
-
-  override def constructDetails(sourceFile: File): Option[EventSourceDetail] = {
-    Try {
-      FileEventSource(sourceFile, Seq(progressTracker, stateManager))
-    } match {
-      case Success(eventSource) =>
-        logInfo(s"Successfully created file source ${sourceFile.getName}")
-        Some(EventSourceDetail(eventSource, progressTracker, stateManager))
-      case Failure(ex)          =>
-        logWarn(s"Failure creating file source from ${sourceFile.getName}: ${ex.getMessage}")
-        None
-    }
-  }
+case class SourceAndDetail(source: EventSourceLike, detail: EventSourceDetail) {
+  val id = source.eventSourceId
 }

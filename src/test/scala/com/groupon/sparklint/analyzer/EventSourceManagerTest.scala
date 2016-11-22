@@ -4,7 +4,6 @@ import com.groupon.sparklint.events._
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 
 /**
-  *
   * @author swhitear 
   * @since 11/21/16.
   */
@@ -14,9 +13,11 @@ class EventSourceManagerTest extends FlatSpec with Matchers with BeforeAndAfterE
 
   override protected def beforeEach(): Unit = {
     manager = new EventSourceManager[String] {
-      override def constructDetails(eventSourceCtor: String): Option[EventSourceDetail] = {
-        Some(EventSourceDetail(StubEventSource(eventSourceCtor, Seq.empty),
-          new EventProgressTracker(), new StubEventStateManager()))
+      override def constructDetails(eventSourceCtor: String): Option[SourceAndDetail] = {
+        val es = StubEventSource(eventSourceCtor, Seq.empty)
+        val detail = EventSourceDetail(eventSourceCtor, new EventSourceMeta(),
+          new EventProgressTracker(), new StubEventStateManager())
+        Some(SourceAndDetail(es, detail))
       }
     }
   }
@@ -31,10 +32,10 @@ class EventSourceManagerTest extends FlatSpec with Matchers with BeforeAndAfterE
     manager.addEventSource("test_app_id_1")
 
     manager.sourceCount shouldEqual 2
-    manager.containsAppId("test_app_id_1") shouldBe true
-    manager.containsAppId("test_app_id_2") shouldBe true
-    manager.getSourceDetail("test_app_id_1").source.appId shouldBe "test_app_id_1"
-    manager.getSourceDetail("test_app_id_2").source.appId shouldBe "test_app_id_2"
+    manager.containsEventSourceId("test_app_id_1") shouldBe true
+    manager.containsEventSourceId("test_app_id_2") shouldBe true
+    manager.getSourceDetail("test_app_id_1").eventSourceId shouldBe "test_app_id_1"
+    manager.getSourceDetail("test_app_id_2").eventSourceId shouldBe "test_app_id_2"
   }
 
   it should "throw up when invalid appId specified for indexer" in {

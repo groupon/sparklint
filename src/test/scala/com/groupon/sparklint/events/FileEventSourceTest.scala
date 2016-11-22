@@ -3,7 +3,6 @@ package com.groupon.sparklint.events
 import java.io.File
 
 import com.groupon.sparklint.TestUtils.resource
-import com.groupon.sparklint.common.Utils
 import org.apache.spark.groupon.StringToSparkEvent
 import org.apache.spark.scheduler._
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
@@ -16,12 +15,10 @@ import scala.io.Source
   */
 class FileEventSourceTest extends FlatSpec with Matchers with BeforeAndAfterEach {
 
-  var stateManager   : StubEventStateManager = _
-  //var progressTracker: EventProgressTracker  = _
+  var stateManager: StubEventStateManager = _
 
   override protected def beforeEach(): Unit = {
     stateManager = new StubEventStateManager()
-    //progressTracker = new EventProgressTracker()
   }
 
   it should "throw up if the file does not exist" in {
@@ -44,9 +41,7 @@ class FileEventSourceTest extends FlatSpec with Matchers with BeforeAndAfterEach
   it should "handle an empty file just fine" in {
     val source = FileEventSource(emptyFile, Seq(stateManager))
 
-    source.appId shouldEqual "file_event_log_empty_test"
-    source.appName shouldEqual Utils.UNKNOWN_STRING
-    source.nameOrId shouldEqual "file_event_log_empty_test"
+    source.eventSourceId shouldEqual "file_event_log_empty_test"
 
     stateManager.eventCount shouldEqual 0
     source.hasNext shouldBe false
@@ -63,28 +58,11 @@ class FileEventSourceTest extends FlatSpec with Matchers with BeforeAndAfterEach
     source.hasPrevious shouldBe false
   }
 
-  it should "set initial state if events in source" in {
-    val source = FileEventSource(testFileWithState, Seq(stateManager))
-
-    source.version shouldEqual "1.5.2"
-    source.appId shouldEqual "application_1462781278026_205691"
-    source.trimmedId shouldEqual "1462781278026_205691"
-    source.appName shouldEqual "MyAppName"
-    source.fullName shouldEqual "MyAppName (application_1462781278026_205691)"
-    source.nameOrId shouldEqual "MyAppName"
-    source.user shouldEqual "johndoe"
-    source.host shouldEqual "10.22.81.222"
-    source.port shouldEqual 44783
-    source.maxMemory shouldEqual 2300455157l
-    source.startTime shouldEqual 1466087746466l
-    source.endTime shouldEqual 0
-  }
-
   it should "preprocess the source events" in {
     val fileEvents = testEvents(testFileNoState)
     val source = FileEventSource(testFileNoState, Seq(stateManager))
 
-    source.appId shouldEqual "file_event_log_test_simple"
+    source.eventSourceId shouldEqual "file_event_log_test_simple"
     stateManager.eventCount shouldEqual 5
     stateManager.preprocCount shouldEqual 5
     stateManager.onCount shouldEqual 0
@@ -98,7 +76,7 @@ class FileEventSourceTest extends FlatSpec with Matchers with BeforeAndAfterEach
     val fileEvents = testEvents(testFileNoState)
     val source = FileEventSource(testFileNoState, Seq(stateManager))
 
-    source.appId shouldEqual "file_event_log_test_simple"
+    source.eventSourceId shouldEqual "file_event_log_test_simple"
     stateManager.eventCount shouldEqual 5
     stateManager.preprocCount shouldEqual 5
     stateManager.onCount shouldEqual 0
@@ -126,7 +104,7 @@ class FileEventSourceTest extends FlatSpec with Matchers with BeforeAndAfterEach
     val fileEvents = testEvents(testFileWithNavEvents)
     val source = FileEventSource(testFileWithNavEvents, Seq(stateManager))
 
-    source.appId shouldEqual "file_event_log_test_nav_events"
+    source.eventSourceId shouldEqual "file_event_log_test_nav_events"
     stateManager.eventCount shouldEqual 16
     stateManager.preprocCount shouldEqual 16
     stateManager.onCount shouldEqual 0
@@ -169,7 +147,7 @@ class FileEventSourceTest extends FlatSpec with Matchers with BeforeAndAfterEach
     val fileEvents = testEvents(testFileWithNavEvents)
     val source = FileEventSource(testFileWithNavEvents, Seq(stateManager))
 
-    source.appId shouldEqual "file_event_log_test_nav_events"
+    source.eventSourceId shouldEqual "file_event_log_test_nav_events"
     stateManager.eventCount shouldEqual 16
     stateManager.preprocCount shouldEqual 16
     stateManager.onCount shouldEqual 0
@@ -212,7 +190,7 @@ class FileEventSourceTest extends FlatSpec with Matchers with BeforeAndAfterEach
     val fileEvents = testEvents(testFileWithNavEvents)
     val source = FileEventSource(testFileWithNavEvents, Seq(stateManager))
 
-    source.appId shouldEqual "file_event_log_test_nav_events"
+    source.eventSourceId shouldEqual "file_event_log_test_nav_events"
     stateManager.eventCount shouldEqual 16
     stateManager.preprocCount shouldEqual 16
     stateManager.onCount shouldEqual 0

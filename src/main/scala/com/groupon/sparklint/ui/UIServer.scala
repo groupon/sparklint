@@ -59,7 +59,7 @@ class UIServer(esManager: EventSourceManagerLike[_])
   }
 
   private def appExists(appId: String): Boolean = {
-    esManager.containsAppId(appId)
+    esManager.containsEventSourceId(appId)
   }
 
   private def homepage: String = {
@@ -69,7 +69,7 @@ class UIServer(esManager: EventSourceManagerLike[_])
 
   private def state(appId: String): String = {
     val detail = esManager.getSourceDetail(appId)
-    val report = new SparklintStateAnalyzer(detail.source, detail.state)
+    val report = new SparklintStateAnalyzer(detail.meta, detail.state)
     pretty(UIServer.reportJson(report, detail.progress))
   }
 
@@ -84,11 +84,12 @@ class UIServer(esManager: EventSourceManagerLike[_])
   private def fwdApp(appId: String, count: String, evType: EventType): String = {
     def progress() = esManager.getSourceDetail(appId).progress
     val mover = moveEventSource(count, appId, progress) _
+    val eventSource = esManager.getScrollingSource(appId)
     evType match {
-      case Events => mover(esManager.getScrollingSource(appId).forwardEvents)
-      case Tasks  => mover(esManager.getScrollingSource(appId).forwardTasks)
-      case Stages => mover(esManager.getScrollingSource(appId).forwardStages)
-      case Jobs   => mover(esManager.getScrollingSource(appId).forwardJobs)
+      case Events => mover(eventSource.forwardEvents)
+      case Tasks  => mover(eventSource.forwardTasks)
+      case Stages => mover(eventSource.forwardStages)
+      case Jobs   => mover(eventSource.forwardJobs)
     }
   }
 
@@ -99,11 +100,12 @@ class UIServer(esManager: EventSourceManagerLike[_])
   private def rwdApp(appId: String, count: String, evType: EventType): String = {
     def progress() = esManager.getSourceDetail(appId).progress
     val mover = moveEventSource(count, appId, progress) _
+    val eventSource = esManager.getScrollingSource(appId)
     evType match {
-      case Events => mover(esManager.getScrollingSource(appId).rewindEvents)
-      case Tasks  => mover(esManager.getScrollingSource(appId).rewindTasks)
-      case Stages => mover(esManager.getScrollingSource(appId).rewindStages)
-      case Jobs   => mover(esManager.getScrollingSource(appId).rewindJobs)
+      case Events => mover(eventSource.rewindEvents)
+      case Tasks  => mover(eventSource.rewindTasks)
+      case Stages => mover(eventSource.rewindStages)
+      case Jobs   => mover(eventSource.rewindJobs)
     }
   }
 

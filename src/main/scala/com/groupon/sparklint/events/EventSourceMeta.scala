@@ -13,22 +13,26 @@
 package com.groupon.sparklint.events
 
 import com.groupon.sparklint.common.Utils._
+import org.apache.spark.groupon.SparkListenerLogStartShim
+import org.apache.spark.scheduler._
 
 import scala.collection.Map
 import scala.collection.immutable.HashMap
 
 /**
-  * Pushing down some option wrangling, defaults, and base state handling to use across all
-  * EvenSource impls.
+  * The EventSourceMeta receiver routes the early events in the event log in order to extract information
+  * about the application itself.
   *
   * @author swhitear 
   * @since 9/29/16.
   */
-trait EventSourceBase extends EventSourceLike {
+class EventSourceMeta extends EventSourceMetaLike with EventReceiverLike {
 
   type EnvironmentData = Map[String, Seq[(String, String)]]
 
-  val appId: String
+  var appIdOpt: Option[String] = None
+
+  def appId: String = appIdOpt.getOrElse(UNKNOWN_STRING)
 
   var appNameOpt: Option[String] = None
 
@@ -68,4 +72,42 @@ trait EventSourceBase extends EventSourceLike {
 
   def fullName = s"$appName ($appId)"
 
+
+  override protected def preprocLogStart(event: SparkListenerLogStartShim) = setVersionState(event)
+
+  override protected def preprocAddBlockManager(event: SparkListenerBlockManagerAdded) = setBlockManagerState(event)
+
+  override protected def preprocEnvironmentUpdate(event: SparkListenerEnvironmentUpdate) = setEnvironmentState(event)
+
+  override protected def preprocAddApp(event: SparkListenerApplicationStart) = setAppStartState(event)
+
+  override protected def preprocEndApp(event: SparkListenerApplicationEnd) = setAppEndState(event)
+
+
+  private def setVersionState(event: SparkListenerLogStartShim) = {
+    versionOpt = Some(event.sparkVersion)
+  }
+
+  private def setBlockManagerState(event: SparkListenerBlockManagerAdded) = {
+    hostOpt = Some(event.blockManagerId.host)
+    portOpt = Some(event.blockManagerId.port)
+    maxMemoryOpt = Some(event.maxMem)
+  }
+
+  private def setEnvironmentState(event: SparkListenerEnvironmentUpdate) = {
+    environmentOpt = Some(event.environmentDetails)
+  }
+
+  private def setAppStartState(event: SparkListenerApplicationStart) = {
+    appIdOpt = event.appId
+    appNameOpt = Some(event.appName)
+    userOpt = Some(event.sparkUser)
+    startTimeOpt = Some(event.time)
+  }
+
+  private def setAppEndState(event: SparkListenerApplicationEnd) = {
+    endTimeOpt = Some(event.time)
+  }
+
+  override def toString: String = s"AppId: $appId, Name: $appName"
 }

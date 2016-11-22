@@ -56,22 +56,23 @@ class SparklintHomepage(sourceManager: EventSourceManagerLike[_]) extends UITemp
       <div class="navbar-default sidebar" role="navigation">
         <div class="sidebar-nav navbar-collapse">
           <ul class="nav" id="side-menu">
-            {for (source <- sourceManager.eventSourceDetails) yield navbarItem(source.source, source.progress)}
+            {for (source <- sourceManager.eventSourceDetails)
+            yield navbarItem(source.eventSourceId, source.meta, source.progress)}
             {navbarReplayControl}
           </ul>
         </div>
       </div>
     </nav>
 
-  def navbarItem(source: EventSourceLike, progress: EventProgressTrackerLike): Seq[Node] =
-    <li data-value={source.appId}>
-      <a href="#" class="sparklintApp" data-value={source.appId}>
-        <strong>App: </strong>{source.nameOrId}
-        <p class="text-center" id={uniqueId(source.appId, "app-prog")}>
+  def navbarItem(esId: String, meta: EventSourceMetaLike, progress: EventProgressTrackerLike): Seq[Node] =
+    <li data-value={esId}>
+      <a href="#" class="sparklintApp" data-value={esId}>
+        <strong>App: </strong>{meta.nameOrId}
+        <p class="text-center" id={uniqueId(esId, "app-prog")}>
         {progress.eventProgress.description}
       </p>
         <div class="progress active">
-          <div class="progress-bar" role="progressbar" id={uniqueId(source.appId, "progress-bar")}
+          <div class="progress-bar" role="progressbar" id={uniqueId(esId, "progress-bar")}
                aria-valuenow={progress.eventProgress.percent.toString} aria-valuemin="0" aria-valuemax="100"
                style={widthStyle(progress.eventProgress)}>
           </div>

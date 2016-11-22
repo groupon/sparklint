@@ -35,13 +35,15 @@ class SparklintListener(appId: String, appName: String) extends SparkFirehoseLis
     buffer.push(event)
   }
 
+  val meta = new EventSourceMeta()
   val progress = new EventProgressTracker()
   val stateManager =  new CompressedStateManager()
-  val buffer = BufferedEventSource(appId, Seq(progress, stateManager))
+  val buffer = BufferedEventSource(appId, Seq(meta, progress, stateManager))
 
   val eventSourceManager = new EventSourceManager[String] {
-    override def constructDetails(eventSourceCtor: String): Option[EventSourceDetail] = {
-      Some(EventSourceDetail(buffer, progress, stateManager))
+    override def constructDetails(eventSourceCtor: String): Option[SourceAndDetail] = {
+      val detail = EventSourceDetail(appId, meta, progress, stateManager)
+      Some(SourceAndDetail(buffer, detail))
     }
   }
   eventSourceManager.addEventSource(appId)   // still a little bit nasty, but this is the extent of the hacking

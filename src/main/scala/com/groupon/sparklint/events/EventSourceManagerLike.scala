@@ -49,7 +49,7 @@ trait EventSourceManagerLike[CtorT] {
     * @param appId The appId to check for.
     * @return True if it exists, false otherwise.
     */
-  def containsAppId(appId: String): Boolean
+  def containsEventSourceId(appId: String): Boolean
 
   /**
     * Provides indexed access to the EventSourceDetail instances by appId.
@@ -73,8 +73,14 @@ trait EventSourceManagerLike[CtorT] {
 
 }
 
-case class EventSourceDetail(source: EventSourceLike,
+/**
+  * A case class wrapping the three current event receivers, allows views to access by name.
+  * @param eventSourceId the id of the event source associated with the detailed state info.
+  * @param meta an EventSourceMetaLike instance containing metadata about the application.
+  * @param progress an EventProgressTrackerLike instance containing progress of various event types.
+  * @param state an EventStateManagerLike containing the current aggregated event state.
+  */
+case class EventSourceDetail(eventSourceId: String,
+                             meta: EventSourceMetaLike,
                              progress: EventProgressTrackerLike,
-                             state: EventStateManagerLike) {
-  val id = source.appId
-}
+                             state: EventStateManagerLike)

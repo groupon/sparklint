@@ -56,29 +56,29 @@ class StubEventStateManager(val onEvents: ArrayBuffer[SparkListenerEvent] = Arra
 
   override def preprocEndApp(event: SparkListenerApplicationEnd): Unit = appendPreproc(event)
 
-  override def addApp(event: SparkListenerApplicationStart): Unit = appendOn(event)
+  override def onAddApp(event: SparkListenerApplicationStart): Unit = appendOn(event)
 
-  override def addExecutor(event: SparkListenerExecutorAdded): Unit = appendOn(event)
+  override def onAddExecutor(event: SparkListenerExecutorAdded): Unit = appendOn(event)
 
-  override def removeExecutor(event: SparkListenerExecutorRemoved): Unit = appendOn(event)
+  override def onRemoveExecutor(event: SparkListenerExecutorRemoved): Unit = appendOn(event)
 
-  override def addBlockManager(event: SparkListenerBlockManagerAdded): Unit = appendOn(event)
+  override def onAddBlockManager(event: SparkListenerBlockManagerAdded): Unit = appendOn(event)
 
-  override def jobStart(event: SparkListenerJobStart): Unit = appendOn(event)
+  override def onJobStart(event: SparkListenerJobStart): Unit = appendOn(event)
 
-  override def stageSubmitted(event: SparkListenerStageSubmitted): Unit = appendOn(event)
+  override def onStageSubmitted(event: SparkListenerStageSubmitted): Unit = appendOn(event)
 
-  override def taskStart(event: SparkListenerTaskStart): Unit = appendOn(event)
+  override def inTaskStart(event: SparkListenerTaskStart): Unit = appendOn(event)
 
-  override def taskEnd(event: SparkListenerTaskEnd): Unit = appendOn(event)
+  override def onTaskEnd(event: SparkListenerTaskEnd): Unit = appendOn(event)
 
-  override def stageCompleted(event: SparkListenerStageCompleted): Unit = appendOn(event)
+  override def onStageCompleted(event: SparkListenerStageCompleted): Unit = appendOn(event)
 
-  override def jobEnd(event: SparkListenerJobEnd): Unit = appendOn(event)
+  override def onJobEnd(event: SparkListenerJobEnd): Unit = appendOn(event)
 
-  override def unpersistRDD(event: SparkListenerUnpersistRDD): Unit = appendOn(event)
+  override def onUnpersistRDD(event: SparkListenerUnpersistRDD): Unit = appendOn(event)
 
-  override def endApp(event: SparkListenerApplicationEnd): Unit = appendUn(event)
+  override def onEndApp(event: SparkListenerApplicationEnd): Unit = appendUn(event)
 
   override def unAddApp(event: SparkListenerApplicationStart): Unit = appendUn(event)
 

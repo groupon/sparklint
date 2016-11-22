@@ -15,7 +15,7 @@ package com.groupon.sparklint.events
 import java.io.File
 
 import com.groupon.sparklint.common.Logging
-import org.apache.spark.groupon.{SparkListenerLogStartShim, StringToSparkEvent}
+import org.apache.spark.groupon.StringToSparkEvent
 import org.apache.spark.scheduler.{SparkListenerEvent, SparkListenerTaskEnd, _}
 
 import scala.io.Source
@@ -30,16 +30,13 @@ import scala.util.{Failure, Success, Try}
   */
 @throws[IllegalArgumentException]
 case class FileEventSource(fileSource: File, receivers: Seq[EventReceiverLike])
-  extends EventSourceBase with FreeScrollEventSource with Logging {
-
-  // important to declare this before the buffer is filled
-  private var extractedId = Option.empty[String]
+  extends EventSourceLike with FreeScrollEventSource with Logging {
 
   private val buffer    = new EventBuffer(fillBuffer())
   private val fwdScroll = new ScrollHandler(buffer.next, onEvent, !buffer.hasNext)
   private val rewScroll = new ScrollHandler(buffer.previous, unEvent, !buffer.hasPrevious)
 
-  override val appId: String = extractedId.getOrElse(fileSource.getName)
+  override val eventSourceId: String = fileSource.getName
 
   @throws[IllegalArgumentException]
   def forwardEvents(count: Int = 1) = fwdScroll.scroll(count)
@@ -76,57 +73,19 @@ case class FileEventSource(fileSource: File, receivers: Seq[EventReceiverLike])
   private def fillBuffer(): IndexedSeq[SparkListenerEvent] = {
     Try(Source.fromFile(fileSource)) match {
       case Success(sparkEventLog) =>
-        sparkEventLog.getLines().flatMap(toStateOrBuffer).toIndexedSeq
+        sparkEventLog.getLines().flatMap(parseAndPreprocess).toIndexedSeq
       case Failure(ex)            =>
         throw new IllegalArgumentException(s"Failure reading file event source from ${fileSource.getName}.", ex)
     }
   }
 
-  private def toStateOrBuffer(line: String): Option[SparkListenerEvent] = {
-    StringToSparkEvent(line) match {
-      case event: SparkListenerLogStartShim      => setVersionState(event)
-      case event: SparkListenerBlockManagerAdded => setBlockManagerState(event)
-      case event: SparkListenerEnvironmentUpdate => setEnvironmentState(event)
-      case event: SparkListenerApplicationStart  => setAppStartState(event)
-      case event: SparkListenerApplicationEnd    => setAppEndState(event)
-      case default                               => preprocessEvent(default)
-    }
-  }
-
-  private def setVersionState(event: SparkListenerLogStartShim): Option[SparkListenerEvent] = {
-    versionOpt = Some(event.sparkVersion)
-    None // filter the event from the buffer
-  }
-
-  private def setBlockManagerState(event: SparkListenerBlockManagerAdded): Option[SparkListenerEvent] = {
-    hostOpt = Some(event.blockManagerId.host)
-    portOpt = Some(event.blockManagerId.port)
-    maxMemoryOpt = Some(event.maxMem)
-    None // filter the event from the buffer
-  }
-
-  private def setEnvironmentState(event: SparkListenerEnvironmentUpdate): Option[SparkListenerEvent] = {
-    environmentOpt = Some(event.environmentDetails)
-    None // filter the event from the buffer
-  }
-
-  private def setAppStartState(event: SparkListenerApplicationStart): Option[SparkListenerEvent] = {
-    extractedId = event.appId
-    appNameOpt = Some(event.appName)
-    userOpt = Some(event.sparkUser)
-    startTimeOpt = Some(event.time)
-    preprocessEvent(event) // include the event in the buffer
-  }
-
-  private def setAppEndState(event: SparkListenerApplicationEnd): Option[SparkListenerEvent] = {
-    endTimeOpt = Some(event.time)
-    preprocessEvent(event) // include the event in the buffer
-  }
-
-  private def preprocessEvent(event: SparkListenerEvent) = {
-    receivers.foreach(_.preprocess(event))
+  private def parseAndPreprocess(line: String): Option[SparkListenerEvent] = {
+    val event = StringToSparkEvent(line)
+    preprocessEvent(event)
     Some(event)
   }
+
+  private def preprocessEvent(event: SparkListenerEvent) = receivers.foreach(_.preprocess(event))
 
   private def onEvent(event: SparkListenerEvent) = receivers.foreach(_.onEvent(event))
 

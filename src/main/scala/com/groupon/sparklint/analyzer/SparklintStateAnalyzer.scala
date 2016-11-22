@@ -13,8 +13,10 @@
 package com.groupon.sparklint.analyzer
 
 import com.groupon.sparklint.data._
-import com.groupon.sparklint.data.compressed._
-import com.groupon.sparklint.events.{EventSourceLike, EventStateManagerLike}
+import com.groupon.sparklint.data.compressed.CompressedMetricsSink
+import com.groupon.sparklint.data.lossless.LosslessMetricsSink
+//import com.groupon.sparklint.data.compressed._
+import com.groupon.sparklint.events.{EventSourceMetaLike, EventStateManagerLike}
 import org.apache.spark.scheduler.TaskLocality
 import org.apache.spark.scheduler.TaskLocality._
 
@@ -29,7 +31,7 @@ import scala.util.Try
   * @param source       the source to analyze
   * @param stateManager the state to analyze
   */
-class SparklintStateAnalyzer(val source: EventSourceLike, val stateManager: EventStateManagerLike)
+class SparklintStateAnalyzer(val source: EventSourceMetaLike, val stateManager: EventStateManagerLike)
   extends SparklintAnalyzerLike {
   val state = stateManager.getState
 
@@ -137,7 +139,9 @@ class SparklintStateAnalyzer(val source: EventSourceLike, val stateManager: Even
     * @return the metricsSink that stores the number of CPU millis allocated for each interval
     */
   private[analyzer] def getAllocatedCores(numBuckets: Int): MetricsSink = {
+    // TODO: shoud this not be specific to the Lossless / Compressed manager?
     var sink = CompressedMetricsSink.empty(source.startTime, numBuckets)
+    //var sink = LosslessMetricsSink.empty(source.startTime, numBuckets)
     state.executorInfo.values.foreach(executorInfo => {
       sink = sink.addUsage(executorInfo.startTime, executorInfo.endTime.getOrElse(state.lastUpdatedAt), executorInfo.cores)
     })

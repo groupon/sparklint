@@ -14,7 +14,6 @@ package com.groupon.sparklint.events
 
 import java.util.concurrent.{BlockingQueue, LinkedBlockingDeque}
 
-import com.groupon.sparklint.SparklintServer._
 import org.apache.spark.scheduler.SparkListenerEvent
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -26,8 +25,8 @@ import scala.concurrent.Future
   * @author swhitear 
   * @since 8/18/16.
   */
-case class BufferedEventSource(appId: String, receivers: Seq[EventReceiverLike])
-  extends EventSourceBase {
+case class BufferedEventSource(eventSourceId: String, receivers: Seq[EventReceiverLike])
+  extends EventSourceLike {
 
   val buffer: BlockingQueue[SparkListenerEvent] = new LinkedBlockingDeque()
 
