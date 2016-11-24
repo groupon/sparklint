@@ -105,7 +105,7 @@ object TestUtils {
     new TaskInfo(taskId, index, attempt, launchTime, executorId, host, locality, false)
   }
 
-  def sparkTaskMetrics(): TaskMetrics = new TaskMetrics
+  def sparkTaskMetrics(): TaskMetrics = null
 
   def sparkStageCompletedFromId(stageId: Int): SparkListenerStageCompleted = {
     sparkStageCompleted(sparkStageInfo(stageId = stageId))
