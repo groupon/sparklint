@@ -34,10 +34,10 @@ class SparklintListener(appId: String, appName: String) extends SparkFirehoseLis
     buffer.push(event)
   }
 
-  private val factory                     = new ListenerEventSourceFactory()
   private val sourceManager               = new EventSourceManager()
-  private val eventSource                 = factory.buildEventSourceDetail(appId) match {
-    case Some(detail) => startListening(detail)
+
+  new ListenerEventSourceFactory().buildEventSourceDetail(appId) match {
+    case Some(detail) => sourceManager.addEventSource(detail); startListening(detail)
     case None         => throw new Exception(s"Unable to construct buffered source from $appId:$appName")
   }
   private var buffer: BufferedEventSource = _
