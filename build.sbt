@@ -17,7 +17,7 @@ resolvers in ThisBuild ++= Seq(
   Resolver.sonatypeRepo("releases")
 )
 
-val spark = "1.6.1"
+val spark = "2.0.2"
 val http4s = "0.13.2"
 val optparse = "1.1.2"
 val scalatest = "2.2.6"
