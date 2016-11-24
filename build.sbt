@@ -40,6 +40,8 @@ mainClass in (Compile, run) := Some("com.groupon.sparklint.SparklintServer")
 
 publishMavenStyle := true
 publishArtifact in Test := false
+publishArtifact in (Compile, packageDoc) := false
+publishArtifact in (Compile, packageSrc) := false
 
 headers := Map(
   "scala" -> Apache2_0(startYear.value.get.toString, "Groupon, Inc.")
