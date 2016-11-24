@@ -8,7 +8,7 @@ homepage := Some(url("https://github.com/groupon/sparklint"))
 startYear := Some(2016)
 licenses := Seq("Apache License, Version 2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0.txt"))
 
-scalaVersion := "2.10.6"
+scalaVersion := "2.11.8"
 crossScalaVersions := Seq("2.10.6", "2.11.8")
 
 /* ----- Dependencies ---------*/
