@@ -27,35 +27,34 @@ class LosslessTaskMetrics extends SparklintTaskMetrics {
   val metricsByTaskId = TrieMap.empty[Long, TaskMetrics]
 
   override def outputMetrics: SparklintOutputMetrics = {
-    val found = metricsByTaskId.values.flatMap(_.outputMetrics)
     new SparklintOutputMetrics(
-      StatCounter(found.map(_.recordsWritten.toDouble)),
-      StatCounter(found.map(_.bytesWritten.toDouble)))
+      outputMetrics.recordWritten,
+      outputMetrics.bytesWritten)
   }
 
-  override def inputMetrics: Map[DataReadMethod, SparklintInputMetrics] = {
-    val found = metricsByTaskId.values.flatMap(_.inputMetrics).groupBy(_.readMethod)
-    found.mapValues(_.foldLeft(new SparklintInputMetrics())(_ merge _))
+  override def inputMetrics: SparklintInputMetrics = {
+    new SparklintInputMetrics(
+      inputMetrics.recordsRead,
+      inputMetrics.bytesRead
+    )
   }
 
   override def shuffleReadMetrics: SparklintShuffleReadMetrics = {
-    val found = metricsByTaskId.values.flatMap(_.shuffleReadMetrics)
     new SparklintShuffleReadMetrics(
-      StatCounter(found.map(_.fetchWaitTime.toDouble)),
-      StatCounter(found.map(_.localBlocksFetched.toDouble)),
-      StatCounter(found.map(_.localBytesRead.toDouble)),
-      StatCounter(found.map(_.recordsRead.toDouble)),
-      StatCounter(found.map(_.remoteBlocksFetched.toDouble)),
-      StatCounter(found.map(_.remoteBytesRead.toDouble))
+      shuffleReadMetrics.fetchWaitTime,
+      shuffleReadMetrics.localBlocksFetched,
+      shuffleReadMetrics.localBytesRead,
+      shuffleReadMetrics.recordsRead,
+      shuffleReadMetrics.remoteBlocksFetched,
+      shuffleReadMetrics.remoteBytesRead
     )
   }
 
   override def shuffleWriteMetrics: SparklintShuffleWriteMetrics = {
-    val found = metricsByTaskId.values.flatMap(_.shuffleWriteMetrics)
     new SparklintShuffleWriteMetrics(
-      StatCounter(found.map(_.shuffleBytesWritten.toDouble)),
-      StatCounter(found.map(_.shuffleRecordsWritten.toDouble)),
-      StatCounter(found.map(_.shuffleWriteTime.toDouble))
+      shuffleWriteMetrics.shuffleBytesWritten,
+      shuffleWriteMetrics.shuffleRecordsWritten,
+      shuffleWriteMetrics.shuffleWriteTime
     )
   }
 

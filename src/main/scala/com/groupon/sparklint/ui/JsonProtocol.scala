@@ -14,7 +14,7 @@ package com.groupon.sparklint.ui
 
 import org.apache.spark.executor.TaskMetrics
 import org.apache.spark.scheduler.{StageInfo, TaskInfo}
-import org.json4s.JsonAST.{JNothing, JObject}
+import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 
 /**
@@ -33,28 +33,28 @@ object JsonProtocol {
       ("ResultSerializationTime" -> taskMetrics.resultSerializationTime) ~
       ("DiskBytesSpilled" -> taskMetrics.diskBytesSpilled) ~
       ("MemoryBytesSpilled" -> taskMetrics.memoryBytesSpilled) ~
-      ("OutputWritten" -> taskMetrics.outputMetrics.map(outputMetrics =>
-        ("Records" -> outputMetrics.recordsWritten) ~
-          ("Bytes" -> outputMetrics.bytesWritten)
-      ).getOrElse(JNothing)) ~
-      ("ShuffleWritten" -> taskMetrics.shuffleWriteMetrics.map(shuffleWriteMetrics =>
-        ("Bytes" -> shuffleWriteMetrics.shuffleBytesWritten) ~
-          ("Records" -> shuffleWriteMetrics.shuffleRecordsWritten) ~
-          ("Time" -> shuffleWriteMetrics.shuffleWriteTime)
-      ).getOrElse(JNothing)) ~
-      ("ShuffleRead" -> taskMetrics.shuffleReadMetrics.map(shuffleReadMetrics =>
-        ("RemoteBytes" -> shuffleReadMetrics.remoteBytesRead) ~
-          ("RemoteBlocks" -> shuffleReadMetrics.remoteBlocksFetched) ~
-          ("LocalBytes" -> shuffleReadMetrics.localBytesRead) ~
-          ("LocalBlocks" -> shuffleReadMetrics.localBlocksFetched) ~
-          ("FetchWaitTime" -> shuffleReadMetrics.fetchWaitTime) ~
-          ("Records" -> shuffleReadMetrics.recordsRead)
-      ).getOrElse(JNothing)) ~
-      ("InputRead" -> taskMetrics.inputMetrics.map(inputMetrics =>
-        ("Bytes" -> inputMetrics.bytesRead) ~
-          ("Method" -> inputMetrics.readMethod.toString) ~
-          ("Records" -> inputMetrics.recordsRead)
-      ).getOrElse(JNothing))
+      ("OutputWritten" ->
+        ("Records" -> taskMetrics.outputMetrics.recordsWritten) ~
+          ("Bytes" -> taskMetrics.outputMetrics.bytesWritten)
+      ) ~
+      ("ShuffleWritten" ->
+        ("Bytes" -> taskMetrics.shuffleWriteMetrics.bytesWritten) ~
+          ("Records" -> taskMetrics.shuffleWriteMetrics.recordsWritten) ~
+          ("Time" -> taskMetrics.shuffleWriteMetrics.writeTime)
+      ) ~
+      ("ShuffleRead" ->
+        ("RemoteBytes" -> taskMetrics.shuffleReadMetrics.remoteBytesRead) ~
+          ("RemoteBlocks" -> taskMetrics.shuffleReadMetrics.remoteBlocksFetched) ~
+          ("LocalBytes" -> taskMetrics.shuffleReadMetrics.localBytesRead) ~
+          ("LocalBlocks" -> taskMetrics.shuffleReadMetrics.localBlocksFetched) ~
+          ("FetchWaitTime" -> taskMetrics.shuffleReadMetrics.fetchWaitTime) ~
+          ("Records" -> taskMetrics.shuffleReadMetrics.recordsRead)
+      ) ~
+      ("InputRead" ->
+        ("Bytes" -> taskMetrics.inputMetrics.bytesRead) ~
+          ("Method" -> "Deprecated in 2.0.0") ~
+          ("Records" -> taskMetrics.inputMetrics.recordsRead)
+      )
   }
 
   def taskInfoToJson(taskInfo: TaskInfo): JObject = {
