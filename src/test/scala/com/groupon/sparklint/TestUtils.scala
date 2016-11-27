@@ -41,7 +41,7 @@ object TestUtils {
     ResourceHelper.convertResourcePathToFilePath(getClass.getClassLoader, name)
   }
 
-  def replay(eventSource: EventSourceLike with FreeScrollEventSource, count: Long = Long.MaxValue) = {
+  def replay(eventSource: FreeScrollEventSource, count: Long = Long.MaxValue) = {
     var counter = 0
     while (counter < count && eventSource.hasNext) {
       eventSource.forwardEvents()
@@ -51,14 +51,6 @@ object TestUtils {
 
   def sparkStageSubmittedEvent(id: Int, name: String): SparkListenerEvent = {
     SparkListenerStageSubmitted(new StageInfo(id, 42, name, 42, Seq.empty, Seq.empty, "details"))
-  }
-
-  def stubEventDetails(appId: String): EventSourceDetail = {
-    EventSourceDetail(StubEventSource(appId), StubEventState(), new EventSourceProgress())
-  }
-
-  def stubEventDetails(eventSource: EventSourceLike): EventSourceDetail = {
-    EventSourceDetail(eventSource, StubEventState(), new EventSourceProgress())
   }
 
   def sparkAppStart(name: String = TEST_NAME,

@@ -12,27 +12,14 @@
 */
 package com.groupon.sparklint.events
 
-import java.io.File
-
-import com.groupon.sparklint.SparklintServer._
-
-import scala.util.{Failure, Success, Try}
-
 /**
   * Implementations of this trait are capable of managing the list of event sources for a specific configuration of
   * Sparklint.
   *
-  * @author swhitear 
+  * @author swhitear
   * @since 9/13/16.
   */
 trait EventSourceManagerLike {
-
-  /**
-    * Adds an EventSourceDetail instance to the manager.
-    *
-    * @param eventSource the EventSourceDetail instance to add.
-    */
-  def addEventSource(eventSource: EventSourceDetail): Unit
 
   /**
     * The number of sources currently in the manager.
@@ -46,33 +33,45 @@ trait EventSourceManagerLike {
     *
     * @return
     */
-  def eventSources: Iterable[EventSourceDetail]
+  def eventSourceDetails: Iterable[EventSourceDetail]
 
   /** True if the current set of managed EventSourceLike instances contains the specified appId.
     *
     * @param appId The appId to check for.
     * @return True if it exists, false otherwise.
     */
-  def containsAppId(appId: String): Boolean
+  def containsEventSourceId(appId: String): Boolean
 
   /**
-    * Provides indexed access to the EventSourceLike instances by appId.
+    * Provides indexed access to the EventSourceDetail instances by appId.
     *
-    * @param appId The appId of the EventSourceLike instance to return.
+    * @param appId The appId of the EventSourceDetail instance to return.
     * @throws NoSuchElementException When the specified appId does not exist.
-    * @return The specified EventSourceLike instance.
+    * @return The specified EventSourceDetail instance wrapping hte EventSource and associated receivers.
     */
   @throws[NoSuchElementException]
-  def getSource(appId: String): EventSourceDetail
+  def getSourceDetail(appId: String): EventSourceDetail
 
+  /**
+    * Provides indexed access to any wrapped EventSourceLike instances that extend FreeScrollEventSource.
+    *
+    * @param appId The appId of the EventSourceDetail instance to return.
+    * @throws NoSuchElementException When the specified appId does not exist.
+    * @return
+    */
   @throws[NoSuchElementException]
   def getScrollingSource(appId: String): FreeScrollEventSource
 
 }
 
-case class EventSourceDetail(source: EventSourceLike, state: EventStateLike, progress: EventSourceProgressLike) {
-  def forwardIfPossible() = source match {
-    case scrollable: FreeScrollEventSource => scrollable.toEnd()
-    case _ =>
-  }
-}
+/**
+  * A case class wrapping the three current event receivers, allows views to access by name.
+  * @param eventSourceId the id of the event source associated with the detailed state info.
+  * @param meta an EventSourceMetaLike instance containing metadata about the application.
+  * @param progress an EventProgressTrackerLike instance containing progress of various event types.
+  * @param state an EventStateManagerLike containing the current aggregated event state.
+  */
+case class EventSourceDetail(eventSourceId: String,
+                             meta: EventSourceMetaLike,
+                             progress: EventProgressTrackerLike,
+                             state: EventStateManagerLike)

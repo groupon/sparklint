@@ -1,25 +1,36 @@
 package com.groupon.sparklint.events
 
+import com.groupon.sparklint.data.SparklintStateLike
+import com.groupon.sparklint.data.compressed.CompressedState
 import org.apache.spark.scheduler._
 
 import scala.collection.mutable.ArrayBuffer
 
 /**
-  * Routes all events to a list based on their process type (preproc, on, un).
   *
   * @author swhitear 
   * @since 11/16/16.
   */
-class StubEventReceiver() extends EventReceiverLike {
+class StubEventStateManager(val onEvents: ArrayBuffer[SparkListenerEvent] = ArrayBuffer.empty,
+                            val unEvents: ArrayBuffer[SparkListenerEvent] = ArrayBuffer.empty,
+                            val state: SparklintStateLike = CompressedState.empty)
+  extends EventStateManagerLike {
 
   val preprocEvents = ArrayBuffer.empty[SparkListenerEvent]
-  val onEvents      = ArrayBuffer.empty[SparkListenerEvent]
-  val unEvents      = ArrayBuffer.empty[SparkListenerEvent]
 
   def eventCount = preprocEvents.size + onEvents.size + unEvents.size
+
   def preprocCount = preprocEvents.size
+
   def onCount = onEvents.size
+
   def unCount = unEvents.size
+
+  override def onEvent(event: SparkListenerEvent): Unit = onEvents += event
+
+  override def unEvent(event: SparkListenerEvent): Unit = unEvents += event
+
+  override def getState: SparklintStateLike = state
 
   override def preprocAddApp(event: SparkListenerApplicationStart): Unit = appendPreproc(event)
 
@@ -45,29 +56,29 @@ class StubEventReceiver() extends EventReceiverLike {
 
   override def preprocEndApp(event: SparkListenerApplicationEnd): Unit = appendPreproc(event)
 
-  override def addApp(event: SparkListenerApplicationStart): Unit = appendOn(event)
+  override def onAddApp(event: SparkListenerApplicationStart): Unit = appendOn(event)
 
-  override def addExecutor(event: SparkListenerExecutorAdded): Unit = appendOn(event)
+  override def onAddExecutor(event: SparkListenerExecutorAdded): Unit = appendOn(event)
 
-  override def removeExecutor(event: SparkListenerExecutorRemoved): Unit = appendOn(event)
+  override def onRemoveExecutor(event: SparkListenerExecutorRemoved): Unit = appendOn(event)
 
-  override def addBlockManager(event: SparkListenerBlockManagerAdded): Unit = appendOn(event)
+  override def onAddBlockManager(event: SparkListenerBlockManagerAdded): Unit = appendOn(event)
 
-  override def jobStart(event: SparkListenerJobStart): Unit = appendOn(event)
+  override def onJobStart(event: SparkListenerJobStart): Unit = appendOn(event)
 
-  override def stageSubmitted(event: SparkListenerStageSubmitted): Unit = appendOn(event)
+  override def onStageSubmitted(event: SparkListenerStageSubmitted): Unit = appendOn(event)
 
-  override def taskStart(event: SparkListenerTaskStart): Unit = appendOn(event)
+  override def onTaskStart(event: SparkListenerTaskStart): Unit = appendOn(event)
 
-  override def taskEnd(event: SparkListenerTaskEnd): Unit = appendOn(event)
+  override def onTaskEnd(event: SparkListenerTaskEnd): Unit = appendOn(event)
 
-  override def stageCompleted(event: SparkListenerStageCompleted): Unit = appendOn(event)
+  override def onStageCompleted(event: SparkListenerStageCompleted): Unit = appendOn(event)
 
-  override def jobEnd(event: SparkListenerJobEnd): Unit = appendOn(event)
+  override def onJobEnd(event: SparkListenerJobEnd): Unit = appendOn(event)
 
-  override def unpersistRDD(event: SparkListenerUnpersistRDD): Unit = appendOn(event)
+  override def onUnpersistRDD(event: SparkListenerUnpersistRDD): Unit = appendOn(event)
 
-  override def endApp(event: SparkListenerApplicationEnd): Unit = appendUn(event)
+  override def onEndApp(event: SparkListenerApplicationEnd): Unit = appendUn(event)
 
   override def unAddApp(event: SparkListenerApplicationStart): Unit = appendUn(event)
 
@@ -93,19 +104,10 @@ class StubEventReceiver() extends EventReceiverLike {
 
   override def unEndApp(event: SparkListenerApplicationEnd): Unit = appendUn(event)
 
-
   private def appendPreproc(event: SparkListenerEvent) = preprocEvents += event
 
-  private def appendOn(event: SparkListenerEvent) =  onEvents += event
+  private def appendOn(event: SparkListenerEvent) = onEvents += event
 
-  private def appendUn(event: SparkListenerEvent) =  unEvents += event
+  private def appendUn(event: SparkListenerEvent) = unEvents += event
 
 }
-
-abstract class ProcType(procType: String)
-
-case class Preproc() extends ProcType("preprocess")
-
-case class On() extends ProcType("on")
-
-case class Un() extends ProcType("un")

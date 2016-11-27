@@ -30,6 +30,10 @@ trait SparklintStateLike {
 
   def lastUpdatedAt: Long
 
+  def stageIdLookup: Map[Int, StageIdentifier]
+
+  def applicationEndedAt: Option[Long]
+
   def coreUsage: Map[TaskLocality, MetricsSink]
 
   lazy val aggregatedCoreUsage: MetricsSink = {

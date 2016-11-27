@@ -22,7 +22,7 @@ import org.apache.spark.scheduler.SparkListenerEvent
   * @author swhitear 
   * @since 9/10/16.
   */
-trait EventStateLike extends EventReceiverLike {
+trait EventStateManagerLike extends EventReceiverLike {
 
   /**
     * The current EventState represented as a SparklintState object.

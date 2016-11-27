@@ -18,8 +18,7 @@ package com.groupon.sparklint.events
   * @author swhitear
   * @since 8/18/16.
   */
-trait FreeScrollEventSource {
-  self: EventSourceLike =>
+trait FreeScrollEventSource extends EventSourceLike {
 
   @throws[IllegalArgumentException]
   def forwardEvents(count: Int = 1): Unit

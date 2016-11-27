@@ -20,20 +20,18 @@ import com.groupon.sparklint.common.Logging
   * @author rxue
   * @since 9/22/16.
   */
-case class EventSourceDirectory(eventSourceManager: EventSourceManagerLike, dir: File, runImmediately: Boolean)
+class EventSourceDirectory(eventSourceManager: FileEventSourceManager, val dir: File, runImmediately: Boolean)
   extends Logging {
 
   implicit val logger: Logging = this
 
   private var loadedFileNames = Set.empty[String]
-  private val factory         = new FileEventSourceFactory
 
-  def poll(eventSourceManager: EventSourceManagerLike): Unit = {
+  def poll(): Unit = {
     newFiles.foreach(file => {
-      val loadedDetail = factory.buildEventSourceDetail(file) match {
-        case Some(detail) =>
-          if (runImmediately) detail.forwardIfPossible
-          eventSourceManager.addEventSource(detail)
+      eventSourceManager.addFile(file) match {
+        case Some(fileSource) =>
+          if (runImmediately) fileSource.forwardIfPossible()
           loadedFileNames = loadedFileNames + file.getName
         case None         =>
           logger.logWarn(s"Failed to construct source from ${file.getName}")

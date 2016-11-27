@@ -12,6 +12,7 @@
 */
 package com.groupon.sparklint.events
 
+import org.apache.spark.groupon.SparkListenerLogStartShim
 import org.apache.spark.scheduler._
 
 /**
@@ -39,6 +40,10 @@ trait EventReceiverLike {
 
   // Preprocessing base no-ops
 
+  protected def preprocLogStart(event: SparkListenerLogStartShim): Unit = {}
+
+  protected def preprocEnvironmentUpdate(event: SparkListenerEnvironmentUpdate): Unit = {}
+
   protected def preprocAddApp(event: SparkListenerApplicationStart): Unit = {}
 
   protected def preprocAddExecutor(event: SparkListenerExecutorAdded): Unit = {}
@@ -46,6 +51,8 @@ trait EventReceiverLike {
   protected def preprocRemoveExecutor(event: SparkListenerExecutorRemoved): Unit = {}
 
   protected def preprocAddBlockManager(event: SparkListenerBlockManagerAdded): Unit = {}
+
+  protected def preprocRemoveBlockManager(event: SparkListenerBlockManagerRemoved): Unit = {}
 
   protected def preprocJobStart(event: SparkListenerJobStart): Unit = {}
 
@@ -66,32 +73,42 @@ trait EventReceiverLike {
 
   // On events base no-ops
 
-  protected def addApp(event: SparkListenerApplicationStart): Unit = {}
+  protected def onLogStart(event: SparkListenerLogStartShim): Unit = {}
 
-  protected def addExecutor(event: SparkListenerExecutorAdded): Unit = {}
+  protected def onEnvironmentUpdate(event: SparkListenerEnvironmentUpdate): Unit = {}
 
-  protected def removeExecutor(event: SparkListenerExecutorRemoved): Unit = {}
+  protected def onAddApp(event: SparkListenerApplicationStart): Unit = {}
 
-  protected def addBlockManager(event: SparkListenerBlockManagerAdded): Unit = {}
+  protected def onAddExecutor(event: SparkListenerExecutorAdded): Unit = {}
 
-  protected def jobStart(event: SparkListenerJobStart): Unit = {}
+  protected def onRemoveExecutor(event: SparkListenerExecutorRemoved): Unit = {}
 
-  protected def stageSubmitted(event: SparkListenerStageSubmitted): Unit = {}
+  protected def onAddBlockManager(event: SparkListenerBlockManagerAdded): Unit = {}
 
-  protected def taskStart(event: SparkListenerTaskStart): Unit = {}
+  protected def onRemoveBlockManager(event: SparkListenerBlockManagerRemoved): Unit = {}
 
-  protected def taskEnd(event: SparkListenerTaskEnd): Unit = {}
+  protected def onJobStart(event: SparkListenerJobStart): Unit = {}
 
-  protected def stageCompleted(event: SparkListenerStageCompleted): Unit = {}
+  protected def onStageSubmitted(event: SparkListenerStageSubmitted): Unit = {}
 
-  protected def jobEnd(event: SparkListenerJobEnd): Unit = {}
+  protected def onTaskStart(event: SparkListenerTaskStart): Unit = {}
 
-  protected def unpersistRDD(event: SparkListenerUnpersistRDD): Unit = {}
+  protected def onTaskEnd(event: SparkListenerTaskEnd): Unit = {}
 
-  protected def endApp(event: SparkListenerApplicationEnd): Unit = {}
+  protected def onStageCompleted(event: SparkListenerStageCompleted): Unit = {}
+
+  protected def onJobEnd(event: SparkListenerJobEnd): Unit = {}
+
+  protected def onUnpersistRDD(event: SparkListenerUnpersistRDD): Unit = {}
+
+  protected def onEndApp(event: SparkListenerApplicationEnd): Unit = {}
 
 
   // Un event base no-ops
+
+  protected def unLogStart(event: SparkListenerLogStartShim): Unit = {}
+
+  protected def unEnvironmentUpdate(event: SparkListenerEnvironmentUpdate): Unit = {}
 
   protected def unAddApp(event: SparkListenerApplicationStart): Unit = {}
 
@@ -100,6 +117,8 @@ trait EventReceiverLike {
   protected def unRemoveExecutor(event: SparkListenerExecutorRemoved): Unit = {}
 
   protected def unAddBlockManager(event: SparkListenerBlockManagerAdded): Unit = {}
+
+  protected def unRemoveBlockManager(event: SparkListenerBlockManagerRemoved): Unit = {}
 
   protected def unJobStart(event: SparkListenerJobStart): Unit = {}
 
@@ -122,57 +141,66 @@ trait EventReceiverLike {
   def preprocess(event: SparkListenerEvent): Unit = synchronized {
     onPreprocEvent(event)
     event match {
-      case event: SparkListenerApplicationStart  => preprocAddApp(event)
-      case event: SparkListenerExecutorAdded     => preprocAddExecutor(event)
-      case event: SparkListenerExecutorRemoved   => preprocRemoveExecutor(event)
-      case event: SparkListenerBlockManagerAdded => preprocAddBlockManager(event)
-      case event: SparkListenerJobStart          => preprocJobStart(event)
-      case event: SparkListenerStageSubmitted    => preprocStageSubmitted(event)
-      case event: SparkListenerTaskStart         => preprocTaskStart(event)
-      case event: SparkListenerTaskEnd           => preprocTaskEnd(event)
-      case event: SparkListenerStageCompleted    => preprocStageCompleted(event)
-      case event: SparkListenerJobEnd            => preprocJobEnd(event)
-      case event: SparkListenerUnpersistRDD      => preprocUnpersistRDD(event)
-      case event: SparkListenerApplicationEnd    => preprocEndApp(event)
-      case _                                     =>
+      case event: SparkListenerLogStartShim        => preprocLogStart(event)
+      case event: SparkListenerEnvironmentUpdate   => preprocEnvironmentUpdate(event)
+      case event: SparkListenerApplicationStart    => preprocAddApp(event)
+      case event: SparkListenerExecutorAdded       => preprocAddExecutor(event)
+      case event: SparkListenerExecutorRemoved     => preprocRemoveExecutor(event)
+      case event: SparkListenerBlockManagerAdded   => preprocAddBlockManager(event)
+      case event: SparkListenerBlockManagerRemoved => preprocRemoveBlockManager(event)
+      case event: SparkListenerJobStart            => preprocJobStart(event)
+      case event: SparkListenerStageSubmitted      => preprocStageSubmitted(event)
+      case event: SparkListenerTaskStart           => preprocTaskStart(event)
+      case event: SparkListenerTaskEnd             => preprocTaskEnd(event)
+      case event: SparkListenerStageCompleted      => preprocStageCompleted(event)
+      case event: SparkListenerJobEnd              => preprocJobEnd(event)
+      case event: SparkListenerUnpersistRDD        => preprocUnpersistRDD(event)
+      case event: SparkListenerApplicationEnd      => preprocEndApp(event)
+      case _                                       =>
     }
   }
 
   def onEvent(event: SparkListenerEvent): Unit = synchronized {
-   onOnEvent(event)
-   event match {
-      case event: SparkListenerApplicationStart  => addApp(event)
-      case event: SparkListenerExecutorAdded     => addExecutor(event)
-      case event: SparkListenerExecutorRemoved   => removeExecutor(event)
-      case event: SparkListenerBlockManagerAdded => addBlockManager(event)
-      case event: SparkListenerJobStart          => jobStart(event)
-      case event: SparkListenerStageSubmitted    => stageSubmitted(event)
-      case event: SparkListenerTaskStart         => taskStart(event)
-      case event: SparkListenerTaskEnd           => taskEnd(event)
-      case event: SparkListenerStageCompleted    => stageCompleted(event)
-      case event: SparkListenerJobEnd            => jobEnd(event)
-      case event: SparkListenerUnpersistRDD      => unpersistRDD(event)
-      case event: SparkListenerApplicationEnd    => endApp(event)
-      case _                                     =>
+    onOnEvent(event)
+    event match {
+      case event: SparkListenerLogStartShim        => onLogStart(event)
+      case event: SparkListenerEnvironmentUpdate   => onEnvironmentUpdate(event)
+      case event: SparkListenerApplicationStart    => onAddApp(event)
+      case event: SparkListenerExecutorAdded       => onAddExecutor(event)
+      case event: SparkListenerExecutorRemoved     => onRemoveExecutor(event)
+      case event: SparkListenerBlockManagerAdded   => onAddBlockManager(event)
+      case event: SparkListenerBlockManagerRemoved => onRemoveBlockManager(event)
+      case event: SparkListenerJobStart            => onJobStart(event)
+      case event: SparkListenerStageSubmitted      => onStageSubmitted(event)
+      case event: SparkListenerTaskStart           => onTaskStart(event)
+      case event: SparkListenerTaskEnd             => onTaskEnd(event)
+      case event: SparkListenerStageCompleted      => onStageCompleted(event)
+      case event: SparkListenerJobEnd              => onJobEnd(event)
+      case event: SparkListenerUnpersistRDD        => onUnpersistRDD(event)
+      case event: SparkListenerApplicationEnd      => onEndApp(event)
+      case _                                       =>
     }
   }
 
   def unEvent(event: SparkListenerEvent): Unit = synchronized {
     onUnEvent(event)
     event match {
-      case event: SparkListenerApplicationStart  => unAddApp(event)
-      case event: SparkListenerExecutorAdded     => unAddExecutor(event)
-      case event: SparkListenerExecutorRemoved   => unRemoveExecutor(event)
-      case event: SparkListenerBlockManagerAdded => unAddBlockManager(event)
-      case event: SparkListenerJobStart          => unJobStart(event)
-      case event: SparkListenerStageSubmitted    => unStageSubmitted(event)
-      case event: SparkListenerTaskStart         => unTaskStart(event)
-      case event: SparkListenerTaskEnd           => unTaskEnd(event)
-      case event: SparkListenerStageCompleted    => unStageCompleted(event)
-      case event: SparkListenerJobEnd            => unJobEnd(event)
-      case event: SparkListenerUnpersistRDD      => unUnpersistRDD(event)
-      case event: SparkListenerApplicationEnd    => unEndApp(event)
-      case _                                     =>
+      case event: SparkListenerLogStartShim        => unLogStart(event)
+      case event: SparkListenerEnvironmentUpdate   => unEnvironmentUpdate(event)
+      case event: SparkListenerApplicationStart    => unAddApp(event)
+      case event: SparkListenerExecutorAdded       => unAddExecutor(event)
+      case event: SparkListenerExecutorRemoved     => unRemoveExecutor(event)
+      case event: SparkListenerBlockManagerAdded   => unAddBlockManager(event)
+      case event: SparkListenerBlockManagerRemoved => unRemoveBlockManager(event)
+      case event: SparkListenerJobStart            => unJobStart(event)
+      case event: SparkListenerStageSubmitted      => unStageSubmitted(event)
+      case event: SparkListenerTaskStart           => unTaskStart(event)
+      case event: SparkListenerTaskEnd             => unTaskEnd(event)
+      case event: SparkListenerStageCompleted      => unStageCompleted(event)
+      case event: SparkListenerJobEnd              => unJobEnd(event)
+      case event: SparkListenerUnpersistRDD        => unUnpersistRDD(event)
+      case event: SparkListenerApplicationEnd      => unEndApp(event)
+      case _                                       =>
     }
   }
 }

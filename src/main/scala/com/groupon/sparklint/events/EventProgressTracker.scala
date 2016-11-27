@@ -25,11 +25,11 @@ import scala.collection.mutable
   * @since 9/12/16.
   */
 @throws[IllegalArgumentException]
-class EventSourceProgress(val eventProgress: EventProgressLike = EventProgress.empty(),
-                          val taskProgress: EventProgressLike = EventProgress.empty(),
-                          val stageProgress: EventProgressLike = EventProgress.empty(),
-                          val  jobProgress: EventProgressLike = EventProgress.empty())
-  extends EventSourceProgressLike with EventReceiverLike {
+class EventProgressTracker(val eventProgress: EventProgress = EventProgress.empty(),
+                           val taskProgress: EventProgress = EventProgress.empty(),
+                           val stageProgress: EventProgress = EventProgress.empty(),
+                           val  jobProgress: EventProgress = EventProgress.empty())
+  extends EventProgressTrackerLike with EventReceiverLike {
 
   require(eventProgress != null)
   require(taskProgress != null)
@@ -64,12 +64,12 @@ class EventSourceProgress(val eventProgress: EventProgressLike = EventProgress.e
     eventProgress.complete -= 1
   }
 
-  override def taskStart(event: SparkListenerTaskStart): Unit = {
+  override def onTaskStart(event: SparkListenerTaskStart): Unit = {
     taskProgress.started += 1
     taskProgress.active = taskProgress.active + taskNameFromInfo(event.taskInfo)
   }
 
-  override def taskEnd(event: SparkListenerTaskEnd): Unit = {
+  override def onTaskEnd(event: SparkListenerTaskEnd): Unit = {
     taskProgress.complete += 1
     taskProgress.active = taskProgress.active - taskNameFromInfo(event.taskInfo)
   }
@@ -84,12 +84,12 @@ class EventSourceProgress(val eventProgress: EventProgressLike = EventProgress.e
     taskProgress.active = taskProgress.active + taskNameFromInfo(event.taskInfo)
   }
 
-  override def stageSubmitted(event: SparkListenerStageSubmitted): Unit = {
+  override def onStageSubmitted(event: SparkListenerStageSubmitted): Unit = {
     stageProgress.started += 1
     stageProgress.active = stageProgress.active + event.stageInfo.name
   }
 
-  override def stageCompleted(event: SparkListenerStageCompleted): Unit = {
+  override def onStageCompleted(event: SparkListenerStageCompleted): Unit = {
     stageProgress.complete += 1
     stageProgress.active = stageProgress.active - event.stageInfo.name
   }
@@ -104,12 +104,12 @@ class EventSourceProgress(val eventProgress: EventProgressLike = EventProgress.e
     stageProgress.active = taskProgress.active + event.stageInfo.name
   }
 
-  override def jobStart(event: SparkListenerJobStart): Unit = {
+  override def onJobStart(event: SparkListenerJobStart): Unit = {
     jobProgress.started += 1
     jobProgress.active = jobProgress.active + jobNameFromInfo(event)
   }
 
-  override def jobEnd(event: SparkListenerJobEnd): Unit = {
+  override def onJobEnd(event: SparkListenerJobEnd): Unit = {
     jobProgress.complete += 1
     jobProgress.active = jobProgress.active - jobNameFromId(event.jobId)
   }
@@ -142,15 +142,14 @@ class EventSourceProgress(val eventProgress: EventProgressLike = EventProgress.e
   }
 }
 
-trait EventSourceProgressLike {
-  val eventProgress: EventProgressLike
-  val taskProgress : EventProgressLike
-  val stageProgress: EventProgressLike
-  val jobProgress  : EventProgressLike
+trait EventProgressTrackerLike {
+  val eventProgress: EventProgress
+  val taskProgress : EventProgress
+  val stageProgress: EventProgress
+  val jobProgress  : EventProgress
 }
 
-class EventProgress(var count: Int, var started: Int, var complete: Int, var active: Set[String])
-  extends EventProgressLike {
+class EventProgress(var count: Int, var started: Int, var complete: Int, var active: Set[String]) {
   require(count >= 0)
   require(started >= 0 && started <= count)
   require(complete >= 0 && complete <= count)
@@ -163,24 +162,6 @@ class EventProgress(var count: Int, var started: Int, var complete: Int, var act
 
   def description = s"Completed $complete / $count ($percent%) with $inFlightCount active$activeString."
 
-  private def activeString = if (active.isEmpty) "" else s" (${active.mkString(", ")})"
-}
-
-object EventProgress {
-  def empty(): EventProgress = new EventProgress(0, 0, 0, Set.empty)
-}
-
-trait EventProgressLike {
-
-  var count   : Int
-  var started : Int
-  var complete: Int
-  var active  : Set[String]
-
-  def percent: Long
-
-  def description: String
-
   def hasNext = complete < count
 
   def hasPrevious = complete > 0
@@ -189,4 +170,9 @@ trait EventProgressLike {
 
   override def toString: String = s"$complete of $count with $inFlightCount active"
 
+  private def activeString = if (active.isEmpty) "" else s" (${active.mkString(", ")})"
+}
+
+object EventProgress {
+  def empty(): EventProgress = new EventProgress(0, 0, 0, Set.empty)
 }

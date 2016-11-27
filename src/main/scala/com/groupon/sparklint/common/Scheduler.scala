@@ -42,23 +42,22 @@ class Scheduler extends SchedulerLike with Logging {
 /**
   * A convenient class to represent a job to be scheduled
   * @param name the name of the task
-  * @param context task input
   * @param fn task function
   * @param periodSeconds schedule interval
   * @param delaySeconds initial job delay
   * @param logger the logger used for logging
   * @tparam T the type of the task input
   */
-case class ScheduledTask[T](name: String, context: T, fn: (T) => Unit,
+case class ScheduledTask[T](name: String, fn: () => Unit,
                             periodSeconds: Int = 1, delaySeconds: Int = 0)
                            (implicit logger: Logging)
   extends TimerTask {
 
   override def run(): Unit = Try({
     logger.logInfo(s"Executing ScheduledTask $name.")
-    fn(context)
+    fn()
   }) match {
-    case Success(_) => logger.logInfo(s"Execution of $name completed with state $context")
+    case Success(_) => logger.logInfo(s"Execution of $name completed")
     case Failure(ex) => logger.logError(s"Execution of $name failed with exception.", ex)
   }
 }
