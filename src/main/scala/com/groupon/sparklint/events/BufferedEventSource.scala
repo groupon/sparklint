@@ -37,12 +37,6 @@ case class BufferedEventSource(eventSourceId: String, receivers: Seq[EventReceiv
   def startConsuming() = Future {
     while (true) {
       val event = buffer.takeFirst()
-      if (processed == 0) {
-        event match {
-          case start: SparkListenerExecutorAdded =>
-            startTimeOpt = Some(start.time)
-        }
-      }
       receivers.foreach(r => {
         r.preprocess(event)
         r.onEvent(event)
