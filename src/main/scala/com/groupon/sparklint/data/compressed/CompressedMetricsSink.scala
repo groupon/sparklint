@@ -53,6 +53,10 @@ class CompressedMetricsSink(override val resolution: Long,
    */
   def batchAddUsage(pairs: Seq[(Long, Long)], weight: Int): CompressedMetricsSink = {
     val inputInterval = Interval(pairs.map(_._1).min, pairs.map(_._2).max)
+    if (inputInterval.minimum < origin)
+      throw new IllegalArgumentException(
+        s"minimum of input sequence is < origin: ${inputInterval.minimum} < $origin")
+
     val desiredIndex = toBucketIndex(inputInterval.maximum)
     val (newStorage, newResolution) = if (desiredIndex >= length) {
       val desiredRatio = (desiredIndex / length) + 1

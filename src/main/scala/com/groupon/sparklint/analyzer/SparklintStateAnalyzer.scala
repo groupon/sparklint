@@ -141,7 +141,11 @@ class SparklintStateAnalyzer(val source: EventSourceMetaLike, val stateManager: 
   private[analyzer] def getAllocatedCores(numBuckets: Int): MetricsSink = {
     var sink = CompressedMetricsSink.empty(source.startTime, numBuckets)
     state.executorInfo.values.foreach(executorInfo => {
-      sink = sink.addUsage(executorInfo.startTime, executorInfo.endTime.getOrElse(state.lastUpdatedAt), executorInfo.cores)
+      val startTime = executorInfo.startTime
+      val endTime = executorInfo.endTime.getOrElse(state.lastUpdatedAt)
+      if (endTime >= startTime)
+        sink = sink.addUsage(startTime, endTime, executorInfo.cores)
+      // TODO: handle invalid interval
     })
     sink
   }
