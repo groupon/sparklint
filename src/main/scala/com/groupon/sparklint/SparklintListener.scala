@@ -31,7 +31,7 @@ class SparklintListener(appId: String, appName: String, val uiServerPort: Int) e
     this(
       conf.get("spark.app.id", "AppId"),
       conf.get("spark.app.name", "AppName"),
-      conf.get("sparklint.ui.port", UIServer.DEFAULT_PORT.toString).toInt
+      conf.get("spark.sparklint.ui.port", UIServer.DEFAULT_PORT.toString).toInt
     )
   }
 
