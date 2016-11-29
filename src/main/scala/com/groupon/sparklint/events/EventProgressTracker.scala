@@ -158,9 +158,9 @@ class EventProgress(var count: Int, var started: Int, var complete: Int, var act
 
   def safeCount: Double = if (count == 0) 1 else count
 
-  def percent = ((complete / safeCount) * 100).round
+  def percent = ((complete / safeCount) * 100).round.toInt
 
-  def description = s"Completed $complete / $count ($percent%) with $inFlightCount active$activeString."
+  //def description = s"Completed $complete / $count ($percent%) with $inFlightCount active$activeString."
 
   def hasNext = complete < count
 

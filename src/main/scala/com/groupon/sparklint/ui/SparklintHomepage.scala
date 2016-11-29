@@ -31,17 +31,23 @@ class SparklintHomepage(sourceManager: EventSourceManagerLike) extends UITemplat
     * @return
     */
 
-  override val title: String = "Sparklint"
+  override val title      : String = "Sparklint"
   override val description: String = "Performance Analyzer for Apache Spark"
-  override val author: String = "Groupon"
+  override val author     : String = "Groupon"
 
   override protected def extraScripts: Seq[Node] = Seq(
     <script src="/static/js/sparklintHomepage.js"></script>
   )
 
+  override protected def extraCSS: Seq[Node] = Seq(
+      <link rel="stylesheet" type="text/css" href="/static/css/sparklint.css"/>
+  )
+
   override def content: Seq[Node] =
-    <div id="wrapper">{navbar}
-      <div id="page-wrapper">{mainContainer}</div>
+    <div id="wrapper">
+      {navbar}<div id="page-wrapper">
+      {mainContainer}
+    </div>
     </div>
 
   def navbar: Seq[Node] =
@@ -57,8 +63,7 @@ class SparklintHomepage(sourceManager: EventSourceManagerLike) extends UITemplat
         <div class="sidebar-nav navbar-collapse">
           <ul class="nav" id="side-menu">
             {for (source <- sourceManager.eventSourceDetails)
-            yield navbarItem(source.eventSourceId, source.meta, source.progress)}
-            {navbarReplayControl}
+            yield navbarItem(source.eventSourceId, source.meta, source.progress)}{navbarReplayControl}
           </ul>
         </div>
       </div>
@@ -67,19 +72,21 @@ class SparklintHomepage(sourceManager: EventSourceManagerLike) extends UITemplat
   def navbarItem(esId: String, meta: EventSourceMetaLike, progress: EventProgressTrackerLike): Seq[Node] =
     <li data-value={esId}>
       <a href="#" class="sparklintApp" data-value={esId}>
-        <strong>App: </strong>{meta.nameOrId}
-        <p class="text-center" id={uniqueId(esId, "app-prog")}>
-        {progress.eventProgress.description}
-      </p>
-        <div class="progress active">
-          <div class="progress-bar" role="progressbar" id={uniqueId(esId, "progress-bar")}
-               aria-valuenow={progress.eventProgress.percent.toString} aria-valuemin="0" aria-valuemax="100"
-               style={widthStyle(progress.eventProgress)}>
-          </div>
+        <div class="nav-bar-text">{meta.nameOrId}</div>
+        <div class="nav-bar-text" id={uniqueId(esId, "text")}>
+          <strong class="slight_right_pad">Events:</strong>{eventProgressDescription(progress.eventProgress)}</div>
+        <div class="progress active spark-progress">
+          {progressBar(uniqueId(esId, "progress-bar"), progress.eventProgress.percent)}
         </div>
       </a>
     </li>
     <li class="divider"></li>
+
+  def progressBar(controlId: String, value: Int = 0): Seq[Node] =
+    <div class="progress-bar" role="progressbar" id={controlId}
+           aria-valuenow={value.toString} aria-valuemin="0" aria-valuemax="100"
+           style={widthStyle(value)}>
+    </div>
 
   def navbarReplayControl: Seq[Node] =
     <li class="sidebar-search">
@@ -105,8 +112,9 @@ class SparklintHomepage(sourceManager: EventSourceManagerLike) extends UITemplat
         </select>
         <select class="form-control" id="typeSelector">
           {for (navType <- EventType.ALL_TYPES) yield
-          <option>{navType}</option>
-          }
+          <option>
+            {navType}
+          </option>}
         </select>
         <div class="input-group-btn">
           <button type="button" class="btn btn-default" title="Forward" id="eventsForward">
@@ -125,33 +133,80 @@ class SparklintHomepage(sourceManager: EventSourceManagerLike) extends UITemplat
         <div class="col-md-12">
           <div class="alert alert-danger" id="error-message">
           </div>
-        </div>
-        <div class="col-md-12">
-          <h1 class="page-header">
-            <span id="appName">Sparklint</span>
-            <small id="appId">Select an app from left side</small>
-          </h1>
-        </div>
-        <div class="col-md-12">
-          <div class="alert alert-success" id="summaryApplicationEndedAlert">
-            <span id="summaryApplicationDuration"></span>
-          </div>
-          <div class="progress">
-            <div id="summaryApplicationProgress" class="progress-bar" role="progressbar"
-                 aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" style="width: 0%">
-              <span class="sr-only"></span>
-            </div>
-          </div>
-        </div>
-      </div>
-      {summaryRow}
-      <div class="row">
-        <div class="col-lg-12">
-          {coreUsageTimeSeries}{coreUsageDistribution}{taskDistributionList}
-        </div>
+        </div>{richTopBar}
+      </div>{summaryRow}<div class="row">
+      <div class="col-lg-12">
+        {coreUsageTimeSeries}{coreUsageDistribution}{taskDistributionList}
       </div>
     </div>
+    </div>
     <div class="loading-spinner">
+    </div>
+
+  def richTopBar: Seq[Node] =
+    <div class="col-md-10 header-app-name">
+      <h2 class="panel">
+        <span id="appName">Sparklint</span>
+        <small id="appId">Select an app from left side</small>
+      </h2>
+    </div>
+    <div class="col-md-4">
+      <div class="table-responsive" id="summary-meta" style="display:None">
+        <table class="table table-bordered meta-table">
+          <tbody>
+            <tr>
+              <th class="meta-header">Host</th>
+              <td id="spark_host"></td>
+            </tr>
+            <tr>
+              <th class="meta-header">Start</th>
+              <td id="spark_start"></td>
+            </tr>
+            <tr>
+              <th class="meta-header">End</th>
+              <td id="spark_end"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="col-md-8">
+      <div class="table-responsive" id="detailed-progress" style="display:None">
+        <table class="table table-bordered meta-table">
+          <tbody>
+            <tr>
+              <th class="meta-header">Tasks</th>
+              <td class="spark-progress-text" id="task-progress-text"></td>
+              <td class="spark-progress-container">
+                <div class="progress active spark-progress spark-progress-centered">
+                  {progressBar("task-progress-bar", 0)}
+                </div>
+              </td>
+              <td class="spark-progress-text" id="task-progress-active"></td>
+            </tr>
+            <tr>
+              <th class="meta-header">Stages</th>
+              <td class="spark-progress-text" id="stage-progress-text"></td>
+              <td class="spark-progress-container">
+                <div class="progress active spark-progress spark-progress-centered">
+                  {progressBar("stage-progress-bar", 0)}
+                </div>
+              </td>
+              <td class="spark-progress-text" id="stage-progress-active"></td>
+            </tr>
+            <tr>
+              <th class="meta-header">Jobs</th>
+              <td class="spark-progress-text" id="job-progress-text"></td>
+              <td class="spark-progress-container">
+                <div class="progress active spark-progress spark-progress-centered">
+                  {progressBar("job-progress-bar", 0)}
+                </div>
+              </td>
+              <td class="spark-progress-text" id="job-progress-active"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
     </div>
 
   def summaryRow: Seq[Node] =
@@ -293,7 +348,11 @@ class SparklintHomepage(sourceManager: EventSourceManagerLike) extends UITemplat
       <!-- /.panel-body -->
     </div>
 
-  private def widthStyle(esp: EventProgress) = s"width: ${esp.percent}%"
+  private def widthStyle(percent: Int) = s"width: ${percent.toString}%"
 
   private def uniqueId(appId: String, idType: String) = s"$appId-$idType"
+
+  private def eventProgressDescription(progress: EventProgress) = {
+    s"${progress.complete} / ${progress.count} (${progress.percent}%)"
+  }
 }

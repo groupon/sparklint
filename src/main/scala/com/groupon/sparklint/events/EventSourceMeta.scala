@@ -103,10 +103,12 @@ class EventSourceMeta extends EventSourceMetaLike with EventReceiverLike {
     appNameOpt = Some(event.appName)
     userOpt = Some(event.sparkUser)
     startTimeOpt = Some(event.time)
+    println(s"Set start time to ${event.time}")
   }
 
   private def setAppEndState(event: SparkListenerApplicationEnd) = {
     endTimeOpt = Some(event.time)
+    println(s"Set end time to ${event.time}")
   }
 
   override def toString: String = s"AppId: $appId, Name: $appName"

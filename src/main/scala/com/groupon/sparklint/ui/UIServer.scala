@@ -70,7 +70,7 @@ class UIServer(esManager: EventSourceManagerLike)
   private def state(appId: String): String = {
     val detail = esManager.getSourceDetail(appId)
     val report = new SparklintStateAnalyzer(detail.meta, detail.state)
-    pretty(UIServer.reportJson(report, detail.progress))
+    pretty(UIServer.reportJson(detail.meta, report, detail.progress))
   }
 
   private def eventSource(appId: String): String = {
@@ -147,10 +147,11 @@ class UIServer(esManager: EventSourceManagerLike)
 
 object UIServer {
 
-  def reportJson(report: SparklintStateAnalyzer,
+  def reportJson(source: EventSourceMetaLike,
+                 report: SparklintStateAnalyzer,
                  progress: EventProgressTrackerLike): JObject = {
     implicit val formats = DefaultFormats
-    val source = report.source
+    //val source = report.source
     ("appName" -> source.appName) ~
       ("appId" -> source.appId) ~
       ("allocatedCores" -> report.getExecutorInfo.map(_.values.map(_.cores).sum)) ~
@@ -189,13 +190,29 @@ object UIServer {
       ("lastUpdatedAt" -> report.getLastUpdatedAt) ~
       ("applicationLaunchedAt" -> source.startTime) ~
       ("applicationEndedAt" -> source.endTime) ~
+      ("user" -> source.user) ~
+      ("host" -> source.host) ~
+      ("port" -> source.port) ~
       ("progress" -> progressJson(progress))
   }
 
-  def progressJson(progressTracker: EventProgressTrackerLike) = {
-    ("percent" -> progressTracker.eventProgress.percent) ~
-      ("description" -> progressTracker.eventProgress.description) ~
-      ("has_next" -> progressTracker.eventProgress.hasNext) ~
-      ("has_previous" -> progressTracker.eventProgress.hasPrevious)
+  def progressJson(progressTracker: EventProgressTrackerLike): JObject = {
+    ("events" -> progressJson(progressTracker.eventProgress)) ~
+      ("tasks" -> progressJson(progressTracker.taskProgress)) ~
+      ("stages" -> progressJson(progressTracker.stageProgress)) ~
+      ("jobs" -> progressJson(progressTracker.jobProgress))
   }
+
+  def progressJson(progress: EventProgress): JObject = {
+    ("percent" -> progress.percent) ~
+      ("count" -> progress.count) ~
+      ("started" -> progress.started) ~
+      ("complete" -> progress.complete) ~
+      ("in_flight" -> progress.inFlightCount) ~
+      ("active" -> progress.active) ~
+      ("has_next" -> progress.hasNext) ~
+      ("has_previous" -> progress.hasPrevious)
+  }
+
+
 }
