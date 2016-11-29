@@ -53,7 +53,11 @@ class CompressedMetricsSink(override val resolution: Long,
    */
   def batchAddUsage(pairs: Seq[(Long, Long)], weight: Int): CompressedMetricsSink = {
     val inputInterval = Interval(pairs.map(_._1).min, pairs.map(_._2).max)
-    val desiredIndex = getBucketIndex(inputInterval.maximum)
+    if (inputInterval.minimum < origin)
+      throw new IllegalArgumentException(
+        s"minimum of input sequence is < origin: ${inputInterval.minimum} < $origin")
+
+    val desiredIndex = toBucketIndex(inputInterval.maximum)
     val (newStorage, newResolution) = if (desiredIndex >= length) {
       val desiredRatio = (desiredIndex / length) + 1
       val compactRatio = compactRatioUntil(desiredRatio)
@@ -62,8 +66,8 @@ class CompressedMetricsSink(override val resolution: Long,
       (storage.toBuffer, resolution)
     }
     pairs.foreach({ case (startTime, endTime) =>
-      val startBucket = getBucketIndexWithNewResolution(startTime, newResolution)
-      val endBucket = getBucketIndexWithNewResolution(endTime, newResolution)
+      val startBucket = getBucketIndex(startTime, newResolution)
+      val endBucket = getBucketIndex(endTime, newResolution)
       if (startBucket == endBucket) {
         newStorage(startBucket) += (endTime - startTime) * weight
       } else {
@@ -88,10 +92,6 @@ class CompressedMetricsSink(override val resolution: Long,
     require(toResolution >= resolution)
     val compactRatio = toResolution / resolution
     new CompressedMetricsSink(toResolution, dataRange, origin, compactStorage(compactRatio).toArray)
-  }
-
-  private[data] def getBucketIndexWithNewResolution(time: Long, resolutionToUse: Long): Int = {
-    ((time - bucketStart) / resolutionToUse).toInt
   }
 
   /**

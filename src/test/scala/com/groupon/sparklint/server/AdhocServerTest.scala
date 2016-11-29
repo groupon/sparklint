@@ -51,7 +51,7 @@ class AdhocServerTest extends FlatSpec with BeforeAndAfterAll with Matchers {
     val service = getService
     try {
       service.startServer(None)
-      service.server.get.address.getPort shouldBe service.DEFAULT_PORT
+      service.server.get.address.getPort should (be >= service.DEFAULT_PORT)
     } finally {
       service.stopServer()
     }

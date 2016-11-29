@@ -50,8 +50,16 @@ trait MetricsSink {
 
   def nonEmpty: Boolean = dataRange.nonEmpty
 
-  def getBucketIndex(time: Long): Int = {
-    ((time - bucketStart) / resolution).toInt
+  def getBucketIndex(time: Long, resolution: Long = resolution): Int = {
+    val longIndex: Long = toBucketIndex(time, resolution)
+    if (longIndex < 0 || longIndex >= length)
+      throw new IllegalArgumentException(
+        s"Computed index $longIndex out of bounds for time=$time and resolution=$resolution")
+    longIndex.toInt
+  }
+
+  def toBucketIndex(time: Long, resolution: Long = resolution): Long = {
+    (time - bucketStart) / resolution
   }
 
   def changeResolution(toResolution: Long): MetricsSink

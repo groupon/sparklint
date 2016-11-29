@@ -12,9 +12,9 @@
 */
 package com.groupon.sparklint.events
 
-import java.util.concurrent.{BlockingQueue, LinkedBlockingDeque}
+import java.util.concurrent.{BlockingDeque, LinkedBlockingDeque}
 
-import org.apache.spark.scheduler.SparkListenerEvent
+import org.apache.spark.scheduler.{SparkListenerEvent, SparkListenerExecutorAdded}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -28,15 +28,15 @@ import scala.concurrent.Future
 case class BufferedEventSource(eventSourceId: String, receivers: Seq[EventReceiverLike])
   extends EventSourceLike {
 
-  val buffer: BlockingQueue[SparkListenerEvent] = new LinkedBlockingDeque()
+  val buffer: BlockingDeque[SparkListenerEvent] = new LinkedBlockingDeque()
 
   def push(event: SparkListenerEvent): Unit = {
-    buffer.add(event)
+    buffer.offerLast(event)
   }
 
   def startConsuming() = Future {
     while (true) {
-      val event = buffer.take()
+      val event = buffer.takeFirst()
       receivers.foreach(r => {
         r.preprocess(event)
         r.onEvent(event)

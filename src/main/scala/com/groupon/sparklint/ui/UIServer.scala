@@ -147,6 +147,8 @@ class UIServer(esManager: EventSourceManagerLike)
 
 object UIServer {
 
+  val DEFAULT_PORT = 23763
+
   def reportJson(report: SparklintStateAnalyzer,
                  progress: EventProgressTrackerLike): JObject = {
     implicit val formats = DefaultFormats

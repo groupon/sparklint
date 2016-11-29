@@ -43,13 +43,10 @@ SparklintServer can run on your local machine. It will read spark event logs fro
 You can feed Sparklint an event log file to playback activities.
 
 - Checking on the repo
-- Make sure you have [apache maven](https://maven.apache.org/) installed.
-- Copy spark event log files to analyze into a directory then `mvn clean scala:run "-DaddArgs=-d|/path/to/log/dir|-r"`
-- Or analyze a single log file `mvn clean scala:run "-DaddArgs=-f|/path/to/logfile|-r"`
+- Make sure you have [SBT](http://www.scala-sbt.org/) installed.
+- Copy spark event log files to analyze into a directory then `sbt "run -d /path/to/log/dir -r"`
+- Or analyze a single log file `sbt "run -f /path/to/logfile -r"`
 - Then open browser and navigate to `http://localhost:23763`
-
-> `-DaddArgs` is the scala maven plugin's way of passing commandline arguments to the application.
-> scala maven plugin use `|` to separate command line arguments
 
 The command line arguments supported are:
 

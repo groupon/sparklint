@@ -13,11 +13,8 @@
 package com.groupon.sparklint.data.compressed
 
 import com.groupon.sparklint.data._
-import org.apache.spark.executor.DataReadMethod._
 import org.apache.spark.executor._
 import org.apache.spark.util.StatCounter
-
-import scala.collection.concurrent.TrieMap
 
 /**
   * @author rxue
@@ -25,7 +22,7 @@ import scala.collection.concurrent.TrieMap
   */
 class CompressedTaskMetrics extends SparklintTaskMetrics {
   private val _outputMetrics           = new SparklintOutputMetrics()
-  private val _inputMetrics            = TrieMap.empty[DataReadMethod, SparklintInputMetrics]
+  private val _inputMetrics            = new SparklintInputMetrics()
   private val _shuffleReadMetrics      = new SparklintShuffleReadMetrics()
   private val _shuffleWriteMetrics     = new SparklintShuffleWriteMetrics()
   private val _diskBytesSpilled        = StatCounter()
@@ -38,7 +35,7 @@ class CompressedTaskMetrics extends SparklintTaskMetrics {
 
   override def outputMetrics: SparklintOutputMetrics = _outputMetrics
 
-  override def inputMetrics: Map[DataReadMethod, SparklintInputMetrics] = _inputMetrics.toMap
+  override def inputMetrics: SparklintInputMetrics = _inputMetrics
 
   override def shuffleReadMetrics: SparklintShuffleReadMetrics = _shuffleReadMetrics
 
@@ -59,10 +56,10 @@ class CompressedTaskMetrics extends SparklintTaskMetrics {
   override def executorRunTime: StatCounter = _executorRunTime.copy()
 
   def merge(taskId: Long, metrics: TaskMetrics): CompressedTaskMetrics = {
-    metrics.inputMetrics.foreach(m => _inputMetrics.getOrElseUpdate(m.readMethod, new SparklintInputMetrics()).merge(m))
-    metrics.outputMetrics.foreach(_outputMetrics.merge)
-    metrics.shuffleReadMetrics.foreach(_shuffleReadMetrics.merge)
-    metrics.shuffleWriteMetrics.foreach(_shuffleWriteMetrics.merge)
+    _inputMetrics.merge(metrics.inputMetrics)
+    _outputMetrics.merge(metrics.outputMetrics)
+    _shuffleReadMetrics.merge(metrics.shuffleReadMetrics)
+    _shuffleWriteMetrics.merge(metrics.shuffleWriteMetrics)
     _diskBytesSpilled.merge(metrics.diskBytesSpilled)
     _memoryBytesSpilled.merge(metrics.memoryBytesSpilled)
     _executorDeserializeTime.merge(metrics.executorDeserializeTime)

@@ -19,6 +19,9 @@ package com.groupon.sparklint.data
   * @param maximum
   */
 case class Interval(minimum: Long, maximum: Long) {
+  if (minimum.compareTo(maximum) > 0)
+    throw new IllegalArgumentException(s"Invalid interval: $minimum, $maximum")
+
   def merge(that: Interval): Interval = {
     Interval(minimum min that.minimum, maximum max that.maximum)
   }

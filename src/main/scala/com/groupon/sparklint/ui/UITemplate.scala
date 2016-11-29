@@ -44,7 +44,7 @@ trait UITemplate {
       <link rel="stylesheet" type="text/css" href="/static/css/sb-admin-2.min.css"/>
       <link rel="stylesheet" type="text/css" href="/static/font-awesome/css/font-awesome.min.css"/>
       <link rel="stylesheet" type="text/css" href="/static/css/morris.css"/>
-      <link rel="stylesheet" type="text/css" href="/static/css/metismenu.min.css"/>{extraCSS}
+      <link rel="stylesheet" type="text/css" href="/static/css/metisMenu.min.css"/>{extraCSS}
     </head>
     <body>
       {content}<script src="/static/js/jquery.min.js"></script>
@@ -53,7 +53,7 @@ trait UITemplate {
       <script src="/static/js/morris.min.js"></script>
       <script src="/static/js/sb-admin-2.min.js"></script>
       <script src="/static/js/moment.min.js"></script>
-      <script src="/static/js/metismenu.min.js"></script>
+      <script src="/static/js/metisMenu.min.js"></script>
       <script src="/static/js/underscore.min.js"></script>{extraScripts}
     </body>
   </html>

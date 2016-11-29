@@ -22,7 +22,7 @@ import org.apache.spark.util.StatCounter
   */
 trait SparklintTaskMetrics {
   def outputMetrics          : SparklintOutputMetrics
-  def inputMetrics           : Map[DataReadMethod, SparklintInputMetrics]
+  def inputMetrics           : SparklintInputMetrics
   def shuffleReadMetrics     : SparklintShuffleReadMetrics
   def shuffleWriteMetrics    : SparklintShuffleWriteMetrics
   def diskBytesSpilled       : StatCounter

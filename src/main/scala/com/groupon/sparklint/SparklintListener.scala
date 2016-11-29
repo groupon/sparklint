@@ -14,6 +14,7 @@ package com.groupon.sparklint
 
 import com.groupon.sparklint.common.SparklintConfig
 import com.groupon.sparklint.events._
+import com.groupon.sparklint.server.AdhocServer
 import com.groupon.sparklint.ui.UIServer
 import org.apache.spark.scheduler.SparkListenerEvent
 import org.apache.spark.{SparkConf, SparkFirehoseListener}
@@ -24,10 +25,14 @@ import org.apache.spark.{SparkConf, SparkFirehoseListener}
   * @author rxue
   * @since 8/18/16.
   */
-class SparklintListener(appId: String, appName: String) extends SparkFirehoseListener {
+class SparklintListener(appId: String, appName: String, val uiServerPort: Int) extends SparkFirehoseListener {
 
   def this(conf: SparkConf) = {
-    this(conf.get("spark.app.id", "AppId"), conf.get("spark.app.name", "AppName"))
+    this(
+      conf.get("spark.app.id", "AppId"),
+      conf.get("spark.app.name", "AppName"),
+      conf.get("spark.sparklint.ui.port", UIServer.DEFAULT_PORT.toString).toInt
+    )
   }
 
   override def onEvent(event: SparkListenerEvent): Unit = {
@@ -48,7 +53,7 @@ class SparklintListener(appId: String, appName: String) extends SparkFirehoseLis
   val uiServer = new UIServer(eventSourceManager)
 
   // ATTN: ordering?
-  uiServer.startServer()
+  uiServer.startServer(Some(uiServerPort))
   buffer.startConsuming()
 
 }
