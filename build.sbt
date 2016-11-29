@@ -11,6 +11,8 @@ licenses := Seq("Apache License, Version 2.0" -> url("https://www.apache.org/lic
 scalaVersion := "2.11.8"
 crossScalaVersions := Seq("2.10.6", "2.11.8")
 
+val mainClassName = "com.groupon.sparklint.SparklintServer"
+
 /* ----- Dependencies ---------*/
 resolvers in ThisBuild ++= Seq(
   Resolver.sonatypeRepo("snapshot"),
@@ -21,12 +23,18 @@ val spark = "2.0.2"
 val http4s = "0.13.2"
 val optparse = "1.1.2"
 val scalatest = "2.2.6"
+val json4s = "3.2.11"
+val slf4j = "1.7.16"
 
 libraryDependencies ++= Seq(
   "org.apache.spark" %% "spark-core" % spark % "provided",
   "org.http4s" %% "http4s-dsl" % http4s,
   "org.http4s" %% "http4s-blaze-server" % http4s,
   "com.frugalmechanic" %% "scala-optparse" % optparse,
+  "org.json4s" %% "json4s-native" % json4s,
+  "org.slf4j" % "slf4j-api" % slf4j,
+  "org.slf4j" % "slf4j-log4j12" % slf4j % "runtime",
+  "log4j" % "log4j" % "1.2.17" % "runtime",
   "org.scalatest" %% "scalatest" % scalatest % "test",
   "org.http4s" %% "http4s-blaze-client" % http4s % "test"
 )
@@ -36,12 +44,15 @@ libraryDependencies ++= Seq(
 testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-l", "UIPreview")
 
 /* ----- Run ---------*/
-mainClass in (Compile, run) := Some("com.groupon.sparklint.SparklintServer")
+mainClass in (Compile, run) := Some(mainClassName)
+run in Compile <<= Defaults.runTask(fullClasspath in Compile, mainClass in (Compile, run), runner in (Compile, run))
 
+/* ----- Package ---------*/
 publishMavenStyle := true
 publishArtifact in Test := false
 publishArtifact in (Compile, packageDoc) := false
 publishArtifact in (Compile, packageSrc) := false
+mainClass in (Compile, packageBin) := Some(mainClassName)
 
 headers := Map(
   "scala" -> Apache2_0(startYear.value.get.toString, "Groupon, Inc.")
