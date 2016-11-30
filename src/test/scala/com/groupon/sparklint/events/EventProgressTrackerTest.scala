@@ -227,7 +227,7 @@ class EventProgressTrackerTest extends FlatSpec with Matchers {
   }
 
   private def taskName(taskId: Int, host: String, attemptId: Int = 0) = {
-    s"ID$taskId:${TaskLocality.NO_PREF}:$host:ATT$attemptId)"
+    s"ID$taskId:${TaskLocality.NO_PREF}:$host:ATT$attemptId"
   }
 
   private def jobName(jobId: Int) = {

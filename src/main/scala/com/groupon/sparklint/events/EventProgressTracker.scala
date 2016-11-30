@@ -128,7 +128,7 @@ class EventProgressTracker(val eventProgress: EventProgress = EventProgress.empt
     s"Event: $eventProgress, Task: $taskProgress, Stage: $stageProgress, Job: $jobProgress"
 
   private def taskNameFromInfo(taskInf: TaskInfo) =
-    s"ID${taskInf.taskId}:${taskInf.taskLocality}:${taskInf.host}(attempt ${taskInf.attemptNumber})"
+    s"ID${taskInf.taskId}:${taskInf.taskLocality}:${taskInf.host}:ATT${taskInf.attemptNumber}"
 
   private def jobNameFromInfo(event: SparkListenerJobStart): String = {
     val props = event.properties
@@ -160,8 +160,6 @@ class EventProgress(var count: Int, var started: Int, var complete: Int, var act
 
   def percent = ((complete / safeCount) * 100).round.toInt
 
-  //def description = s"Completed $complete / $count ($percent%) with $inFlightCount active$activeString."
-
   def hasNext = complete < count
 
   def hasPrevious = complete > 0
@@ -169,8 +167,6 @@ class EventProgress(var count: Int, var started: Int, var complete: Int, var act
   def inFlightCount = started - complete
 
   override def toString: String = s"$complete of $count with $inFlightCount active"
-
-  private def activeString = if (active.isEmpty) "" else s" (${active.mkString(", ")})"
 }
 
 object EventProgress {
