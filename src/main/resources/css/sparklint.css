@@ -10,16 +10,57 @@
  See the License for the specific language governing permissions and
  limitations under the License.
 */
-.sparklintApp .progress {
+
+.nav-bar-text {
+    padding: 2px;
+}
+
+.spark-progress {
     height: 10px;
+    margin-top: 2px;
     margin-bottom: 0;
 }
 
-.col-xl-1, .col-xl-2, .col-xl-3, .col-xl-4, .col-xl-5, .col-xl-6, .col-xl-7, .col-xl-8, .col-xl-9, .col-xl-10, .col-xl-11, .col-xl-12 {
+.spark-progress-centered {
+    display: inline-block;
+    width: 100%;
+}
+
+.spark-progress-container {
+    width: 150px;
+}
+
+.spark-progress-text {
+    width: 100px;
+}
+
+table.meta-table>tbody>tr>td, table.meta-table>tbody>tr>th {
+    font-size: 12pt;
+    padding: 3pt;
+    border:none;
+}
+
+.meta-header {
+    width: 75px;
+}
+
+.header-app-name {
     position: relative;
-    min-height: 1px;
-    padding-right: 15px;
-    padding-left: 15px;
+}
+
+.header-duration {
+    font-size: medium;
+    position: absolute;
+    bottom: 40%;
+    left: 50%;
+}
+
+.slight_right_pad {
+    padding-right: 5px;
+}
+
+small#appId {
+    white-space: pre;
 }
 
 .loading-spinner {
@@ -35,6 +76,13 @@
     bottom : 0;
     right : 0;
     top : 0;
+}
+
+.col-xl-1, .col-xl-2, .col-xl-3, .col-xl-4, .col-xl-5, .col-xl-6, .col-xl-7, .col-xl-8, .col-xl-9, .col-xl-10, .col-xl-11, .col-xl-12 {
+    position: relative;
+    min-height: 1px;
+    padding-right: 15px;
+    padding-left: 15px;
 }
 
 @media (min-width: 2400px) {

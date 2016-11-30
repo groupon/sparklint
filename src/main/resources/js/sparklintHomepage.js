@@ -33,11 +33,11 @@ function appSelectorClicked(ev) {
 }
 
 function displayAppState(appId, appState) {
-    updateNameAndId(appState);
+    updateMainHeader(appState);
+    updateSummaryMeta(appState);
+    updateDetailedProgress(appState.progress);
     updateSummaryNumExecutors(appState);
     updateSummaryPanel(appState);
-    updateSummaryAppDuration(appState);
-    updateProgressBarFor($("#summaryApplicationProgress"), appState);
     updateSummaryCoreUtilization(appState);
     updateIdleTimePanel(appState);
     updateCoreUsageChart(appState);
@@ -57,7 +57,8 @@ function hideErrorMessage() {
 
 function updateEventSourceControl(appId, appState) {
     // optionally enable the event source replay panel
-    var enabledEventSource = appState.progress.has_next || appState.progress.has_previous;
+    var eventProgress = appState.progress.events;
+    var enabledEventSource = eventProgress.has_next || eventProgress.has_previous;
     if (enabledEventSource) {
         $("#replay-controls").show();
     } else {
@@ -66,21 +67,48 @@ function updateEventSourceControl(appId, appState) {
 
     // set the correct label and progress bar for the event source
     var labelSelector = "#" + appId + "-app-prog";
-    var description = appState.progress.description;
+    var description = eventProgress.description;
     $(labelSelector).text(description);
 
-    updateProgressBarFor($("#" + appId + "-progress-bar"), appState);
+    updateProgressBarFor($("#" + appId + "-text"), $("#" + appId + "-progress-bar"), eventProgress, progressDescription(eventProgress));
 
     // set button enabled state on the replay panel
-    $("#eventsToStart").prop("disabled", !appState.progress.has_previous);
-    $("#eventsBackward").prop("disabled", !appState.progress.has_previous);
-    $("#eventsForward").prop("disabled", !appState.progress.has_next);
-    $("#eventsToEnd").prop("disabled", !appState.progress.has_next);
+    $("#eventsToStart").prop("disabled", !eventProgress.has_previous);
+    $("#eventsBackward").prop("disabled", !eventProgress.has_previous);
+    $("#eventsForward").prop("disabled", !eventProgress.has_next);
+    $("#eventsToEnd").prop("disabled", !eventProgress.has_next);
 }
 
-function updateNameAndId(appState) {
+function updateMainHeader(appState) {
     $("#appName").text(appState.appName || "<unknown>");
-    $("#appId").text(appState.appId || "<unknown>");
+    var idAndDuration = (appState.appId || "<unknown>") + " ".repeat(5) +
+        appDuration(appState.applicationLaunchedAt, appState.applicationEndedAt) || "<unknown>";
+    $("#appId").text(idAndDuration);
+}
+
+function updateSummaryMeta(appState) {
+    $("#spark_host").text(fullHostName(appState));
+    $("#spark_start").text(moment(appState.applicationLaunchedAt).toISOString());
+    var end_time_row = $("#spark_end");
+    if (appState.applicationEndedAt) {
+        end_time_row.text(moment(appState.applicationEndedAt).toISOString());
+    } else {
+        end_time_row.text("running");
+    }
+    $("#summary-meta").show();
+}
+
+function updateDetailedProgress(progressTracker) {
+    updateDetailedProgressFor("task", progressTracker.tasks, progressDescription(progressTracker.tasks), "");
+    updateDetailedProgressFor("stage", progressTracker.stages, progressCounts(progressTracker.stages), inFlightDescription(progressTracker.stages));
+    updateDetailedProgressFor("job", progressTracker.jobs, progressCounts(progressTracker.jobs), inFlightDescription(progressTracker.jobs));
+    $("#detailed-progress").show();
+}
+
+function updateDetailedProgressFor(eventType, progress, description, activeText) {
+    updateProgressBarFor($("#" + eventType + "-progress-text"),
+        $("#" + eventType + "-progress-bar"), progress, description);
+    $("#" + eventType + "-progress-active").text(activeText);
 }
 
 function updateSummaryNumExecutors(appState) {
@@ -96,13 +124,10 @@ function updateSummaryNumExecutors(appState) {
 function updateSummaryPanel(appState) {
     var summaryTaskPanel = $("#summaryTaskPanel");
     var chartTaskDistributionList = $("#chartTaskDistributionList");
-    var summaryApplicationEndedAlert = $("#summaryApplicationEndedAlert");
     if (appState.applicationEndedAt && appState.applicationLaunchedAt) {
-        summaryApplicationEndedAlert.addClass("alert-info").removeClass("alert-success");
         summaryTaskPanel.hide();
         chartTaskDistributionList.hide();
     } else {
-        summaryApplicationEndedAlert.addClass("alert-success").removeClass("alert-danger");
         summaryTaskPanel.show();
         chartTaskDistributionList.show();
 
@@ -124,28 +149,15 @@ function updateSummaryCoreUtilization(appState) {
     }
 }
 
-function updateSummaryAppDuration(appState) {
-    var summaryApplicationDuration = $("#summaryApplicationDuration");
-    var start = moment(appState.applicationLaunchedAt);
-    if (appState.applicationEndedAt && appState.applicationLaunchedAt) {
-        var end = moment(appState.applicationEndedAt);
-        var duration = moment.duration(appState.applicationEndedAt - appState.applicationLaunchedAt);
-        summaryApplicationDuration.text("Application finished in " + duration.humanize() +
-            " (" + start.toISOString() + " -> " + end.toISOString() + ")");
+function updateProgressBarFor(progressTextDiv, progressBarDiv, eventProgress, progressText) {
+    progressBarDiv.removeClass("progress-bar-success progress-bar-info progress-bar-striped active");
+    var percent = eventProgress.percent.toString();
+    topLevelText(progressTextDiv, progressText);
+    progressBarDiv.attr('style', 'width: ' + percent + '%').attr('aria-valuenow', percent);
+    if (eventProgress.percent == '100') {
+        progressBarDiv.addClass("progress-bar-success");
     } else {
-        summaryApplicationDuration.text("Application is still running. (Since " + start.toISOString() + ")");
-    }
-}
-
-function updateProgressBarFor(progressBar, appState) {
-    progressBar.removeClass("progress-bar-success progress-bar-info progress-bar-striped active");
-    var percent = appState.progress.percent.toString();
-    progressBar.attr('style', 'width: ' + percent + '%').attr('aria-valuenow', percent);
-    progressBar.find(".sr-only").text(appState.progress.description);
-    if (appState.progress.percent == '100') {
-        progressBar.addClass("progress-bar-success");
-    } else {
-        progressBar.addClass("progress-bar-info active progress-bar-striped");
+        progressBarDiv.addClass("progress-bar-info active progress-bar-striped");
     }
 }
 
@@ -233,6 +245,35 @@ function drawExecutor(executorInfo, tasks) {
     return $(document.createElement('div')).addClass('list-group-item').append(root);
 }
 
+function fullHostName(appName) {
+    return appName.user + "@" + appName.host + ":" + appName.port.toString();
+}
+
+function appDuration(start, end) {
+    if (end) {
+        return "finished in " + moment.duration(end - start).humanize();
+    } else {
+        // streaming, assume wall clock time is end time.
+        return "running for " + moment.duration(moment() - moment(start)).humanize();
+    }
+}
+
+function progressDescription(progress) {
+    return progress.complete.toString() + " / " + progress.count.toString() + " (" + progress.percent.toString() + "%)";
+}
+
+function progressCounts(progress) {
+    return progress.complete.toString() + " / " + progress.count.toString() + " (" + progress.in_flight.toString() + " active)";
+}
+
+function inFlightDescription(progress) {
+    if (progress.in_flight > 0) {
+        return "Active: " + progress.active.join();
+    } else {
+        return "";
+    }
+}
+
 // ####### EventSource progression controls #######
 
 function eventsToStart() {
@@ -259,7 +300,7 @@ function moveEvents(direction) {
     var type = $("#typeSelector").val();
     var url = "/" + appId + "/" + direction + "/" + count + "/" + type;
     handleJSON(url, function (progJson) {
-        console.log("moved " + appId + " " + direction + " by " + count + " " + type + "(s): " + JSON.stringify(progJson));
+        console.log("moved " + appId + " " + direction + " by " + count + " " + type + "(s): " + JSON.stringify(progJson.events));
         loadApp(appId);
     })
 }
@@ -270,7 +311,7 @@ function moveEventsToEnd(end) {
 
     var url = "/" + appId + "/to_" + end;
     handleJSON(url, function (progJson) {
-        console.log("moved " + appId + " to " + end + ": " + JSON.stringify(progJson));
+        console.log("moved " + appId + " to " + end + ": " + JSON.stringify(progJson.events));
         loadApp(appId);
     });
 }
@@ -286,6 +327,11 @@ function handleJSON(url, successFn) {
             displayErrorMessage(exMsg.responseText);
         }
     });
+}
+
+function topLevelText(node, textValue) {
+    var children = node.children();
+    node.text(textValue).prepend(children);
 }
 
 $(function () {

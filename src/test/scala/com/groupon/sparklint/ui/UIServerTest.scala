@@ -46,6 +46,7 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
   }
 
   it should "return limited information when most of the information are not available" in {
+
     pretty(state) shouldBe
       """{
         |  "appName" : "MyAppName",
@@ -55,11 +56,50 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
         |  "lastUpdatedAt" : 0,
         |  "applicationLaunchedAt" : 1466087746466,
         |  "applicationEndedAt" : 1466088058982,
+        |  "user" : "johndoe",
+        |  "host" : "worker121.datacenter",
+        |  "port" : 44406,
         |  "progress" : {
-        |    "percent" : 0,
-        |    "description" : "Completed 0 / 431 (0%) with 0 active.",
-        |    "has_next" : true,
-        |    "has_previous" : false
+        |    "events" : {
+        |      "percent" : 0,
+        |      "count" : 431,
+        |      "started" : 0,
+        |      "complete" : 0,
+        |      "in_flight" : 0,
+        |      "active" : [ ],
+        |      "has_next" : true,
+        |      "has_previous" : false
+        |    },
+        |    "tasks" : {
+        |      "percent" : 0,
+        |      "count" : 204,
+        |      "started" : 0,
+        |      "complete" : 0,
+        |      "in_flight" : 0,
+        |      "active" : [ ],
+        |      "has_next" : true,
+        |      "has_previous" : false
+        |    },
+        |    "stages" : {
+        |      "percent" : 0,
+        |      "count" : 3,
+        |      "started" : 0,
+        |      "complete" : 0,
+        |      "in_flight" : 0,
+        |      "active" : [ ],
+        |      "has_next" : true,
+        |      "has_previous" : false
+        |    },
+        |    "jobs" : {
+        |      "percent" : 0,
+        |      "count" : 3,
+        |      "started" : 0,
+        |      "complete" : 0,
+        |      "in_flight" : 0,
+        |      "active" : [ ],
+        |      "has_next" : true,
+        |      "has_previous" : false
+        |    }
         |  }
         |}""".stripMargin
   }
@@ -77,11 +117,50 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
         |  "lastUpdatedAt" : 1466087746466,
         |  "applicationLaunchedAt" : 1466087746466,
         |  "applicationEndedAt" : 1466088058982,
+        |  "user" : "johndoe",
+        |  "host" : "worker121.datacenter",
+        |  "port" : 44406,
         |  "progress" : {
-        |    "percent" : 1,
-        |    "description" : "Completed 4 / 431 (1%) with 0 active.",
-        |    "has_next" : true,
-        |    "has_previous" : true
+        |    "events" : {
+        |      "percent" : 1,
+        |      "count" : 431,
+        |      "started" : 4,
+        |      "complete" : 4,
+        |      "in_flight" : 0,
+        |      "active" : [ ],
+        |      "has_next" : true,
+        |      "has_previous" : true
+        |    },
+        |    "tasks" : {
+        |      "percent" : 0,
+        |      "count" : 204,
+        |      "started" : 0,
+        |      "complete" : 0,
+        |      "in_flight" : 0,
+        |      "active" : [ ],
+        |      "has_next" : true,
+        |      "has_previous" : false
+        |    },
+        |    "stages" : {
+        |      "percent" : 0,
+        |      "count" : 3,
+        |      "started" : 0,
+        |      "complete" : 0,
+        |      "in_flight" : 0,
+        |      "active" : [ ],
+        |      "has_next" : true,
+        |      "has_previous" : false
+        |    },
+        |    "jobs" : {
+        |      "percent" : 0,
+        |      "count" : 3,
+        |      "started" : 0,
+        |      "complete" : 0,
+        |      "in_flight" : 0,
+        |      "active" : [ ],
+        |      "has_next" : true,
+        |      "has_previous" : false
+        |    }
         |  }
         |}""".stripMargin
   }
@@ -133,11 +212,50 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
         |  "lastUpdatedAt" : 1466087848562,
         |  "applicationLaunchedAt" : 1466087746466,
         |  "applicationEndedAt" : 1466088058982,
+        |  "user" : "johndoe",
+        |  "host" : "worker121.datacenter",
+        |  "port" : 44406,
         |  "progress" : {
-        |    "percent" : 3,
-        |    "description" : "Completed 11 / 431 (3%) with 0 active.",
-        |    "has_next" : true,
-        |    "has_previous" : true
+        |    "events" : {
+        |      "percent" : 3,
+        |      "count" : 431,
+        |      "started" : 11,
+        |      "complete" : 11,
+        |      "in_flight" : 0,
+        |      "active" : [ ],
+        |      "has_next" : true,
+        |      "has_previous" : true
+        |    },
+        |    "tasks" : {
+        |      "percent" : 0,
+        |      "count" : 204,
+        |      "started" : 1,
+        |      "complete" : 0,
+        |      "in_flight" : 1,
+        |      "active" : [ "ID0:NODE_LOCAL:worker194.datacenter:ATT0" ],
+        |      "has_next" : true,
+        |      "has_previous" : false
+        |    },
+        |    "stages" : {
+        |      "percent" : 0,
+        |      "count" : 3,
+        |      "started" : 1,
+        |      "complete" : 0,
+        |      "in_flight" : 1,
+        |      "active" : [ "count at <console>:22" ],
+        |      "has_next" : true,
+        |      "has_previous" : false
+        |    },
+        |    "jobs" : {
+        |      "percent" : 0,
+        |      "count" : 3,
+        |      "started" : 1,
+        |      "complete" : 0,
+        |      "in_flight" : 1,
+        |      "active" : [ "ID0:myJobDescription" ],
+        |      "has_next" : true,
+        |      "has_previous" : false
+        |    }
         |  }
         |}""".stripMargin
   }
@@ -281,11 +399,50 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
         |  "lastUpdatedAt" : 1466087852118,
         |  "applicationLaunchedAt" : 1466087746466,
         |  "applicationEndedAt" : 1466088058982,
+        |  "user" : "johndoe",
+        |  "host" : "worker121.datacenter",
+        |  "port" : 44406,
         |  "progress" : {
-        |    "percent" : 4,
-        |    "description" : "Completed 16 / 431 (4%) with 0 active.",
-        |    "has_next" : true,
-        |    "has_previous" : true
+        |    "events" : {
+        |      "percent" : 4,
+        |      "count" : 431,
+        |      "started" : 16,
+        |      "complete" : 16,
+        |      "in_flight" : 0,
+        |      "active" : [ ],
+        |      "has_next" : true,
+        |      "has_previous" : true
+        |    },
+        |    "tasks" : {
+        |      "percent" : 0,
+        |      "count" : 204,
+        |      "started" : 5,
+        |      "complete" : 1,
+        |      "in_flight" : 4,
+        |      "active" : [ "ID2:RACK_LOCAL:worker121.datacenter:ATT0", "ID4:RACK_LOCAL:worker194.datacenter:ATT0", "ID0:NODE_LOCAL:worker194.datacenter:ATT0", "ID3:RACK_LOCAL:worker121.datacenter:ATT0" ],
+        |      "has_next" : true,
+        |      "has_previous" : true
+        |    },
+        |    "stages" : {
+        |      "percent" : 0,
+        |      "count" : 3,
+        |      "started" : 1,
+        |      "complete" : 0,
+        |      "in_flight" : 1,
+        |      "active" : [ "count at <console>:22" ],
+        |      "has_next" : true,
+        |      "has_previous" : false
+        |    },
+        |    "jobs" : {
+        |      "percent" : 0,
+        |      "count" : 3,
+        |      "started" : 1,
+        |      "complete" : 0,
+        |      "in_flight" : 1,
+        |      "active" : [ "ID0:myJobDescription" ],
+        |      "has_next" : true,
+        |      "has_previous" : false
+        |    }
         |  }
         |}""".stripMargin
   }
@@ -513,11 +670,50 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
         |  "lastUpdatedAt" : 1466088058982,
         |  "applicationLaunchedAt" : 1466087746466,
         |  "applicationEndedAt" : 1466088058982,
+        |  "user" : "johndoe",
+        |  "host" : "worker121.datacenter",
+        |  "port" : 44406,
         |  "progress" : {
-        |    "percent" : 100,
-        |    "description" : "Completed 431 / 431 (100%) with 0 active.",
-        |    "has_next" : false,
-        |    "has_previous" : true
+        |    "events" : {
+        |      "percent" : 100,
+        |      "count" : 431,
+        |      "started" : 431,
+        |      "complete" : 431,
+        |      "in_flight" : 0,
+        |      "active" : [ ],
+        |      "has_next" : false,
+        |      "has_previous" : true
+        |    },
+        |    "tasks" : {
+        |      "percent" : 100,
+        |      "count" : 204,
+        |      "started" : 204,
+        |      "complete" : 204,
+        |      "in_flight" : 0,
+        |      "active" : [ ],
+        |      "has_next" : false,
+        |      "has_previous" : true
+        |    },
+        |    "stages" : {
+        |      "percent" : 100,
+        |      "count" : 3,
+        |      "started" : 3,
+        |      "complete" : 3,
+        |      "in_flight" : 0,
+        |      "active" : [ ],
+        |      "has_next" : false,
+        |      "has_previous" : true
+        |    },
+        |    "jobs" : {
+        |      "percent" : 100,
+        |      "count" : 3,
+        |      "started" : 3,
+        |      "complete" : 3,
+        |      "in_flight" : 0,
+        |      "active" : [ ],
+        |      "has_next" : false,
+        |      "has_previous" : true
+        |    }
         |  }
         |}""".stripMargin
   }

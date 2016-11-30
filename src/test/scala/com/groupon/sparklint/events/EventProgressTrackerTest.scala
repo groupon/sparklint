@@ -227,7 +227,7 @@ class EventProgressTrackerTest extends FlatSpec with Matchers {
   }
 
   private def taskName(taskId: Int, host: String, attemptId: Int = 0) = {
-    s"ID$taskId:${TaskLocality.NO_PREF}:$host(attempt $attemptId)"
+    s"ID$taskId:${TaskLocality.NO_PREF}:$host:ATT$attemptId"
   }
 
   private def jobName(jobId: Int) = {
@@ -248,7 +248,6 @@ class EventProgressTest extends FlatSpec with Matchers {
     progress.percent shouldEqual 0d
     progress.hasNext shouldEqual false
     progress.hasPrevious shouldEqual false
-    progress.description shouldEqual "Completed 0 / 0 (0%) with 0 active."
   }
 
   it should "represent progress correctly" in {
@@ -262,7 +261,6 @@ class EventProgressTest extends FlatSpec with Matchers {
     progress.percent shouldEqual 40d
     progress.hasNext shouldEqual true
     progress.hasPrevious shouldEqual true
-    progress.description shouldEqual "Completed 4 / 10 (40%) with 2 active (test-in-flight1, test-in-flight2)."
   }
 
   it should "represent end of events correctly" in {
@@ -276,7 +274,6 @@ class EventProgressTest extends FlatSpec with Matchers {
     progress.percent shouldEqual 100d
     progress.hasNext shouldEqual false
     progress.hasPrevious shouldEqual true
-    progress.description shouldEqual "Completed 10 / 10 (100%) with 0 active."
   }
 
 }
