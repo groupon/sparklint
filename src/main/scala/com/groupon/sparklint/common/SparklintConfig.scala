@@ -12,7 +12,7 @@ import com.frugalmechanic.optparse.OptParse
   */
 case class SparklintConfig(exitOnError: Boolean = true) extends OptParse with Logging {
   // For testing we want OptParse to throw exceptions instead of calling System.exit
-  override val optParseExitOnError = exitOnError
+  override val optParseExitOnError: Boolean = exitOnError
 
   val fileSource = FileOpt(
     long = "file", short = 'f',
