@@ -61,7 +61,8 @@ lazy val root = Project("sparklint", file("."))
     name := "sparklint",
     description := "Listener and WebUI for Apache Spark performance events",
     libraryDependencies ++= Seq(
-      "com.frugalmechanic" %% "scala-optparse" % optparse
+      "com.frugalmechanic" %% "scala-optparse" % optparse,
+      "org.http4s" %% "http4s-blaze-client" % http4s % "test"
     ),
     /* ----- Run ---------*/
     mainClass in(Compile, run) := Some("com.groupon.sparklint.SparklintServer")
@@ -85,7 +86,6 @@ lazy val sparklintUI = project
       "org.slf4j" % "slf4j-api" % slf4j,
       "org.slf4j" % "slf4j-log4j12" % slf4j,
       "log4j" % "log4j" % log4j,
-      "org.json4s" %% "json4s-jackson" % json4s,
-      "org.http4s" %% "http4s-blaze-client" % http4s % "test"
+      "org.json4s" %% "json4s-jackson" % json4s
     )
   )
