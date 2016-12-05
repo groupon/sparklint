@@ -17,6 +17,7 @@ import java.io.File
 import com.groupon.sparklint.common.TestUtils
 import com.groupon.sparklint.data._
 import com.groupon.sparklint.events.{CompressedStateManager, EventSourceMeta, FileEventSource}
+import org.apache.spark.scheduler.TaskLocality._
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 
 /**
@@ -101,9 +102,9 @@ class SparklintStateAnalyzerTest extends FlatSpec with Matchers with BeforeAndAf
     val actual: SparklintStageMetrics = new SparklintStateAnalyzer(meta, stateManager)
       .getLocalityStatsByStageIdentifier(SparklintStageIdentifier('myJobGroup, 'myJobDescription, "count at <console>:22")).get
     actual.metricsRepo.size shouldBe 4
-    actual.metricsRepo should contain key ('PROCESS_LOCAL -> 'ResultTask)
-    actual.metricsRepo should contain key ('RACK_LOCAL -> 'ResultTask)
-    actual.metricsRepo should contain key ('ANY -> 'ResultTask)
-    actual.metricsRepo should contain key ('NODE_LOCAL -> 'ResultTask)
+    actual.metricsRepo should contain key (PROCESS_LOCAL -> 'ResultTask)
+    actual.metricsRepo should contain key (RACK_LOCAL -> 'ResultTask)
+    actual.metricsRepo should contain key (ANY -> 'ResultTask)
+    actual.metricsRepo should contain key (NODE_LOCAL -> 'ResultTask)
   }
 }

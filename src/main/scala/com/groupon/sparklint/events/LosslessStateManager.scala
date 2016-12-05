@@ -131,7 +131,7 @@ class LosslessStateManager(metricsBuckets: Int = 1000) extends EventStateManager
 
   override def onTaskEnd(event: SparkListenerTaskEnd): Unit = {
     val stageId = state.stageIdLookup(event.stageId)
-    val locality = Symbol(event.taskInfo.taskLocality.toString)
+    val locality = event.taskInfo.taskLocality
     state = state.copy(
       coreUsage = state.coreUsage + (locality -> state.coreUsage(locality).addUsage(
         startTime = event.taskInfo.launchTime,
@@ -146,7 +146,7 @@ class LosslessStateManager(metricsBuckets: Int = 1000) extends EventStateManager
   }
 
   override def unTaskEnd(event: SparkListenerTaskEnd): Unit = {
-    val locality = Symbol(event.taskInfo.taskLocality.toString)
+    val locality = event.taskInfo.taskLocality
     state = state.copy(
       coreUsage = state.coreUsage + (locality -> state.coreUsage(locality).removeUsage(
         startTime = event.taskInfo.launchTime,

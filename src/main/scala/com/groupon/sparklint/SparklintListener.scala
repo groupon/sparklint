@@ -35,7 +35,7 @@ class SparklintListener(appId: String, appName: String) extends SparkFirehoseLis
 
   override def onEvent(event: SparkListenerEvent): Unit = {
     // push unconsumed events to the queue so the listener can keep consuming on the main thread
-//    buffer.push(event)
+    buffer.push(event)
   }
 
   //TODO: support sparkConf based config

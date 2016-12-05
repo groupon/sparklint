@@ -16,33 +16,18 @@
 
 package com.groupon.sparklint.data
 
+import org.apache.spark.scheduler.TaskLocality.TaskLocality
+
 /**
   * @author rxue
-  * @since 9/23/16.
+  * @since 12/4/16.
   */
-trait SparklintStateLike {
-
-  def executorInfo: Map[String, SparklintExecutorInfo]
-
-  def stageMetrics: Map[SparklintStageIdentifier, SparklintStageMetrics]
-
-  def runningTasks: Map[Long, SparklintTaskInfo]
-
-  def firstTaskAt: Option[Long]
-
-  def lastUpdatedAt: Long
-
-  def stageIdLookup: Map[Int, SparklintStageIdentifier]
-
-  def applicationEndedAt: Option[Long]
-
+trait SparklintStageMetrics {
   /**
-    * TaskLocality -> CPU usage
+    * (TaskLocality, TaskType) -> TaskMetrics, to provide metrics group by TaskLocality and TaskType
     * @return
     */
-  def coreUsage: Map[Symbol, MetricsSink]
+  def metricsRepo: Map[(TaskLocality, Symbol), SparklintTaskCounter]
 
-  lazy val aggregatedCoreUsage: MetricsSink = {
-    MetricsSink.mergeSinks(coreUsage.values)
-  }
+  def merge(taskId: Long, taskType: Symbol, locality: TaskLocality, metrics: SparklintTaskMetrics): SparklintStageMetrics
 }

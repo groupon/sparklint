@@ -18,6 +18,8 @@ package com.groupon.sparklint.analyzer
 
 import com.groupon.sparklint.data._
 import com.groupon.sparklint.events.{EventSourceMetaLike, EventStateManagerLike}
+import org.apache.spark.scheduler.TaskLocality
+import org.apache.spark.scheduler.TaskLocality._
 
 import scala.collection.mutable.ArrayBuffer
 import scala.util.Try
@@ -109,11 +111,11 @@ class SparklintStateAnalyzer(val source: EventSourceMetaLike, val stateManager: 
           val time = bucketStart + index * resolution
           timeSeries(index) = CoreUsage(time,
             allocatedCoresTimeSeries.getAvgValueForTime(time),
-            adjustedCoreUsage('ANY).getAvgValueForTime(time),
-            adjustedCoreUsage('PROCESS_LOCAL).getAvgValueForTime(time),
-            adjustedCoreUsage('NODE_LOCAL).getAvgValueForTime(time),
-            adjustedCoreUsage('RACK_LOCAL).getAvgValueForTime(time),
-            adjustedCoreUsage('NO_PREF).getAvgValueForTime(time)
+            adjustedCoreUsage(ANY).getAvgValueForTime(time),
+            adjustedCoreUsage(PROCESS_LOCAL).getAvgValueForTime(time),
+            adjustedCoreUsage(NODE_LOCAL).getAvgValueForTime(time),
+            adjustedCoreUsage(RACK_LOCAL).getAvgValueForTime(time),
+            adjustedCoreUsage(NO_PREF).getAvgValueForTime(time)
           )
         })
         Some(timeSeries)
@@ -149,13 +151,13 @@ class SparklintStateAnalyzer(val source: EventSourceMetaLike, val stateManager: 
     MetricsSink.mergeSinks(coreUsageWithRunningTasks.values)
   }
 
-  private lazy val coreUsageWithRunningTasks: Map[Symbol, MetricsSink] = {
+  private lazy val coreUsageWithRunningTasks: Map[TaskLocality, MetricsSink] = {
     if (state.runningTasks.isEmpty) {
       state.coreUsage
     } else {
       var toReturn = state.coreUsage
       state.runningTasks.values.foreach(runningTask => {
-        val locality = runningTask.locality
+        val locality = TaskLocality.withName(runningTask.locality.name)
         toReturn = toReturn.updated(locality, toReturn(locality).addUsage(runningTask.launchTime, state.lastUpdatedAt))
       })
       toReturn

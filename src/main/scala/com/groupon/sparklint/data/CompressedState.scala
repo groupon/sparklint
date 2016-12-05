@@ -16,11 +16,13 @@
 
 package com.groupon.sparklint.data
 
+import org.apache.spark.scheduler.TaskLocality.TaskLocality
+
 /**
   * @author rxue
   * @since 8/22/16.
   */
-case class CompressedState(coreUsage: Map[Symbol, CompressedMetricsSink],
+case class CompressedState(coreUsage: Map[TaskLocality, CompressedMetricsSink],
                            executorInfo: Map[String, SparklintExecutorInfo],
                            stageMetrics: Map[SparklintStageIdentifier, CompressedStageMetrics],
                            stageIdLookup: Map[Int, SparklintStageIdentifier],

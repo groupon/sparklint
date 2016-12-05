@@ -16,18 +16,20 @@
 
 package com.groupon.sparklint.data
 
+import org.apache.spark.scheduler.TaskLocality.TaskLocality
+
 /**
   * @author rxue
   * @since 8/16/16.
   */
-case class CompressedStageMetrics(compressedMetricsRepo: Map[(Symbol, Symbol), CompressedTaskCounter])
+case class CompressedStageMetrics(compressedMetricsRepo: Map[(TaskLocality, Symbol), CompressedTaskCounter])
   extends SparklintStageMetrics {
-  def merge(taskId: Long, taskType: Symbol, locality: Symbol, metrics: SparklintTaskMetrics): CompressedStageMetrics = {
+  def merge(taskId: Long, taskType: Symbol, locality: TaskLocality, metrics: SparklintTaskMetrics): CompressedStageMetrics = {
     val newMetrics = compressedMetricsRepo.getOrElse(locality -> taskType, new CompressedTaskCounter).merge(taskId, metrics)
     copy(compressedMetricsRepo + ((locality -> taskType) -> newMetrics))
   }
 
-  override def metricsRepo: Map[(Symbol, Symbol), SparklintTaskCounter] = compressedMetricsRepo
+  override def metricsRepo: Map[(TaskLocality, Symbol), SparklintTaskCounter] = compressedMetricsRepo
 }
 
 object CompressedStageMetrics {

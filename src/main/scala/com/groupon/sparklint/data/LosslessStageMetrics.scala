@@ -16,15 +16,17 @@
 
 package com.groupon.sparklint.data
 
+import org.apache.spark.scheduler.TaskLocality.TaskLocality
+
 /**
   * @author rxue
   * @since 9/22/16.
   */
-case class LosslessStageMetrics(losslessMetricsRepo: Map[(Symbol, Symbol), LosslessTaskCounter])
+case class LosslessStageMetrics(losslessMetricsRepo: Map[(TaskLocality, Symbol), LosslessTaskCounter])
   extends SparklintStageMetrics {
-  override def metricsRepo: Map[(Symbol, Symbol), SparklintTaskCounter] = losslessMetricsRepo
+  override def metricsRepo: Map[(TaskLocality, Symbol), SparklintTaskCounter] = losslessMetricsRepo
 
-  def merge(taskId: Long, taskType: Symbol, locality: Symbol, metrics: SparklintTaskMetrics): LosslessStageMetrics = {
+  def merge(taskId: Long, taskType: Symbol, locality: TaskLocality, metrics: SparklintTaskMetrics): LosslessStageMetrics = {
     val newMetrics = losslessMetricsRepo.getOrElse(locality -> taskType, new LosslessTaskCounter).merge(taskId, metrics)
     copy(losslessMetricsRepo + ((locality -> taskType) -> newMetrics))
   }
