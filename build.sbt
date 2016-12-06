@@ -47,6 +47,9 @@ libraryDependencies ++= Seq(
 // Run
 mainClass in run := Some("com.groupon.sparklint.SparklintServer")
 
+// Package Multiple Spark Version
+commands += BuildUtils.packageSparklint
+
 // Publish
 publishMavenStyle := true
 publishArtifact in Test := false
