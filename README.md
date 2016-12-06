@@ -31,7 +31,7 @@ SparklintListener is an implementation of [SparkFirehoseListener](https://spark.
 that listen to spark event log while the application is running. To enable it, you can try one of the following:
 
 1. Upload packaged jar to your cluster, include jar in classpath directly
-2. Use `--packages` command to inject dependency during job submission if we have a precompiled jar, like `--conf spark.extraListeners=com.groupon.sparklint.SparklintListener --packages com.groupon.sparklint:sparklint-spark161_2.10:1.0.2`
+2. Use `--packages` command to inject dependency during job submission if we have a precompiled jar, like `--conf spark.extraListeners=com.groupon.sparklint.SparklintListener --packages com.groupon.sparklint:sparklint-spark161_2.10:1.0.4`
 3. Add dependency directly in your pom, repackage your application, then during job submission, use `--conf spark.extraListeners=com.groupon.sparklint.SparklintListener`
 
 Finally, find out your spark application's driver node address, open a browser and visit port 23763 (our default port) of the driver node.
