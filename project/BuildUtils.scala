@@ -1,4 +1,6 @@
-import sbt.{Command, Help}
+import sbt.complete.DefaultParsers._
+import sbt.complete.Parser
+import sbt.{Command, Help, State}
 
 object BuildUtils {
   private val SPARK_1_6_VERSIONS = Seq("1.6.0", "1.6.1", "1.6.2", "1.6.3")
@@ -6,21 +8,26 @@ object BuildUtils {
 
   val SUPPORTED_SPARK_VERSIONS: Seq[String] = SPARK_1_6_VERSIONS ++ SPARK_2_0_VERSIONS
 
-  private val PACKAGE_SPARKLINT = "packageSparklint"
-  private val packageSparklintHelp        = Help(
-    Seq(PACKAGE_SPARKLINT -> "package one jar for each supported spark version"),
-    Map(PACKAGE_SPARKLINT ->
-      """Package one jar for each supported spark version. This will:
+  private val uber_command_text = "foreachSparkVersion"
+  private val uber_command_help = Help(
+    Seq(s"$uber_command_text <extra tasks>" -> "foreach supported spark version, perform a series of task"),
+    Map(uber_command_text ->
+      """Perform tasks foreach supported spark version. This will:
         |1. Enumerate all supported version in BuildUtils.SUPPORTED_SPARK_VERSIONS
-        |2. execute `set sparkVersion := "<version>" package`
+        |2. execute `set sparkVersion := "<version>"` and any extra tasks
       """.stripMargin))
 
-  val packageSparklint: Command = Command.command(PACKAGE_SPARKLINT, packageSparklintHelp) {
-    state =>
-      SUPPORTED_SPARK_VERSIONS.foldRight(state) { (version, state) =>
-        "set sparkVersion := \"" + version + "\"" :: "package" :: state
-      }
+  def uber_command_parser(state: State): Parser[String] = {
+    Space ~> token(StringBasic, "<extra tasks>")
   }
+
+  def uber_command_action(state: State, extraTasks: String): State = {
+    SUPPORTED_SPARK_VERSIONS.foldRight(state) { (version, state) =>
+      "set sparkVersion := \"" + version + "\"" :: extraTasks :: state
+    }
+  }
+
+  val foreachSparkVersion: Command = Command(uber_command_text, uber_command_help)(uber_command_parser)(uber_command_action)
 
   def getProjectNameSuffix(versionString: String): String = versionString.replaceAll("[-\\.]", "")
 
