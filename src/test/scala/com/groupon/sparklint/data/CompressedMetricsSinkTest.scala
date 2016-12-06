@@ -12,7 +12,6 @@
 */
 package com.groupon.sparklint.data
 
-import com.groupon.sparklint.data.compressed.CompressedMetricsSink
 import org.scalatest.{FlatSpec, Matchers}
 
 /**

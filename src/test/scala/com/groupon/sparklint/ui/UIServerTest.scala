@@ -14,8 +14,8 @@ package com.groupon.sparklint.ui
 
 import java.io.File
 
-import com.groupon.sparklint.TestUtils
-import com.groupon.sparklint.events._
+import com.groupon.sparklint.common.TestUtils
+import com.groupon.sparklint.events.{CompressedStateManager, FileEventSourceManager}
 import org.http4s.client.blaze.PooledHttp1Client
 import org.json4s.JValue
 import org.json4s.jackson.JsonMethods._

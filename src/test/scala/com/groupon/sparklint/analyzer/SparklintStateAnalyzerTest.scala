@@ -14,10 +14,10 @@ package com.groupon.sparklint.analyzer
 
 import java.io.File
 
-import com.groupon.sparklint.TestUtils
+import com.groupon.sparklint.common.TestUtils
 import com.groupon.sparklint.data._
-import com.groupon.sparklint.events._
-import org.apache.spark.scheduler.TaskLocality
+import com.groupon.sparklint.events.{CompressedStateManager, EventSourceMeta, FileEventSource}
+import org.apache.spark.scheduler.TaskLocality._
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 
 /**
@@ -89,22 +89,22 @@ class SparklintStateAnalyzerTest extends FlatSpec with Matchers with BeforeAndAf
     // Accumulate to 4 during run
     new SparklintStateAnalyzer(meta, stateManager).getCurrentTaskByExecutors.get shouldEqual
       Map("1" -> List(
-        SparklintTaskInfo(46, "1", 45, 0, 1466087882535L, "ANY", speculative = false),
-        SparklintTaskInfo(41, "1", 39, 0, 1466087875648L, "ANY", speculative = false)
+        SparklintTaskInfo(46, "1", 45, 0, 1466087882535L, 'ANY, speculative = false),
+        SparklintTaskInfo(41, "1", 39, 0, 1466087875648L, 'ANY, speculative = false)
       ), "2" -> List(
-        SparklintTaskInfo(42, "2", 40, 0, 1466087875869L, "ANY", speculative = false),
-        SparklintTaskInfo(43, "2", 41, 0, 1466087877653L, "ANY", speculative = false)
+        SparklintTaskInfo(42, "2", 40, 0, 1466087875869L, 'ANY, speculative = false),
+        SparklintTaskInfo(43, "2", 41, 0, 1466087877653L, 'ANY, speculative = false)
       ))
   }
 
   it should "getLocalityStatsByStageIdentifier correctly if stage identifier hit" in {
     TestUtils.replay(eventSource)
     val actual: SparklintStageMetrics = new SparklintStateAnalyzer(meta, stateManager)
-      .getLocalityStatsByStageIdentifier(StageIdentifier('myJobGroup, 'myJobDescription, "count at <console>:22")).get
+      .getLocalityStatsByStageIdentifier(SparklintStageIdentifier('myJobGroup, 'myJobDescription, "count at <console>:22")).get
     actual.metricsRepo.size shouldBe 4
-    actual.metricsRepo should contain key (TaskLocality.PROCESS_LOCAL -> 'ResultTask)
-    actual.metricsRepo should contain key (TaskLocality.RACK_LOCAL -> 'ResultTask)
-    actual.metricsRepo should contain key (TaskLocality.ANY -> 'ResultTask)
-    actual.metricsRepo should contain key (TaskLocality.NODE_LOCAL -> 'ResultTask)
+    actual.metricsRepo should contain key (PROCESS_LOCAL -> 'ResultTask)
+    actual.metricsRepo should contain key (RACK_LOCAL -> 'ResultTask)
+    actual.metricsRepo should contain key (ANY -> 'ResultTask)
+    actual.metricsRepo should contain key (NODE_LOCAL -> 'ResultTask)
   }
 }

@@ -1,24 +1,28 @@
 /*
- Copyright 2016 Groupon, Inc.
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
- http://www.apache.org/licenses/LICENSE-2.0
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
-*/
+ * Copyright 2016 Groupon, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.groupon.sparklint
 
 import com.frugalmechanic.optparse.OptParse
 import com.groupon.sparklint.common._
-import com.groupon.sparklint.events._
+import com.groupon.sparklint.events.{EventSourceDirectory, FileEventSourceManager}
 import com.groupon.sparklint.ui.UIServer
 
 import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, Promise}
+import scala.concurrent.{Await, Future, Promise}
 
 /**
   * @author rxue, swhitear
@@ -39,7 +43,7 @@ class SparklintServer(eventSourceManager: FileEventSourceManager,
   /**
     * Main entry point for the server based version of SparkLint.
     */
-  def startUI() = {
+  def startUI(): Unit = {
     shutdownUI()
     // wire up the front end server using the analyzer to adapt state via models
     val uiServer = new UIServer(eventSourceManager)
@@ -47,14 +51,14 @@ class SparklintServer(eventSourceManager: FileEventSourceManager,
     uiServer.startServer()
   }
 
-  def shutdownUI() = {
+  def shutdownUI(): Unit = {
     if (ui.isDefined) {
       logInfo(s"Shutting down...")
       ui.get.stopServer()
     }
   }
 
-  def buildEventSources() = {
+  def buildEventSources(): Unit = {
     val runImmediately = config.runImmediately.getOrElse(DEFAULT_RUN_IMMEDIATELY)
     if (config.historySource) {
       logError("historySource unsupported.")
@@ -95,7 +99,7 @@ object SparklintServer extends Logging with OptParse {
     waitForever
   }
 
-  def waitForever = {
+  def waitForever: Future[Nothing] = {
     val p = Promise()
     Await.ready(p.future, Duration.Inf)
   }

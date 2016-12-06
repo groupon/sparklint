@@ -2,8 +2,8 @@ package com.groupon.sparklint.events
 
 import java.util.function.Consumer
 
-import com.groupon.sparklint.TestUtils._
-import org.apache.spark.scheduler.{SparkListenerStageSubmitted, SparkListenerEvent}
+import com.groupon.sparklint.common.TestUtils
+import org.apache.spark.scheduler.{SparkListenerEvent, SparkListenerStageSubmitted}
 import org.scalatest.{FlatSpec, Matchers}
 
 /**
@@ -35,11 +35,11 @@ class EventBufferTest extends FlatSpec with Matchers {
     val buffer = new EventBuffer(IndexedSeq.empty)
 
     intercept[NotImplementedError] {
-      buffer.set(sparkStageSubmittedEvent(42, "test_stage"))
+      buffer.set(TestUtils.sparkStageSubmittedEvent(42, "test_stage"))
     }
 
     intercept[NotImplementedError] {
-      buffer.add(sparkStageSubmittedEvent(4242, "test_stage"))
+      buffer.add(TestUtils.sparkStageSubmittedEvent(4242, "test_stage"))
     }
   }
 
@@ -58,7 +58,7 @@ class EventBufferTest extends FlatSpec with Matchers {
   }
 
   private def genEvents(count: Int) = {
-    (0 until count).map(i => sparkStageSubmittedEvent(i, "test_stage"))
+    (0 until count).map(i => TestUtils.sparkStageSubmittedEvent(i, "test_stage"))
   }
 
   class ConsoleBufferConsumer extends Consumer[SparkListenerEvent] {

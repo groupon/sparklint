@@ -1,27 +1,30 @@
 /*
- Copyright 2016 Groupon, Inc.
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
- http://www.apache.org/licenses/LICENSE-2.0
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
-*/
+ * Copyright 2016 Groupon, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.groupon.sparklint.events
 
 import com.groupon.sparklint.common.Utils
 import com.groupon.sparklint.data._
-import com.groupon.sparklint.data.lossless.{LosslessMetricsSink, LosslessStageMetrics, LosslessState}
 import org.apache.spark.scheduler._
 
 /**
   * @author rxue
   * @since 9/22/16.
   */
-class LosslessEventStateManager(metricsBuckets: Int = 1000) extends EventStateManagerLike {
+class LosslessStateManager(metricsBuckets: Int = 1000) extends EventStateManagerLike with EventReceiverLike {
 
   var state: LosslessState = LosslessState.empty
 
@@ -29,14 +32,12 @@ class LosslessEventStateManager(metricsBuckets: Int = 1000) extends EventStateMa
 
   override def onAddApp(event: SparkListenerApplicationStart): Unit = {
     state = state.copy(
-      appStart = Some(event),
       lastUpdatedAt = event.time
     )
   }
 
   override def unAddApp(event: SparkListenerApplicationStart): Unit = {
     state = state.copy(
-      appStart = None,
       lastUpdatedAt = event.time
     )
   }
@@ -79,7 +80,7 @@ class LosslessEventStateManager(metricsBuckets: Int = 1000) extends EventStateMa
 
   override def onStageSubmitted(event: SparkListenerStageSubmitted): Unit = {
     val stageId = event.stageInfo.stageId
-    val stageIdentifier = StageIdentifier.fromStageInfo(event.stageInfo, event.properties)
+    val stageIdentifier = SparkToSparklint.sparklintStageIdentifier(event.stageInfo, event.properties)
     state = state.copy(
       stageIdLookup = state.stageIdLookup + (stageId -> stageIdentifier),
       lastUpdatedAt = event.stageInfo.submissionTime.getOrElse(state.lastUpdatedAt))
@@ -102,12 +103,12 @@ class LosslessEventStateManager(metricsBuckets: Int = 1000) extends EventStateMa
       state = state.copy(
         coreUsage = Utils.LOCALITIES.map(locality => locality -> LosslessMetricsSink.empty(startTime, metricsBuckets)).toMap,
         firstTaskAt = Some(startTime),
-        runningTasks = Map(event.taskInfo.taskId -> SparklintTaskInfo(event.taskInfo)),
+        runningTasks = Map(event.taskInfo.taskId -> SparkToSparklint.sparklintTaskInfo(event.taskInfo)),
         lastUpdatedAt = startTime
       )
     } else {
       state = state.copy(
-        runningTasks = state.runningTasks + (event.taskInfo.taskId -> SparklintTaskInfo(event.taskInfo)),
+        runningTasks = state.runningTasks + (event.taskInfo.taskId -> SparkToSparklint.sparklintTaskInfo(event.taskInfo)),
         lastUpdatedAt = startTime)
     }
   }
@@ -139,8 +140,8 @@ class LosslessEventStateManager(metricsBuckets: Int = 1000) extends EventStateMa
       stageMetrics = state.stageMetrics + (stageId -> state.stageMetrics.getOrElse(stageId, LosslessStageMetrics.empty).merge(
         taskId = event.taskInfo.taskId,
         taskType = Symbol(event.taskType),
-        locality = event.taskInfo.taskLocality,
-        metrics = event.taskMetrics)),
+        locality = locality,
+        metrics = SparkVersionSpecificToSparklint.sparklintTaskMetrics(event.taskMetrics))),
       lastUpdatedAt = event.taskInfo.finishTime)
   }
 
@@ -150,7 +151,7 @@ class LosslessEventStateManager(metricsBuckets: Int = 1000) extends EventStateMa
       coreUsage = state.coreUsage + (locality -> state.coreUsage(locality).removeUsage(
         startTime = event.taskInfo.launchTime,
         endTime = event.taskInfo.finishTime)),
-      runningTasks = state.runningTasks + (event.taskInfo.taskId -> SparklintTaskInfo(event.taskInfo)),
+      runningTasks = state.runningTasks + (event.taskInfo.taskId -> SparkToSparklint.sparklintTaskInfo(event.taskInfo)),
       // cannot undo message from stageMetrics, since it is not reversible
       lastUpdatedAt = event.taskInfo.finishTime)
   }

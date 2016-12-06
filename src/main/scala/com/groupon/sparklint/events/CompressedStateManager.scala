@@ -1,27 +1,30 @@
 /*
- Copyright 2016 Groupon, Inc.
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
- http://www.apache.org/licenses/LICENSE-2.0
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
-*/
+ * Copyright 2016 Groupon, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.groupon.sparklint.events
 
 import com.groupon.sparklint.common.Utils
 import com.groupon.sparklint.data._
-import com.groupon.sparklint.data.compressed._
 import org.apache.spark.scheduler._
 
 /**
   * @author rxue
   * @since 9/7/16.
   */
-class CompressedStateManager(metricsBuckets: Int = 1000) extends EventStateManagerLike {
+class CompressedStateManager(metricsBuckets: Int = 1000) extends EventStateManagerLike with EventReceiverLike {
   // collections will be optimized for fast writes
   // snapshoting will enable the analyzer to capture the raw data and run models against it
   private var state: CompressedState = CompressedState.empty
@@ -30,14 +33,12 @@ class CompressedStateManager(metricsBuckets: Int = 1000) extends EventStateManag
 
   override def onAddApp(event: SparkListenerApplicationStart): Unit = {
     state = state.copy(
-      //appStart = Some(event),
       lastUpdatedAt = event.time
     )
   }
 
   override def unAddApp(event: SparkListenerApplicationStart): Unit = {
     state = state.copy(
-      //appStart = None,
       lastUpdatedAt = event.time
     )
   }
@@ -80,7 +81,7 @@ class CompressedStateManager(metricsBuckets: Int = 1000) extends EventStateManag
 
   override def onStageSubmitted(event: SparkListenerStageSubmitted): Unit = {
     val stageId = event.stageInfo.stageId
-    val stageIdentifier = StageIdentifier.fromStageInfo(event.stageInfo, event.properties)
+    val stageIdentifier = SparkToSparklint.sparklintStageIdentifier(event.stageInfo, event.properties)
     state = state.copy(
       stageIdLookup = state.stageIdLookup + (stageId -> stageIdentifier),
       lastUpdatedAt = event.stageInfo.submissionTime.getOrElse(state.lastUpdatedAt))
@@ -103,12 +104,12 @@ class CompressedStateManager(metricsBuckets: Int = 1000) extends EventStateManag
       state = state.copy(
         coreUsage = Utils.LOCALITIES.map(locality => locality -> CompressedMetricsSink.empty(startTime, metricsBuckets)).toMap,
         firstTaskAt = Some(startTime),
-        runningTasks = Map(event.taskInfo.taskId -> SparklintTaskInfo(event.taskInfo)),
+        runningTasks = Map(event.taskInfo.taskId -> SparkToSparklint.sparklintTaskInfo(event.taskInfo)),
         lastUpdatedAt = startTime
       )
     } else {
       state = state.copy(
-        runningTasks = state.runningTasks + (event.taskInfo.taskId -> SparklintTaskInfo(event.taskInfo)),
+        runningTasks = state.runningTasks + (event.taskInfo.taskId -> SparkToSparklint.sparklintTaskInfo(event.taskInfo)),
         lastUpdatedAt = startTime)
     }
   }
@@ -140,8 +141,8 @@ class CompressedStateManager(metricsBuckets: Int = 1000) extends EventStateManag
       stageMetrics = state.stageMetrics + (stageId -> state.stageMetrics.getOrElse(stageId, CompressedStageMetrics.empty).merge(
         taskId = event.taskInfo.taskId,
         taskType = Symbol(event.taskType),
-        locality = event.taskInfo.taskLocality,
-        metrics = event.taskMetrics)),
+        locality = locality,
+        metrics = SparkVersionSpecificToSparklint.sparklintTaskMetrics(event.taskMetrics))),
       lastUpdatedAt = event.taskInfo.finishTime)
   }
 
@@ -151,7 +152,7 @@ class CompressedStateManager(metricsBuckets: Int = 1000) extends EventStateManag
       coreUsage = state.coreUsage + (locality -> state.coreUsage(locality).removeUsage(
         startTime = event.taskInfo.launchTime,
         endTime = event.taskInfo.finishTime)),
-      runningTasks = state.runningTasks + (event.taskInfo.taskId -> SparklintTaskInfo(event.taskInfo)),
+      runningTasks = state.runningTasks + (event.taskInfo.taskId -> SparkToSparklint.sparklintTaskInfo(event.taskInfo)),
       // cannot undo message from stageMetrics, since it is not reversible
       lastUpdatedAt = event.taskInfo.finishTime)
   }
@@ -184,5 +185,3 @@ class CompressedStateManager(metricsBuckets: Int = 1000) extends EventStateManag
       lastUpdatedAt = event.time)
   }
 }
-
-

@@ -2,9 +2,7 @@ package com.groupon.sparklint.events
 
 import java.io.File
 
-import com.groupon.sparklint.TestUtils
-import com.groupon.sparklint.TestUtils.resource
-import com.groupon.sparklint.common.Utils
+import com.groupon.sparklint.common.{TestUtils, Utils}
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 
 /**
@@ -51,7 +49,7 @@ class EventSourceMetaTest extends FlatSpec with Matchers with BeforeAndAfterEach
   }
 
   private def testFileWithState: File = {
-    new File(resource("file_event_log_test_state_events"))
+    new File(TestUtils.resource("file_event_log_test_state_events"))
   }
 }
 

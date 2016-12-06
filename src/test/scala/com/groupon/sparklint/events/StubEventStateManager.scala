@@ -1,7 +1,6 @@
 package com.groupon.sparklint.events
 
-import com.groupon.sparklint.data.SparklintStateLike
-import com.groupon.sparklint.data.compressed.CompressedState
+import com.groupon.sparklint.data.{CompressedState, SparklintStateLike}
 import org.apache.spark.scheduler._
 
 import scala.collection.mutable.ArrayBuffer
@@ -14,7 +13,7 @@ import scala.collection.mutable.ArrayBuffer
 class StubEventStateManager(val onEvents: ArrayBuffer[SparkListenerEvent] = ArrayBuffer.empty,
                             val unEvents: ArrayBuffer[SparkListenerEvent] = ArrayBuffer.empty,
                             val state: SparklintStateLike = CompressedState.empty)
-  extends EventStateManagerLike {
+  extends EventStateManagerLike with EventReceiverLike {
 
   val preprocEvents = ArrayBuffer.empty[SparkListenerEvent]
 

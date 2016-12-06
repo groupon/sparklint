@@ -2,11 +2,10 @@ package com.groupon.sparklint.events
 
 import java.io.File
 
-import com.groupon.sparklint.TestUtils.resource
 import org.apache.spark.groupon.StringToSparkEvent
 import org.apache.spark.scheduler._
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
-
+import com.groupon.sparklint.common.TestUtils._
 import scala.io.Source
 
 /**

@@ -14,8 +14,8 @@ package com.groupon.sparklint
 
 import java.io.File
 
-import com.groupon.sparklint.TestUtils.resource
 import com.groupon.sparklint.common.{ScheduledTask, SchedulerLike, SparklintConfig}
+import com.groupon.sparklint.common.TestUtils._
 import com.groupon.sparklint.events.FileEventSourceManager
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 

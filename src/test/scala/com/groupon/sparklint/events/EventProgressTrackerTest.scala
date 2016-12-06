@@ -12,7 +12,7 @@
 */
 package com.groupon.sparklint.events
 
-import com.groupon.sparklint.TestUtils._
+import com.groupon.sparklint.common.TestUtils._
 import com.groupon.sparklint.common.Utils
 import org.apache.spark.scheduler.TaskLocality
 import org.scalatest.{FlatSpec, Matchers}

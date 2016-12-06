@@ -1,21 +1,22 @@
 /*
- Copyright 2016 Groupon, Inc.
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
- http://www.apache.org/licenses/LICENSE-2.0
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
-*/
+ * Copyright 2016 Groupon, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.groupon.sparklint.analyzer
 
 import com.groupon.sparklint.data._
-import com.groupon.sparklint.data.compressed.CompressedMetricsSink
-import com.groupon.sparklint.data.lossless.LosslessMetricsSink
-//import com.groupon.sparklint.data.compressed._
 import com.groupon.sparklint.events.{EventSourceMetaLike, EventStateManagerLike}
 import org.apache.spark.scheduler.TaskLocality
 import org.apache.spark.scheduler.TaskLocality._
@@ -33,7 +34,7 @@ import scala.util.Try
   */
 class SparklintStateAnalyzer(val source: EventSourceMetaLike, val stateManager: EventStateManagerLike)
   extends SparklintAnalyzerLike {
-  val state = stateManager.getState
+  val state: SparklintStateLike = stateManager.getState
 
   override lazy val getCurrentCores: Option[Int] = getRunningTasks
 
@@ -86,7 +87,7 @@ class SparklintStateAnalyzer(val source: EventSourceMetaLike, val stateManager: 
 
   override lazy val getLastUpdatedAt: Option[Long] = Some(state.lastUpdatedAt)
 
-  override def getLocalityStatsByStageIdentifier(stageIdentifier: StageIdentifier): Option[SparklintStageMetrics] = {
+  override def getLocalityStatsByStageIdentifier(stageIdentifier: SparklintStageIdentifier): Option[SparklintStageMetrics] = {
     state.stageMetrics.get(stageIdentifier)
   }
 
@@ -156,7 +157,7 @@ class SparklintStateAnalyzer(val source: EventSourceMetaLike, val stateManager: 
     } else {
       var toReturn = state.coreUsage
       state.runningTasks.values.foreach(runningTask => {
-        val locality = TaskLocality.withName(runningTask.locality)
+        val locality = TaskLocality.withName(runningTask.locality.name)
         toReturn = toReturn.updated(locality, toReturn(locality).addUsage(runningTask.launchTime, state.lastUpdatedAt))
       })
       toReturn

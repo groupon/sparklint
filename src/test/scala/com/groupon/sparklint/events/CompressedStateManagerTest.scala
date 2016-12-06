@@ -14,9 +14,8 @@ package com.groupon.sparklint.events
 
 import java.io.File
 
-import com.groupon.sparklint.TestUtils._
-import com.groupon.sparklint.data.StageIdentifier
-import org.apache.spark.scheduler.TaskLocality
+import com.groupon.sparklint.common.TestUtils._
+import com.groupon.sparklint.data.SparklintStageIdentifier
 import org.apache.spark.scheduler.TaskLocality._
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 
@@ -26,9 +25,9 @@ import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
   */
 class CompressedStateManagerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
 
-  var eventSource    : FileEventSource        = _
-  var eventState     : CompressedStateManager = _
-  var file           : File                   = _
+  var eventSource: FileEventSource        = _
+  var eventState : CompressedStateManager = _
+  var file       : File                   = _
 
   override protected def beforeEach(): Unit = {
     eventState = new CompressedStateManager()
@@ -43,24 +42,24 @@ class CompressedStateManagerTest extends FlatSpec with Matchers with BeforeAndAf
     coreUsage.size shouldBe 5
     // should be when first task was submitted
     val firstTaskTime = 1466087848562L
-    coreUsage(TaskLocality.ANY).origin shouldBe firstTaskTime
-    coreUsage(TaskLocality.PROCESS_LOCAL).origin shouldBe firstTaskTime
-    coreUsage(TaskLocality.NODE_LOCAL).origin shouldBe firstTaskTime
-    coreUsage(TaskLocality.RACK_LOCAL).origin shouldBe firstTaskTime
-    coreUsage(TaskLocality.NO_PREF).origin shouldBe firstTaskTime
+    coreUsage(ANY).origin shouldBe firstTaskTime
+    coreUsage(PROCESS_LOCAL).origin shouldBe firstTaskTime
+    coreUsage(NODE_LOCAL).origin shouldBe firstTaskTime
+    coreUsage(RACK_LOCAL).origin shouldBe firstTaskTime
+    coreUsage(NO_PREF).origin shouldBe firstTaskTime
 
-    coreUsage(TaskLocality.ANY).storage.sum shouldBe 442010
-    coreUsage(TaskLocality.PROCESS_LOCAL).storage.sum shouldBe 926
-    coreUsage(TaskLocality.NODE_LOCAL).storage.sum shouldBe 11338
-    coreUsage(TaskLocality.RACK_LOCAL).storage.sum shouldBe 49480
-    coreUsage(TaskLocality.NO_PREF).storage.sum shouldBe 0
+    coreUsage(ANY).storage.sum shouldBe 442010
+    coreUsage(PROCESS_LOCAL).storage.sum shouldBe 926
+    coreUsage(NODE_LOCAL).storage.sum shouldBe 11338
+    coreUsage(RACK_LOCAL).storage.sum shouldBe 49480
+    coreUsage(NO_PREF).storage.sum shouldBe 0
 
     // the core usage stats' time resolution should be 500 ms
-    coreUsage(TaskLocality.ANY).resolution shouldBe 500
-    coreUsage(TaskLocality.PROCESS_LOCAL).resolution shouldBe 500
-    coreUsage(TaskLocality.NODE_LOCAL).resolution shouldBe 100 // less record than other locality
-    coreUsage(TaskLocality.RACK_LOCAL).resolution shouldBe 500
-    coreUsage(TaskLocality.NO_PREF).resolution shouldBe 1 // no record
+    coreUsage(ANY).resolution shouldBe 500
+    coreUsage(PROCESS_LOCAL).resolution shouldBe 500
+    coreUsage(NODE_LOCAL).resolution shouldBe 100 // less record than other locality
+    coreUsage(RACK_LOCAL).resolution shouldBe 500
+    coreUsage(NO_PREF).resolution shouldBe 1 // no record
   }
 
   it should "accumulate stage metrics correctly" in {
@@ -69,7 +68,7 @@ class CompressedStateManagerTest extends FlatSpec with Matchers with BeforeAndAf
     val stageMetrics = state.stageMetrics
 
     stageMetrics.size shouldBe 1
-    val taskMetricsByLocality = stageMetrics(StageIdentifier('myJobGroup, 'myJobDescription, "count at <console>:22"))
+    val taskMetricsByLocality = stageMetrics(SparklintStageIdentifier('myJobGroup, 'myJobDescription, "count at <console>:22"))
     taskMetricsByLocality.metricsRepo.size shouldBe 4
     taskMetricsByLocality.metricsRepo should contain key PROCESS_LOCAL -> 'ResultTask
     taskMetricsByLocality.metricsRepo should contain key RACK_LOCAL -> 'ResultTask

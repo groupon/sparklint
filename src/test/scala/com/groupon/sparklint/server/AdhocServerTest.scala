@@ -14,7 +14,7 @@ package com.groupon.sparklint.server
 
 import org.http4s.HttpService
 import org.http4s.client.Client
-import org.http4s.client.blaze._
+import org.http4s.client.blaze.PooledHttp1Client
 import org.http4s.dsl._
 import org.scalatest.{BeforeAndAfterAll, FlatSpec, Matchers}
 

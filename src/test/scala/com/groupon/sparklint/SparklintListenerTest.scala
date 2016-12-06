@@ -12,6 +12,7 @@
 */
 package com.groupon.sparklint
 
+import com.groupon.sparklint.common.ResourceHelper
 import org.apache.spark.SparkConf
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 

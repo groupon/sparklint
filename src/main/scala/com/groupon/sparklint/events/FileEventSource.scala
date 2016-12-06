@@ -1,15 +1,19 @@
 /*
- Copyright 2016 Groupon, Inc.
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
- http://www.apache.org/licenses/LICENSE-2.0
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
-*/
+ * Copyright 2016 Groupon, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.groupon.sparklint.events
 
 import java.io.File
@@ -39,32 +43,32 @@ case class FileEventSource(fileSource: File, receivers: Seq[EventReceiverLike])
   override val eventSourceId: String = fileSource.getName
 
   @throws[IllegalArgumentException]
-  def forwardEvents(count: Int = 1) = fwdScroll.scroll(count)
+  def forwardEvents(count: Int = 1): Unit = fwdScroll.scroll(count)
 
   @throws[IllegalArgumentException]
-  def rewindEvents(count: Int = 1) = rewScroll.scroll(count)
+  def rewindEvents(count: Int = 1): Unit = rewScroll.scroll(count)
 
   @throws[IllegalArgumentException]
-  def forwardTasks(count: Int = 1) = fwdScroll.scroll(count, (evt) => evt.isInstanceOf[SparkListenerTaskEnd])
+  def forwardTasks(count: Int = 1): Unit = fwdScroll.scroll(count, (evt) => evt.isInstanceOf[SparkListenerTaskEnd])
 
   @throws[IllegalArgumentException]
-  def rewindTasks(count: Int = 1) = rewScroll.scroll(count, (evt) => evt.isInstanceOf[SparkListenerTaskStart])
+  def rewindTasks(count: Int = 1): Unit = rewScroll.scroll(count, (evt) => evt.isInstanceOf[SparkListenerTaskStart])
 
   @throws[IllegalArgumentException]
-  def forwardStages(count: Int = 1) = fwdScroll.scroll(count, (evt) => evt.isInstanceOf[SparkListenerStageCompleted])
+  def forwardStages(count: Int = 1): Unit = fwdScroll.scroll(count, (evt) => evt.isInstanceOf[SparkListenerStageCompleted])
 
   @throws[IllegalArgumentException]
-  def rewindStages(count: Int = 1) = rewScroll.scroll(count, (evt) => evt.isInstanceOf[SparkListenerStageSubmitted])
+  def rewindStages(count: Int = 1): Unit = rewScroll.scroll(count, (evt) => evt.isInstanceOf[SparkListenerStageSubmitted])
 
   @throws[IllegalArgumentException]
-  def forwardJobs(count: Int = 1) = fwdScroll.scroll(count, (evt) => evt.isInstanceOf[SparkListenerJobEnd])
+  def forwardJobs(count: Int = 1): Unit = fwdScroll.scroll(count, (evt) => evt.isInstanceOf[SparkListenerJobEnd])
 
   @throws[IllegalArgumentException]
-  def rewindJobs(count: Int = 1) = rewScroll.scroll(count, (evt) => evt.isInstanceOf[SparkListenerJobStart])
+  def rewindJobs(count: Int = 1): Unit = rewScroll.scroll(count, (evt) => evt.isInstanceOf[SparkListenerJobStart])
 
-  override def toEnd() = fwdScroll.scroll(Int.MaxValue)
+  override def toEnd(): Unit = fwdScroll.scroll(Int.MaxValue)
 
-  override def toStart() = rewScroll.scroll(Int.MaxValue)
+  override def toStart(): Unit = rewScroll.scroll(Int.MaxValue)
 
   override def hasNext: Boolean = buffer.hasNext
 
