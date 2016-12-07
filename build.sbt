@@ -9,6 +9,7 @@ startYear := Some(2016)
 licenses := Seq("Apache License, Version 2.0" -> url("https://www.apache.org/licenses/LICENSE-2.0.txt"))
 
 // Compile
+enablePlugins(AutomateHeaderPlugin)
 name:= s"sparklint-spark${BuildUtils.getProjectNameSuffix(sparkVersion.value)}"
 scalaVersion := "2.10.6"
 crossScalaVersions := Seq("2.10.6", "2.11.8")
