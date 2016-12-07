@@ -25,6 +25,8 @@ Please note, in the jar the `161` means `Spark1.6.1` and `2.10` means `scala 2.1
 
 If your spark version is not precompiled (i.e. 1.5.0), you can add an entry in `project/BuildUtils.getSparkMajorVersion`, then provide compatible code similar to spark-1.6 in `src/main/spark-1.5`
 
+For more detail about event logging, how to enable it, and how to gather log files, check http://spark.apache.org/docs/latest/configuration.html#spark-ui
+
 ##### Live mode (run inside spark driver node)
 
 SparklintListener is an implementation of [SparkFirehoseListener](https://spark.apache.org/docs/1.5.2/api/java/org/apache/spark/SparkFirehoseListener.html)
@@ -62,15 +64,16 @@ You can feed Sparklint an event log file to playback activities.
 - Docker support is comming soon, track progress at #26
 - Spark version doesn't matter in server mode
 
-The command line arguments supported are:
-
-- `-f [FileName]`: Filename of an Spark event log source to use.
-- `-d [DirectoryName]`: Directory of an Spark event log sources to use. Read in filename sort order.
-- `-p [pollRate]`: The interval (in seconds) between polling for changes in directory and history event sources.
-- `-r`: Set the flag in order to run each buffer through to their end state on startup.
-
-
-For more detail about event logging, how to enable it, and how to gather log files, check http://spark.apache.org/docs/latest/configuration.html#spark-ui
+### Config
+* Common config
+    * Set the port of the UI (eg, 4242)
+        - In live mode, send `--conf sparklint.port=4242` to spark submit script
+        - In server mode, send `--port 4242` to sbt run commandline argument
+* Server only config
+    - `-f [FileName]`: Filename of an Spark event log source to use.
+    - `-d [DirectoryName]`: Directory of an Spark event log sources to use. Read in filename sort order.
+    - `-p [pollRate]`: The interval (in seconds) between polling for changes in directory and history event sources.
+    - `-r`: Set the flag in order to run each buffer through to their end state on startup.
 
 ### Developer cheatsheet
 

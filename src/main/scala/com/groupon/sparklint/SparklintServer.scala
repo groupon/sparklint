@@ -30,7 +30,7 @@ import scala.concurrent.{Await, Future, Promise}
   */
 class SparklintServer(eventSourceManager: FileEventSourceManager,
                       scheduler: SchedulerLike,
-                      config: SparklintConfig)
+                      config: CliSparklintConfig)
   extends Logging {
 
   implicit val logger: Logging = this
@@ -46,7 +46,7 @@ class SparklintServer(eventSourceManager: FileEventSourceManager,
   def startUI(): Unit = {
     shutdownUI()
     // wire up the front end server using the analyzer to adapt state via models
-    val uiServer = new UIServer(eventSourceManager)
+    val uiServer = new UIServer(eventSourceManager, config)
     ui = Some(uiServer)
     uiServer.startServer()
   }
@@ -93,7 +93,7 @@ object SparklintServer extends Logging with OptParse {
   def main(args: Array[String]): Unit = {
     val eventSourceManager = new FileEventSourceManager()
     val scheduler = new Scheduler()
-    val config = SparklintConfig().parseCliArgs(args)
+    val config = CliSparklintConfig().parseCliArgs(args)
     val server = new SparklintServer(eventSourceManager, scheduler, config)
     server.startUI()
     waitForever

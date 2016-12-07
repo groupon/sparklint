@@ -14,7 +14,7 @@ package com.groupon.sparklint
 
 import java.io.File
 
-import com.groupon.sparklint.common.{ScheduledTask, SchedulerLike, SparklintConfig}
+import com.groupon.sparklint.common.{ScheduledTask, SchedulerLike, CliSparklintConfig}
 import com.groupon.sparklint.common.TestUtils._
 import com.groupon.sparklint.events.FileEventSourceManager
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
@@ -35,14 +35,14 @@ class SparklintServerTest extends FlatSpec with BeforeAndAfterEach with Matchers
   private var dirname           : String                 = _
   private var tempFile          : File                   = _
   private var scheduler         : StubScheduler          = _
-  private var config            : SparklintConfig        = _
+  private var config            : CliSparklintConfig = _
 
   override protected def beforeEach(): Unit = {
     eventSourceManager = new FileEventSourceManager()
     scheduler = new StubScheduler()
     dirname = resource("directory_source")
     tempFile = resetTempFile(dirname)
-    config = SparklintConfig(exitOnError = false)
+    config = CliSparklintConfig(exitOnError = false)
     server = new SparklintServer(eventSourceManager, scheduler, config)
   }
 
