@@ -48,9 +48,6 @@ libraryDependencies ++= Seq(
 // Run
 mainClass in run := Some("com.groupon.sparklint.SparklintServer")
 
-// Package Multiple Spark Version
-commands += BuildUtils.foreachSparkVersion
-
 // Package fat jar
 assemblyMergeStrategy in assembly := {
   case PathList("META-INF", xs@_*) => MergeStrategy.discard
@@ -83,6 +80,11 @@ dockerfile in docker := {
     expose(23763)
   }
 }
+
+// Package Multiple Spark Version
+commands += BuildUtils.foreachSparkVersion
+// One command to release everything
+commands += BuildUtils.sparklintReleaseCommand
 
 // To sync with Maven central
 pomExtra in Global := {

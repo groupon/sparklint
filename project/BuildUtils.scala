@@ -8,26 +8,42 @@ object BuildUtils {
 
   val SUPPORTED_SPARK_VERSIONS: Seq[String] = SPARK_1_6_VERSIONS ++ SPARK_2_0_VERSIONS
 
-  private val uber_command_text = "foreachSparkVersion"
-  private val uber_command_help = Help(
-    Seq(s"$uber_command_text <extra tasks>" -> "foreach supported spark version, perform a series of task"),
-    Map(uber_command_text ->
+  // Foreach Spark Version Command
+  private val uberCommandText = "foreachSparkVersion"
+  private val uberCommandHelp = Help(
+    Seq(s"$uberCommandText <extra tasks>" -> "foreach supported spark version, perform a series of task"),
+    Map(uberCommandText ->
       """Perform tasks foreach supported spark version. This will:
         |1. Enumerate all supported version in BuildUtils.SUPPORTED_SPARK_VERSIONS
         |2. execute `set sparkVersion := "<version>"` and any extra tasks
       """.stripMargin))
 
-  def uber_command_parser(state: State): Parser[String] = {
+  def uberCommandParser(state: State): Parser[String] = {
     Space ~> token(StringBasic, "<extra tasks>")
   }
 
-  def uber_command_action(state: State, extraTasks: String): State = {
+  def uberCommandAction(state: State, extraTasks: String): State = {
     SUPPORTED_SPARK_VERSIONS.foldRight(state) { (version, state) =>
       "set sparkVersion := \"" + version + "\"" :: extraTasks :: state
     }
   }
 
-  val foreachSparkVersion: Command = Command(uber_command_text, uber_command_help)(uber_command_parser)(uber_command_action)
+  val foreachSparkVersion: Command = Command(uberCommandText, uberCommandHelp)(uberCommandParser)(uberCommandAction)
+
+  // One command release
+  private val sparklintReleaseCommandText = "sparklintRelease"
+  private val sparklintReleaseCommandHelp = Help(
+    Seq(sparklintReleaseCommandText -> "release sparklint for every scala spark version, and to docker"),
+    Map(sparklintReleaseCommandText ->
+      """Release Sparklint:
+        |1. Foreach spark version and scala version, publish jar to sonatype
+        |2. Publish docker image
+      """.stripMargin))
+
+  val sparklintReleaseCommand: Command = Command.command(sparklintReleaseCommandText) {
+    state =>
+      "+ foreachSparkVersion publishSigned" :: "reload" :: "dockerBuildAndPush" :: state
+  }
 
   def getProjectNameSuffix(versionString: String): String = versionString.replaceAll("[-\\.]", "")
 

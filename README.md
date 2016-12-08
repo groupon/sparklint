@@ -81,10 +81,11 @@ For more detail about event logging, how to enable it, and how to gather log fil
 * Change spark version: `set sparkVersion := "2.0.0"`
 * Change scala version: `++ 2.11.8`
 * Package: `package`
-* Perform task (e.g, test) foreach spark version `foreachSparkVersion test`
-* Publish to sonatype staging `foreachSparkVersion publishSigned`
+* Perform task (e.g, test) foreach spark version `+ foreachSparkVersion test`
+* Publish to sonatype staging `+ foreachSparkVersion publishSigned`
 * Build docker image to local `docker`
     - Snapshot version will be tagged as latest
     - Release version will be tagged as the version number
 * Publish existing docker image `dockerPublish`
 * Build and publish docker image at the same time `dockerBuildAndPublish`
+* The command to release everything: `sparklintRelease`
