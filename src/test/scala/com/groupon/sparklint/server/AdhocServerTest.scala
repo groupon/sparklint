@@ -91,6 +91,9 @@ class AdhocServerTest extends FlatSpec with BeforeAndAfterAll with Matchers {
   }
 
   def getService = new AdhocServer with HeartBeatService {
+
+    override def DEFAULT_PORT: Int = 40000
+
     val secret = 4242
 
     routingMap("") = HttpService {

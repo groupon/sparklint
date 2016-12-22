@@ -16,6 +16,7 @@
 
 package com.groupon.sparklint
 
+import com.groupon.sparklint.common.{SparkConfSparklintConfig, SparklintConfig}
 import com.groupon.sparklint.events._
 import com.groupon.sparklint.ui.UIServer
 import org.apache.spark.scheduler.SparkListenerEvent
@@ -27,10 +28,10 @@ import org.apache.spark.{SparkConf, SparkFirehoseListener}
   * @author rxue
   * @since 8/18/16.
   */
-class SparklintListener(appId: String, appName: String) extends SparkFirehoseListener {
+class SparklintListener(appId: String, appName: String, config: SparklintConfig) extends SparkFirehoseListener {
 
   def this(conf: SparkConf) = {
-    this(conf.get("spark.app.id", "AppId"), conf.get("spark.app.name", "AppName"))
+    this(conf.get("spark.app.id", "AppId"), conf.get("spark.app.name", "AppName"), new SparkConfSparklintConfig(conf))
   }
 
   override def onEvent(event: SparkListenerEvent): Unit = {
@@ -46,7 +47,7 @@ class SparklintListener(appId: String, appName: String) extends SparkFirehoseLis
 
   val detail = SourceAndDetail(buffer, EventSourceDetail(appId, meta, progress, stateManager))
   val eventSourceManager = new EventSourceManager(detail)
-  val uiServer = new UIServer(eventSourceManager)
+  val uiServer = new UIServer(eventSourceManager, config)
 
   // ATTN: ordering?
   uiServer.startServer()

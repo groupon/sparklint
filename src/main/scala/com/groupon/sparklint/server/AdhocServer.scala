@@ -40,7 +40,7 @@ import scalaz.concurrent.Task
   * @since 4/25/16.
   */
 trait AdhocServer extends RoutingMap with Logging {
-  val DEFAULT_PORT           = 23763
+  def DEFAULT_PORT: Int
   // Random number without special meaning
   var server: Option[Server] = None
 

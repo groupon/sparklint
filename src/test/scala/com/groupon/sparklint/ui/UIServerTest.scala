@@ -14,7 +14,7 @@ package com.groupon.sparklint.ui
 
 import java.io.File
 
-import com.groupon.sparklint.common.TestUtils
+import com.groupon.sparklint.common.{SparklintConfig, TestUtils}
 import com.groupon.sparklint.events.{CompressedStateManager, FileEventSourceManager}
 import org.http4s.client.blaze.PooledHttp1Client
 import org.json4s.JValue
@@ -37,7 +37,10 @@ class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
     }
 
     evSourceManager.addFile(file)
-    server = new UIServer(evSourceManager)
+    val config = new SparklintConfig {
+      override def port: Int = defaultPort
+    }
+    server = new UIServer(evSourceManager, config)
     server.startServer(Some(42424))
   }
 
