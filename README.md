@@ -61,8 +61,8 @@ You can feed Sparklint an event log file to playback activities.
 - Copy spark event log files to analyze into a directory then `sbt "run -d /path/to/log/dir -r"`
 - Or analyze a single log file `sbt "run -f /path/to/logfile -r"`
 - Then open browser and navigate to `http://localhost:23763`
-- Docker support is comming soon, track progress at #26
 - Spark version doesn't matter in server mode
+- Docker support available at https://hub.docker.com/r/roboxue/sparklint/
 
 ### Config
 * Common config
@@ -84,6 +84,11 @@ You can feed Sparklint an event log file to playback activities.
 * Change spark version: `set sparkVersion := "2.0.0"`
 * Change scala version: `++ 2.11.8`
 * Package: `package`
-* Perform task (e.g, test) foreach spark version `foreachSparkVersion test`
-* Publish to sonatype staging `foreachSparkVersion publishSigned`
-
+* Perform task (e.g, test) foreach spark version `+ foreachSparkVersion test`
+* Publish to sonatype staging `+ foreachSparkVersion publishSigned`
+* Build docker image to local `docker`
+    - Snapshot version will be tagged as latest
+    - Release version will be tagged as the version number
+* Publish existing docker image `dockerPublish`
+* Build and publish docker image at the same time `dockerBuildAndPublish`
+* The command to release everything: `sparklintRelease`

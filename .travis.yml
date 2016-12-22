@@ -3,6 +3,9 @@ scala:
     - 2.10.6
 jdk:
       - oraclejdk8
+sudo: required
+services:
+      - docker
 before_install:
       - wget https://archive.apache.org/dist/maven/maven-3/3.3.9/binaries/apache-maven-3.3.9-bin.zip
       - unzip -qq apache-maven-3.3.9-bin.zip
