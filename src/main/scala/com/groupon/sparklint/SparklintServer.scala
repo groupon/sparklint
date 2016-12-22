@@ -67,11 +67,11 @@ class SparklintServer(eventSourceManager: FileEventSourceManager,
       val directoryEventSource = new EventSourceDirectory(eventSourceManager, config.directorySource.get, runImmediately)
       scheduleDirectoryPolling(directoryEventSource)
     } else if (config.fileSource) {
-      logInfo(s"Loading data from file source ${config.fileSource}")
+      logInfo(s"Loading data from file source ${config.fileSource.get}")
       eventSourceManager.addFile(config.fileSource.get) match {
         case Some(source) =>
           if (runImmediately) source.forwardIfPossible()
-        case _            => logger.logError(s"Failed to create file source from ${config.fileSource}")
+        case _            => logger.logError(s"Failed to create file source from ${config.fileSource.get}")
       }
     } else {
       logWarn("No source specified, require one of fileSource, directorySource or historySource to be set.")
