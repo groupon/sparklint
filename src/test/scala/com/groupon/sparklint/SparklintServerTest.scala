@@ -1,20 +1,24 @@
 /*
- Copyright 2016 Groupon, Inc.
- Licensed under the Apache License, Version 2.0 (the "License");
- you may not use this file except in compliance with the License.
- You may obtain a copy of the License at
- http://www.apache.org/licenses/LICENSE-2.0
- Unless required by applicable law or agreed to in writing, software
- distributed under the License is distributed on an "AS IS" BASIS,
- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- See the License for the specific language governing permissions and
- limitations under the License.
-*/
+ * Copyright 2016 Groupon, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.groupon.sparklint
 
 import java.io.File
 
-import com.groupon.sparklint.common.{ScheduledTask, SchedulerLike, SparklintConfig}
+import com.groupon.sparklint.common.{ScheduledTask, SchedulerLike, CliSparklintConfig}
 import com.groupon.sparklint.common.TestUtils._
 import com.groupon.sparklint.events.FileEventSourceManager
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
@@ -35,14 +39,14 @@ class SparklintServerTest extends FlatSpec with BeforeAndAfterEach with Matchers
   private var dirname           : String                 = _
   private var tempFile          : File                   = _
   private var scheduler         : StubScheduler          = _
-  private var config            : SparklintConfig        = _
+  private var config            : CliSparklintConfig = _
 
   override protected def beforeEach(): Unit = {
     eventSourceManager = new FileEventSourceManager()
     scheduler = new StubScheduler()
     dirname = resource("directory_source")
     tempFile = resetTempFile(dirname)
-    config = SparklintConfig(exitOnError = false)
+    config = CliSparklintConfig(exitOnError = false)
     server = new SparklintServer(eventSourceManager, scheduler, config)
   }
 

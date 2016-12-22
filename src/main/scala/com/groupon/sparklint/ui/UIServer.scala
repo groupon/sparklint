@@ -17,11 +17,11 @@
 package com.groupon.sparklint.ui
 
 import com.groupon.sparklint.analyzer.SparklintStateAnalyzer
-import com.groupon.sparklint.common.Logging
+import com.groupon.sparklint.common.{Logging, SparklintConfig}
 import com.groupon.sparklint.events._
 import com.groupon.sparklint.server.{AdhocServer, StaticFileService}
-import org.http4s.{HttpService, Response}
 import org.http4s.dsl._
+import org.http4s.{HttpService, Response}
 import org.json4s.JsonDSL._
 import org.json4s.jackson.JsonMethods._
 import org.json4s.{DefaultFormats, Extraction, JObject}
@@ -34,10 +34,12 @@ import scalaz.concurrent.Task
   * @author swhitear
   * @since 8/18/16.
   */
-class UIServer(esManager: EventSourceManagerLike)
+class UIServer(esManager: EventSourceManagerLike, config: SparklintConfig)
   extends AdhocServer with StaticFileService with Logging {
 
   routingMap("/") = sparklintService
+
+  override def DEFAULT_PORT: Int = config.port
 
   private def sparklintService = HttpService {
     case GET -> Root                                                            => tryit(homepage, htmlResponse)
@@ -85,6 +87,7 @@ class UIServer(esManager: EventSourceManagerLike)
 
   private def fwdApp(appId: String, count: String, evType: EventType): String = {
     def progress() = esManager.getSourceDetail(appId).progress
+
     val mover = moveEventSource(count, appId, progress) _
     val eventSource = esManager.getScrollingSource(appId)
     evType match {
@@ -101,6 +104,7 @@ class UIServer(esManager: EventSourceManagerLike)
 
   private def rwdApp(appId: String, count: String, evType: EventType): String = {
     def progress() = esManager.getSourceDetail(appId).progress
+
     val mover = moveEventSource(count, appId, progress) _
     val eventSource = esManager.getScrollingSource(appId)
     evType match {

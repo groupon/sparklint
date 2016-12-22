@@ -30,7 +30,7 @@ import scala.concurrent.{Await, Future, Promise}
   */
 class SparklintServer(eventSourceManager: FileEventSourceManager,
                       scheduler: SchedulerLike,
-                      config: SparklintConfig)
+                      config: CliSparklintConfig)
   extends Logging {
 
   implicit val logger: Logging = this
@@ -46,7 +46,7 @@ class SparklintServer(eventSourceManager: FileEventSourceManager,
   def startUI(): Unit = {
     shutdownUI()
     // wire up the front end server using the analyzer to adapt state via models
-    val uiServer = new UIServer(eventSourceManager)
+    val uiServer = new UIServer(eventSourceManager, config)
     ui = Some(uiServer)
     uiServer.startServer()
   }
@@ -67,11 +67,11 @@ class SparklintServer(eventSourceManager: FileEventSourceManager,
       val directoryEventSource = new EventSourceDirectory(eventSourceManager, config.directorySource.get, runImmediately)
       scheduleDirectoryPolling(directoryEventSource)
     } else if (config.fileSource) {
-      logInfo(s"Loading data from file source ${config.fileSource}")
+      logInfo(s"Loading data from file source ${config.fileSource.get}")
       eventSourceManager.addFile(config.fileSource.get) match {
         case Some(source) =>
           if (runImmediately) source.forwardIfPossible()
-        case _            => logger.logError(s"Failed to create file source from ${config.fileSource}")
+        case _            => logger.logError(s"Failed to create file source from ${config.fileSource.get}")
       }
     } else {
       logWarn("No source specified, require one of fileSource, directorySource or historySource to be set.")
@@ -93,7 +93,7 @@ object SparklintServer extends Logging with OptParse {
   def main(args: Array[String]): Unit = {
     val eventSourceManager = new FileEventSourceManager()
     val scheduler = new Scheduler()
-    val config = SparklintConfig().parseCliArgs(args)
+    val config = CliSparklintConfig().parseCliArgs(args)
     val server = new SparklintServer(eventSourceManager, scheduler, config)
     server.startUI()
     waitForever
