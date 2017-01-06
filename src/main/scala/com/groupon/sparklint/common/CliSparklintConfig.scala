@@ -69,6 +69,12 @@ case class CliSparklintConfig(exitOnError: Boolean = true) extends SparklintConf
     validWith = Seq(historySource)
   )
 
+  val historyFilter: StrOpt = StrOpt(
+    long = "historyFilter",
+    desc = "Regex for applications downloaded from Spark History Server.",
+    validWith = Seq(historySource)
+  )
+
   val pollRate = IntOpt(
     long = "pollRate", short = 'p',
     desc = "The interval (in seconds) between polling for changes in directory and history event sources.",

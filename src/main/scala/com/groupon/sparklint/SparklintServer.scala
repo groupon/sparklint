@@ -17,6 +17,7 @@
 package com.groupon.sparklint
 
 import java.io.File
+import java.util.regex.Pattern
 
 import com.frugalmechanic.optparse.OptParse
 import com.groupon.sparklint.common._
@@ -71,6 +72,7 @@ class SparklintServer(eventSourceManager: FileEventSourceManager,
         eventSourceManager,
         Uri.fromString(config.historySource.get).toOption.get,
         historyDir,
+        Pattern.compile(config.historyFilter.getOrElse(".*")),
         runImmediately))
     } else if (config.directorySource) {
       logInfo(s"Loading data from directory source ${config.directorySource}")

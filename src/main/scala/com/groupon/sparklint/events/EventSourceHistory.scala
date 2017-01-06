@@ -19,6 +19,7 @@ package com.groupon.sparklint.events
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.regex.Pattern
 import java.util.zip.ZipFile
 
 import com.google.common.io.Files
@@ -35,6 +36,7 @@ class EventSourceHistory(
     eventSourceManager: FileEventSourceManager,
     val uri: Uri,
     val dir: File,
+    val pattern: Pattern,
     runImmediately: Boolean
 ) extends Logging {
 
@@ -60,8 +62,10 @@ class EventSourceHistory(
     }
   }
 
-  private def newApps: List[Application] = {
-    api.applications.filterNot(app => loadedApps.contains(app.id))
+  private def newApps: Seq[Application] = {
+    api.applications
+        .filter(app => pattern.matcher(app.name).matches())
+        .filterNot(app => loadedApps.contains(app.id))
   }
 }
 
