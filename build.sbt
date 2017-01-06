@@ -40,10 +40,15 @@ libraryDependencies ++= Seq(
   "com.frugalmechanic" %% "scala-optparse" % optparse,
   "org.http4s" %% "http4s-dsl" % http4s,
   "org.http4s" %% "http4s-blaze-server" % http4s,
+  "org.http4s" %% "http4s-blaze-client" % http4s,
+  "org.http4s" %% "http4s-json4s-jackson" % http4s,
   "org.slf4j" % "slf4j-api" % slf4j,
   "org.slf4j" % "slf4j-log4j12" % slf4j,
   "log4j" % "log4j" % log4j,
-  "org.json4s" %% "json4s-jackson" % json4s
+  "org.json4s" %% "json4s-jackson" % json4s,
+
+  // This is to workaround jackson-module-scala#214.
+  "com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.8.2"
 )
 
 // Run

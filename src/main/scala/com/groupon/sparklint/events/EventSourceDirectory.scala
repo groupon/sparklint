@@ -43,7 +43,7 @@ class EventSourceDirectory(eventSourceManager: FileEventSourceManager, val dir: 
     })
   }
 
-  private def currentFiles = dir.listFiles().filter(_.isFile)
+  private def currentFiles: Seq[File] = dir.listFiles().toSeq.filter(_.isFile)
 
   private def newFiles = currentFiles.filter(f => !loadedFileNames.contains(f.getName))
 }

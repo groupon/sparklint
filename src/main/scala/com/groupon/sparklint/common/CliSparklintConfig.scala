@@ -19,6 +19,7 @@ package com.groupon.sparklint.common
 import java.io.File
 
 import com.frugalmechanic.optparse.OptParse
+import org.http4s.Uri
 
 /**
   * A simple wrapper around some build time specific configuration properties.
@@ -55,7 +56,18 @@ case class CliSparklintConfig(exitOnError: Boolean = true) extends SparklintConf
     desc = "Set the flag in order to run each buffer through to their end state on startup."
   )
 
-  val historySource = StrOpt(desc = "Url of the Spark History Server to use.")
+  val historySource: StrOpt = StrOpt(
+    long = "historySource",
+    desc = "Url of the Spark History Server to use.",
+    validate = input => Uri.fromString(input).isLeft
+  )
+
+  val historyDir: FileOpt = FileOpt(
+    long = "historyDir",
+    desc = "Path to the directory for logs downloaded from Spark History Server.",
+    validate = input => input.isDirectory,
+    validWith = Seq(historySource)
+  )
 
   val pollRate = IntOpt(
     long = "pollRate", short = 'p',
