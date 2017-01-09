@@ -46,6 +46,7 @@ class EventSourceHistory(
   private var loadedApps = mutable.Set.empty[String]
 
   def poll(): Unit = {
+    val snapshot = loadedApps.size
     newApps.foreach { app =>
       loadedApps += app.id
 
@@ -60,6 +61,8 @@ class EventSourceHistory(
         }
       }
     }
+
+    logger.logInfo(s"Loaded ${loadedApps.size - snapshot} new apps")
   }
 
   private def newApps: Seq[Application] = {
@@ -105,7 +108,7 @@ private class HistoryApi(uri: Uri)(implicit logger: Logging) {
         case Attempt(Some(attemptId), _, _, _, true) =>
           val basename = s"${app.id}_$attemptId"
           val entry = zf.getEntry(basename + ".snappy")
-          // XXX the analyzer want uncompressed files, but I think it
+          // XXX the analyzer wants uncompressed files, but I think it
           //     might be better to store them compressed.
           val is = new SnappyInputStream(zf.getInputStream(entry))
           val log = new File(dir, basename)
