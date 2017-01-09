@@ -60,6 +60,8 @@ class EventSourceHistory(
             logger.logWarn(s"Failed to construct source from ${log.getName}")
         }
       }
+
+      logger.logInfo(s"Loaded ${app.name}")
     }
 
     logger.logInfo(s"Loaded ${loadedApps.size - snapshot} new apps")
