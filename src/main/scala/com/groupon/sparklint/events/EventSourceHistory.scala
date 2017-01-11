@@ -31,7 +31,17 @@ import org.json4s.{DefaultFormats, FieldSerializer}
 import org.xerial.snappy.SnappyInputStream
 
 import scala.collection.mutable
+import scalaz.{-\/, \/-}
 
+/**
+ * This class fetches Spark application log files via Spark History API
+ * and persists them in [[dir]].
+ *
+ * Only application with a name matching [[pattern]] will be considered.
+ *
+ * @author superbobry
+ * @since 1/5/17.
+ */
 class EventSourceHistory(
     eventSourceManager: FileEventSourceManager,
     val uri: Uri,
@@ -43,7 +53,7 @@ class EventSourceHistory(
   implicit val logger: Logging = this
 
   private val api = new HistoryApi(uri)
-  private var loadedApps = mutable.Set.empty[String]
+  private val loadedApps = mutable.Set.empty[String]
 
   def poll(): Unit = {
     val snapshot = loadedApps.size
@@ -67,31 +77,29 @@ class EventSourceHistory(
     logger.logInfo(s"Loaded ${loadedApps.size - snapshot} new apps")
   }
 
-  private def newApps: Seq[Application] = {
-    api.applications
+  private def newApps: Seq[ApplicationHistoryInfo] = {
+    api.getApplications()
         .filter(app => pattern.matcher(app.name).matches())
         .filterNot(app => loadedApps.contains(app.id))
   }
 }
 
-private case class Attempt(
+case class ApplicationAttemptInfo(
     attemptId: Option[String],
     startTime: String,
     endTime: String,
     sparkUser: String,
-    completed: Boolean
-)
+    completed: Boolean = false)
 
-private case class Application(
+case class ApplicationHistoryInfo(
     id: String,
     name: String,
-    attempts: List[Attempt]
-)
+    attempts: List[ApplicationAttemptInfo])
 
 private class HistoryApi(uri: Uri)(implicit logger: Logging) {
   private implicit val formats = DefaultFormats +
-      FieldSerializer[Application]() +
-      FieldSerializer[Attempt]()
+      FieldSerializer[ApplicationHistoryInfo]() +
+      FieldSerializer[ApplicationAttemptInfo]()
 
   private val httpClient = PooledHttp1Client()
 
@@ -99,39 +107,45 @@ private class HistoryApi(uri: Uri)(implicit logger: Logging) {
   private def apiUri = uri / "api" / "v1"
 
   /** Fetches and uncompresses all logs for a given application into dir. */
-  def getLogs(app: Application, dir: File): List[File] = {
+  def getLogs(app: ApplicationHistoryInfo, dir: File): List[File] = {
     val request = Request(uri = apiUri / "applications" / app.id / "logs")
     val archive = File.createTempFile(s"eventLogs-${app.id}", ".zip")
-    httpClient.expect(request)(EntityDecoder.binFile(archive)).run
 
-    val zf = new ZipFile(archive)
-    try {
-      app.attempts.flatMap {
-        case Attempt(Some(attemptId), _, _, _, true) =>
-          val basename = s"${app.id}_$attemptId"
-          val entry = zf.getEntry(basename + ".snappy")
-          // XXX the analyzer wants uncompressed files, but I think it
-          //     might be better to store them compressed.
-          val is = new SnappyInputStream(zf.getInputStream(entry))
-          val log = new File(dir, basename)
-          Files.asByteSink(log).writeFrom(is)
-          is.close()
-          Some(log)
-        case _ => None
-      }
-    } finally {
-      zf.close()
-      archive.delete()
+    httpClient.expect(request)(EntityDecoder.binFile(archive)).attemptRun match {
+      case -\/(e) =>
+        logger.logError(s"Failed to fetch logs for ${app.id}", e)
+        List()
+      case \/-(_) =>
+        val zf = new ZipFile(archive)
+        try {
+          app.attempts.map { attempt: ApplicationAttemptInfo =>
+            val basename = attempt.attemptId match {
+              case Some(attemptId) => s"${app.id}_$attemptId"
+              case None => app.id
+            }
+
+            val entry = zf.getEntry(basename + ".snappy")
+            // XXX the analyzer wants uncompressed files, but I think it
+            //     might be better to store them compressed.
+            val is = new SnappyInputStream(zf.getInputStream(entry))
+            val log = new File(dir, basename)
+            Files.asByteSink(log).writeFrom(is)
+            is.close()
+            log
+          }
+        } finally {
+          zf.close()
+          archive.delete()
+        }
     }
   }
 
   /** Returns a list of applications completed today. */
-  def applications: List[Application] = {
-    val today = new SimpleDateFormat("yyyy-MM-dd").format(new Date())
+  def getApplications(minDate: Date = new Date()): List[ApplicationHistoryInfo] = {
     val request = Request(uri = (apiUri / "applications")
         .withQueryParam("status", "completed")
-        .withQueryParam("minDate", today))
-    httpClient.expect(request)(jsonExtract[List[Application]]).run
+        .withQueryParam("minDate", new SimpleDateFormat("yyyy-MM-dd").format(minDate)))
+    httpClient.expect(request)(jsonExtract[List[ApplicationHistoryInfo]]).run
   }
 
   def shutdownNow(): Unit = httpClient.shutdownNow()
