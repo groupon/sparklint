@@ -62,13 +62,6 @@ case class CliSparklintConfig(exitOnError: Boolean = true) extends SparklintConf
     validate = input => Uri.fromString(input).isLeft
   )
 
-  val historyDir: FileOpt = FileOpt(
-    long = "historyDir",
-    desc = "Path to the directory for logs downloaded from Spark History Server.",
-    validate = input => input.isDirectory,
-    validWith = Seq(historySource)
-  )
-
   val historyFilter: StrOpt = StrOpt(
     long = "historyFilter",
     desc = "Regex for applications downloaded from Spark History Server.",

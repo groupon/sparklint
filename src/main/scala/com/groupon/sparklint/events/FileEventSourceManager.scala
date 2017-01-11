@@ -19,6 +19,8 @@ package com.groupon.sparklint.events
 import java.io.File
 
 import scala.util.{Failure, Success, Try}
+import scalaz.concurrent.Task
+import scalaz.{-\/, \/-}
 
 /**
   * A specific implementation of EventSourceManager that creates FileEventSources with Losslesss state management.
@@ -28,6 +30,25 @@ import scala.util.{Failure, Success, Try}
   */
 class FileEventSourceManager extends EventSourceManager {
   def newStateManager: EventStateManagerLike with EventReceiverLike = new LosslessStateManager()
+
+  def addRemoteFile(name: String, task: Task[Array[Char]]): Option[EventSourceLike] = {
+    val meta = new EventSourceMeta()
+    val progress = new EventProgressTracker()
+    val stateManager = newStateManager
+
+    task.attemptRun match {
+      case -\/(ex)       =>
+        logWarn(s"Failure creating history source for $name: ${ex.getMessage}")
+        None
+      case \/-(contents) =>
+        logInfo(s"Successfully created file source $name")
+        val eventSource = HistoryEventSource(name, contents,
+          Seq(meta, progress, stateManager))
+        val detail = EventSourceDetail(name, meta, progress, stateManager)
+        Some(addEventSourceAndDetail(SourceAndDetail(eventSource, detail)))
+    }
+  }
+
   def addFile(sourceFile: File): Option[EventSourceLike] = {
     val meta = new EventSourceMeta()
     val progress = new EventProgressTracker()

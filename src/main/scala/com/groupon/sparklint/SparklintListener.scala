@@ -43,7 +43,7 @@ class SparklintListener(appId: String, appName: String, config: SparklintConfig)
   val meta = new EventSourceMeta(appId, appName)
   val progress = new EventProgressTracker()
   val stateManager =  new CompressedStateManager()
-  val buffer = BufferedEventSource(appId, Seq(meta, progress, stateManager))
+  val buffer = DeferredEventSource(appId, Seq(meta, progress, stateManager))
 
   val detail = SourceAndDetail(buffer, EventSourceDetail(appId, meta, progress, stateManager))
   val eventSourceManager = new EventSourceManager(detail)

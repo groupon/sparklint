@@ -16,13 +16,12 @@
 
 package com.groupon.sparklint.events
 
-import java.io.File
+import java.io.BufferedInputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.regex.Pattern
-import java.util.zip.ZipFile
+import java.util.zip.{ZipEntry, ZipInputStream}
 
-import com.google.common.io.Files
 import com.groupon.sparklint.common.Logging
 import org.http4s._
 import org.http4s.client.blaze._
@@ -31,21 +30,20 @@ import org.json4s.{DefaultFormats, FieldSerializer}
 import org.xerial.snappy.SnappyInputStream
 
 import scala.collection.mutable
-import scalaz.{-\/, \/-}
+import scala.io.Source
+import scalaz.concurrent.Task
 
 /**
- * This class fetches Spark application log files via Spark History API
- * and persists them in [[dir]].
- *
- * Only application with a name matching [[pattern]] will be considered.
- *
- * @author superbobry
- * @since 1/5/17.
- */
+  * This class fetches Spark application log files via Spark History API.
+  *
+  * Only application with a name matching [[pattern]] will be considered.
+  *
+  * @author superbobry
+  * @since 1/5/17.
+  */
 class EventSourceHistory(
     eventSourceManager: FileEventSourceManager,
     val uri: Uri,
-    val dir: File,
     val pattern: Pattern,
     runImmediately: Boolean
 ) extends Logging {
@@ -60,14 +58,14 @@ class EventSourceHistory(
     newApps.foreach { app =>
       loadedApps += app.id
 
-      api.getLogs(app, dir).foreach { log =>
-        eventSourceManager.addFile(log) match {
+      api.getLogs(app).foreach { case (name, task) =>
+        eventSourceManager.addRemoteFile(name, task) match {
           case Some(fileSource) =>
             if (runImmediately) {
               fileSource.forwardIfPossible()
             }
           case None =>
-            logger.logWarn(s"Failed to construct source from ${log.getName}")
+            logger.logWarn(s"Failed to construct source from $name")
         }
       }
 
@@ -106,37 +104,44 @@ private class HistoryApi(uri: Uri)(implicit logger: Logging) {
   /** Base Spark History API URI. */
   private def apiUri = uri / "api" / "v1"
 
-  /** Fetches and uncompresses all logs for a given application into dir. */
-  def getLogs(app: ApplicationHistoryInfo, dir: File): List[File] = {
-    val request = Request(uri = apiUri / "applications" / app.id / "logs")
-    val archive = File.createTempFile(s"eventLogs-${app.id}", ".zip")
+  private def eventLogDecoder(name: String): EntityDecoder[Array[Char]] =
+    EntityDecoder.decodeBy(MediaRange.fromKey("*")) { msg =>
+      val is = scalaz.stream.io.toInputStream(msg.body)
+      val zis = new ZipInputStream(new BufferedInputStream(is))
+      var entry: ZipEntry = null
+      do {
+        zis.closeEntry()
+        entry = zis.getNextEntry
+      } while (zis.available() > 0 && entry.getName != name)
 
-    httpClient.expect(request)(EntityDecoder.binFile(archive)).attemptRun match {
-      case -\/(e) =>
-        logger.logError(s"Failed to fetch logs for ${app.id}", e)
-        List()
-      case \/-(_) =>
-        val zf = new ZipFile(archive)
+      if (entry == null) {
+        DecodeResult.failure(
+          MalformedMessageBodyFailure(s"$name not found in ZIP archive"))
+      } else {
+        val sis = new SnappyInputStream(zis)
         try {
-          app.attempts.map { attempt: ApplicationAttemptInfo =>
-            val basename = attempt.attemptId match {
-              case Some(attemptId) => s"${app.id}_$attemptId"
-              case None => app.id
-            }
-
-            val entry = zf.getEntry(basename + ".snappy")
-            // XXX the analyzer wants uncompressed files, but I think it
-            //     might be better to store them compressed.
-            val is = new SnappyInputStream(zf.getInputStream(entry))
-            val log = new File(dir, basename)
-            Files.asByteSink(log).writeFrom(is)
-            is.close()
-            log
-          }
+          // TODO: we could get rid of the explicit allocation if we move
+          //       event parsing here.
+          DecodeResult.success(Source.fromInputStream(sis).toArray)
         } finally {
-          zf.close()
-          archive.delete()
+          zis.closeEntry()
+          sis.close()
         }
+      }
+    }
+
+  /**
+    * Fetches the event log for a given app and attempt.
+    */
+  def getLogs(app: ApplicationHistoryInfo): List[(String, Task[Array[Char]])] = {
+    app.attempts.map { attempt =>
+      val request = Request(uri = apiUri / "applications" / app.id / "logs")
+      val name = attempt.attemptId match {
+        case Some(attemptId) => s"${app.id}_$attemptId.snappy"
+        case None            => s"${app.id}.snappy"
+      }
+
+      name -> httpClient.expect(request)(eventLogDecoder(name))
     }
   }
 

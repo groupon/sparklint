@@ -16,7 +16,6 @@
 
 package com.groupon.sparklint
 
-import java.io.File
 import java.util.regex.Pattern
 
 import com.frugalmechanic.optparse.OptParse
@@ -65,13 +64,10 @@ class SparklintServer(eventSourceManager: FileEventSourceManager,
   def buildEventSources(): Unit = {
     val runImmediately = config.runImmediately.getOrElse(DEFAULT_RUN_IMMEDIATELY)
     if (config.historySource) {
-      val historyDir = config.historyDir.getOrElse(
-        new File(System.getProperty("java.io.tmpdir")))
-      logInfo(s"Loading data from history source ${config.historySource} into $historyDir")
+      logInfo(s"Loading data from history source ${config.historySource}")
       scheduleHistoryPolling(new EventSourceHistory(
         eventSourceManager,
         Uri.fromString(config.historySource.get).toOption.get,
-        historyDir,
         Pattern.compile(config.historyFilter.getOrElse(".*")),
         runImmediately))
     } else if (config.directorySource) {
