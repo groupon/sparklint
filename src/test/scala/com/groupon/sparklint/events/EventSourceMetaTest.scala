@@ -27,16 +27,15 @@ import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
   */
 class EventSourceMetaTest extends FlatSpec with Matchers with BeforeAndAfterEach {
 
-  var meta: EventSourceMeta = _
+  var meta: EventSourceMetaLike = _
 
   override protected def beforeEach(): Unit = {
-    meta = new EventSourceMeta()
+    meta = new EventSourceMeta(EventSourceIdentifier("appId", Some("attemptId")), "appName")
   }
 
   it should "handle default as expected" in {
-    meta.appId shouldEqual Utils.UNKNOWN_STRING
+    meta.appIdentifier shouldEqual Utils.UNKNOWN_STRING
     meta.appName shouldEqual Utils.UNKNOWN_STRING
-    meta.nameOrId shouldEqual Utils.UNKNOWN_STRING
     meta.user shouldEqual Utils.UNKNOWN_STRING
     meta.version shouldEqual Utils.UNKNOWN_STRING
     meta.host shouldEqual Utils.UNKNOWN_STRING
@@ -47,15 +46,13 @@ class EventSourceMetaTest extends FlatSpec with Matchers with BeforeAndAfterEach
   }
 
   it should "set state if events in source" in {
-    val source = FileEventSource(testFileWithState, Seq(meta))
+    val source = FileEventSource(testFileWithState)
     TestUtils.replay(source)
 
     meta.version shouldEqual "1.5.2"
-    meta.appId shouldEqual "application_1462781278026_205691"
-    meta.trimmedId shouldEqual "1462781278026_205691"
+    meta.appIdentifier shouldEqual "application_1462781278026_205691"
     meta.appName shouldEqual "MyAppName"
     meta.fullName shouldEqual "MyAppName (application_1462781278026_205691)"
-    meta.nameOrId shouldEqual "MyAppName"
     meta.user shouldEqual "johndoe"
     meta.host shouldEqual "10.22.81.222"
     meta.port shouldEqual 44783

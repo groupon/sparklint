@@ -36,7 +36,7 @@ class CompressedStateManagerTest extends FlatSpec with Matchers with BeforeAndAf
   override protected def beforeEach(): Unit = {
     eventState = new CompressedStateManager()
     file = new File(resource("spark_event_log_example"))
-    eventSource = FileEventSource(file, Seq(eventState))
+    eventSource = FileEventSource(file)
   }
 
   it should "accumulate core usage correctly" in {
@@ -84,7 +84,7 @@ class CompressedStateManagerTest extends FlatSpec with Matchers with BeforeAndAf
     eventSource.forwardEvents(300)
 
     val eventState2 = new CompressedStateManager()
-    val eventSource2 = FileEventSource(file, Seq(eventState2))
+    val eventSource2 = FileEventSource(file)
 
     val expected = eventState.getState
     eventSource2.forwardEvents(350)

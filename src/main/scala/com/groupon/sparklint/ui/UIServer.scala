@@ -18,7 +18,7 @@ package com.groupon.sparklint.ui
 
 import com.groupon.sparklint.analyzer.SparklintStateAnalyzer
 import com.groupon.sparklint.common.{Logging, SparklintConfig}
-import com.groupon.sparklint.events._
+import com.groupon.sparklint.events.{RootEventSourceManager, _}
 import com.groupon.sparklint.server.{AdhocServer, StaticFileService}
 import org.http4s.dsl._
 import org.http4s.{HttpService, Response}
@@ -34,7 +34,7 @@ import scalaz.concurrent.Task
   * @author swhitear
   * @since 8/18/16.
   */
-class UIServer(esManager: EventSourceManagerLike, config: SparklintConfig)
+class UIServer(esManager: RootEventSourceManager, config: SparklintConfig)
   extends AdhocServer with StaticFileService with Logging {
 
   routingMap("/") = sparklintService
@@ -62,8 +62,18 @@ class UIServer(esManager: EventSourceManagerLike, config: SparklintConfig)
     }
   }
 
+  private def getIdentifier(appId: String): EventSourceIdentifier = {
+    appId.split("|") match {
+      case Array(id, attempt) =>
+        EventSourceIdentifier(id, Some(attempt))
+      case Array(id) =>
+        EventSourceIdentifier(id, None)
+    }
+
+  }
+
   private def appExists(appId: String): Boolean = {
-    esManager.containsEventSourceId(appId)
+    esManager.containsEventSource(getIdentifier(appId))
   }
 
   private def homepage: String = {
@@ -72,13 +82,13 @@ class UIServer(esManager: EventSourceManagerLike, config: SparklintConfig)
   }
 
   private def state(appId: String): String = {
-    val detail = esManager.getSourceDetail(appId)
+    val detail = esManager.getSourceDetail(getIdentifier(appId))
     val report = new SparklintStateAnalyzer(detail.meta, detail.state)
     pretty(UIServer.reportJson(report, detail.progress))
   }
 
   private def eventSource(appId: String): String = {
-    pretty(UIServer.progressJson(esManager.getSourceDetail(appId).progress))
+    pretty(UIServer.progressJson(esManager.getSourceDetail(getIdentifier(appId)).progress))
   }
 
   private def fwdApp(appId: String, count: String, evString: String): String = {
@@ -86,10 +96,10 @@ class UIServer(esManager: EventSourceManagerLike, config: SparklintConfig)
   }
 
   private def fwdApp(appId: String, count: String, evType: EventType): String = {
-    def progress() = esManager.getSourceDetail(appId).progress
+    def progress() = esManager.getSourceDetail(getIdentifier(appId)).progress
 
     val mover = moveEventSource(count, appId, progress) _
-    val eventSource = esManager.getScrollingSource(appId)
+    val eventSource = esManager.getScrollingSource(getIdentifier(appId))
     evType match {
       case Events => mover(eventSource.forwardEvents)
       case Tasks  => mover(eventSource.forwardTasks)
@@ -103,10 +113,10 @@ class UIServer(esManager: EventSourceManagerLike, config: SparklintConfig)
   }
 
   private def rwdApp(appId: String, count: String, evType: EventType): String = {
-    def progress() = esManager.getSourceDetail(appId).progress
+    def progress() = esManager.getSourceDetail(getIdentifier(appId)).progress
 
     val mover = moveEventSource(count, appId, progress) _
-    val eventSource = esManager.getScrollingSource(appId)
+    val eventSource = esManager.getScrollingSource(getIdentifier(appId))
     evType match {
       case Events => mover(eventSource.rewindEvents)
       case Tasks  => mover(eventSource.rewindTasks)
@@ -117,14 +127,14 @@ class UIServer(esManager: EventSourceManagerLike, config: SparklintConfig)
 
   private def endApp(appId: String): String = {
     endOfEventSource(appId,
-      () => esManager.getScrollingSource(appId).toEnd(),
-      () => esManager.getSourceDetail(appId).progress)
+      () => esManager.getScrollingSource(getIdentifier(appId)).toEnd(),
+      () => esManager.getSourceDetail(getIdentifier(appId)).progress)
   }
 
   private def startApp(appId: String): String = {
     endOfEventSource(appId,
-      () => esManager.getScrollingSource(appId).toStart(),
-      () => esManager.getSourceDetail(appId).progress)
+      () => esManager.getScrollingSource(getIdentifier(appId)).toStart(),
+      () => esManager.getSourceDetail(getIdentifier(appId)).progress)
   }
 
   private def moveEventSource(count: String, appId: String, progFn: () => EventProgressTrackerLike)
@@ -158,7 +168,8 @@ object UIServer {
     implicit val formats = DefaultFormats
     val source = report.source
     ("appName" -> source.appName) ~
-      ("appId" -> source.appId) ~
+      ("appId" -> source.appIdentifier.appId) ~
+      ("appAttemptId" -> source.appIdentifier.attemptId) ~
       ("allocatedCores" -> report.getExecutorInfo.map(_.values.map(_.cores).sum)) ~
       ("executors" -> report.getExecutorInfo.map(_.map({ case (executorId, info) =>
         ("executorId" -> executorId) ~

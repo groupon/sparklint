@@ -38,12 +38,12 @@ class FileEventSourceTest extends FlatSpec with Matchers with BeforeAndAfterEach
 
   it should "throw up if the file does not exist" in {
     intercept[IllegalArgumentException] {
-      FileEventSource(new File("wherefore/art/though/filey"), Seq(stateManager))
+      FileEventSource(new File("wherefore/art/though/filey"))
     }
   }
 
   it should "throw up if negative scroll count used" in {
-    val source = FileEventSource(testFileWithState, Seq(stateManager))
+    val source = FileEventSource(testFileWithState)
 
     intercept[IllegalArgumentException] {
       source.forwardEvents(count = -1)
@@ -54,9 +54,9 @@ class FileEventSourceTest extends FlatSpec with Matchers with BeforeAndAfterEach
   }
 
   it should "handle an empty file just fine" in {
-    val source = FileEventSource(emptyFile, Seq(stateManager))
+    val source = FileEventSource(emptyFile)
 
-    source.eventSourceId shouldEqual "file_event_log_empty_test"
+    source.friendlyName shouldEqual "file_event_log_empty_test"
 
     stateManager.eventCount shouldEqual 0
     source.hasNext shouldBe false
@@ -75,9 +75,9 @@ class FileEventSourceTest extends FlatSpec with Matchers with BeforeAndAfterEach
 
   it should "preprocess the source events" in {
     val fileEvents = testEvents(testFileNoState)
-    val source = FileEventSource(testFileNoState, Seq(stateManager))
+    val source = FileEventSource(testFileNoState)
 
-    source.eventSourceId shouldEqual "file_event_log_test_simple"
+    source.friendlyName shouldEqual "file_event_log_test_simple"
     stateManager.eventCount shouldEqual 5
     stateManager.preprocCount shouldEqual 5
     stateManager.onCount shouldEqual 0
@@ -89,9 +89,9 @@ class FileEventSourceTest extends FlatSpec with Matchers with BeforeAndAfterEach
 
   it should "allow two way iteration through file content" in {
     val fileEvents = testEvents(testFileNoState)
-    val source = FileEventSource(testFileNoState, Seq(stateManager))
+    val source = FileEventSource(testFileNoState)
 
-    source.eventSourceId shouldEqual "file_event_log_test_simple"
+    source.friendlyName shouldEqual "file_event_log_test_simple"
     stateManager.eventCount shouldEqual 5
     stateManager.preprocCount shouldEqual 5
     stateManager.onCount shouldEqual 0
@@ -117,9 +117,9 @@ class FileEventSourceTest extends FlatSpec with Matchers with BeforeAndAfterEach
 
   it should "allow two way task iteration through file content" in {
     val fileEvents = testEvents(testFileWithNavEvents)
-    val source = FileEventSource(testFileWithNavEvents, Seq(stateManager))
+    val source = FileEventSource(testFileWithNavEvents)
 
-    source.eventSourceId shouldEqual "file_event_log_test_nav_events"
+    source.friendlyName shouldEqual "file_event_log_test_nav_events"
     stateManager.eventCount shouldEqual 16
     stateManager.preprocCount shouldEqual 16
     stateManager.onCount shouldEqual 0
@@ -160,9 +160,9 @@ class FileEventSourceTest extends FlatSpec with Matchers with BeforeAndAfterEach
 
   it should "allow two way stage iteration through file content" in {
     val fileEvents = testEvents(testFileWithNavEvents)
-    val source = FileEventSource(testFileWithNavEvents, Seq(stateManager))
+    val source = FileEventSource(testFileWithNavEvents)
 
-    source.eventSourceId shouldEqual "file_event_log_test_nav_events"
+    source.friendlyName shouldEqual "file_event_log_test_nav_events"
     stateManager.eventCount shouldEqual 16
     stateManager.preprocCount shouldEqual 16
     stateManager.onCount shouldEqual 0
@@ -203,9 +203,9 @@ class FileEventSourceTest extends FlatSpec with Matchers with BeforeAndAfterEach
 
   it should "allow two way job iteration through file content" in {
     val fileEvents = testEvents(testFileWithNavEvents)
-    val source = FileEventSource(testFileWithNavEvents, Seq(stateManager))
+    val source = FileEventSource(testFileWithNavEvents)
 
-    source.eventSourceId shouldEqual "file_event_log_test_nav_events"
+    source.friendlyName shouldEqual "file_event_log_test_nav_events"
     stateManager.eventCount shouldEqual 16
     stateManager.preprocCount shouldEqual 16
     stateManager.onCount shouldEqual 0

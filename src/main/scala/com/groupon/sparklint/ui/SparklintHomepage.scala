@@ -16,7 +16,7 @@
 
 package com.groupon.sparklint.ui
 
-import com.groupon.sparklint.events._
+import com.groupon.sparklint.events.{RootEventSourceManager, _}
 
 import scala.xml.Node
 
@@ -24,7 +24,7 @@ import scala.xml.Node
   * @author rxue
   * @since 6/14/16.
   */
-class SparklintHomepage(sourceManager: EventSourceManagerLike) extends UITemplate {
+class SparklintHomepage(sourceManager: RootEventSourceManager) extends UITemplate {
   /**
     * These are all the frontend libraries used by Sparklint UI
     * jquery (dom operation, required by d3)
@@ -35,17 +35,19 @@ class SparklintHomepage(sourceManager: EventSourceManagerLike) extends UITemplat
     * @return
     */
 
-  override val title: String = "Sparklint"
+  override val title      : String = "Sparklint"
   override val description: String = "Performance Analyzer for Apache Spark"
-  override val author: String = "Groupon"
+  override val author     : String = "Groupon"
 
   override protected def extraScripts: Seq[Node] = Seq(
     <script src="/static/js/sparklintHomepage.js"></script>
   )
 
   override def content: Seq[Node] =
-    <div id="wrapper">{navbar}
-      <div id="page-wrapper">{mainContainer}</div>
+    <div id="wrapper">
+      {navbar}<div id="page-wrapper">
+      {mainContainer}
+    </div>
     </div>
 
   def navbar: Seq[Node] =
@@ -60,9 +62,26 @@ class SparklintHomepage(sourceManager: EventSourceManagerLike) extends UITemplat
       <div class="navbar-default sidebar" role="navigation">
         <div class="sidebar-nav navbar-collapse">
           <ul class="nav" id="side-menu">
-            {for (source <- sourceManager.eventSourceDetails)
-            yield navbarItem(source.eventSourceId, source.meta, source.progress)}
-            {navbarReplayControl}
+            {for (eventSourceManager <- sourceManager.eventSourceManagers) yield
+            <li>
+              <a href="#">
+                {eventSourceManager.displayName}
+              </a>
+              <ul class="nav nav-second-level collapse in" aria-expanded="true">
+                {for (source <- eventSourceManager.eventSourceDetails)
+                yield navbarItem(source.meta.appIdentifier.toString, source.meta, source.progress)}{eventSourceManager match {
+                case esm: DirectoryEventSourceManager =>
+                  for ((meta, _) <- esm.availableEventSources) yield
+                    <li data-value={meta.appIdentifier.toString}>
+                      <a href="#" class="sparklintApp" data-value={meta.appIdentifier.toString}>
+                        <strong>App:</strong>{meta.appName}
+                      </a>
+                    </li>
+                      <li class="divider"></li>
+                case _                                =>
+              }}
+              </ul>
+            </li>}{navbarReplayControl}
           </ul>
         </div>
       </div>
@@ -71,8 +90,7 @@ class SparklintHomepage(sourceManager: EventSourceManagerLike) extends UITemplat
   def navbarItem(esId: String, meta: EventSourceMetaLike, progress: EventProgressTrackerLike): Seq[Node] =
     <li data-value={esId}>
       <a href="#" class="sparklintApp" data-value={esId}>
-        <strong>App: </strong>{meta.nameOrId}
-        <p class="text-center" id={uniqueId(esId, "app-prog")}>
+        <strong>App:</strong>{meta.appName}<p class="text-center" id={uniqueId(esId, "app-prog")}>
         {progress.eventProgress.description}
       </p>
         <div class="progress active">
@@ -83,7 +101,7 @@ class SparklintHomepage(sourceManager: EventSourceManagerLike) extends UITemplat
         </div>
       </a>
     </li>
-    <li class="divider"></li>
+      <li class="divider"></li>
 
   def navbarReplayControl: Seq[Node] =
     <li class="sidebar-search">
@@ -109,8 +127,9 @@ class SparklintHomepage(sourceManager: EventSourceManagerLike) extends UITemplat
         </select>
         <select class="form-control" id="typeSelector">
           {for (navType <- EventType.ALL_TYPES) yield
-          <option>{navType}</option>
-          }
+          <option>
+            {navType}
+          </option>}
         </select>
         <div class="input-group-btn">
           <button type="button" class="btn btn-default" title="Forward" id="eventsForward">
@@ -147,16 +166,14 @@ class SparklintHomepage(sourceManager: EventSourceManagerLike) extends UITemplat
             </div>
           </div>
         </div>
-      </div>
-      {summaryRow}
-      <div class="row">
-        <div class="col-lg-12">
-          {coreUsageTimeSeries}{coreUsageDistribution}{taskDistributionList}
-        </div>
+      </div>{summaryRow}<div class="row">
+      <div class="col-lg-12">
+        {coreUsageTimeSeries}{coreUsageDistribution}{taskDistributionList}
       </div>
     </div>
-    <div class="loading-spinner">
     </div>
+      <div class="loading-spinner">
+      </div>
 
   def summaryRow: Seq[Node] =
     <div id="summaryRow" class="row" style="display:None">

@@ -28,28 +28,31 @@ import org.apache.spark.{SparkConf, SparkFirehoseListener}
   * @author rxue
   * @since 8/18/16.
   */
-class SparklintListener(appId: String, appName: String, config: SparklintConfig) extends SparkFirehoseListener {
+class SparklintListener(appId: String, appName: String, attemptId: Option[String], config: SparklintConfig) extends SparkFirehoseListener {
 
+  val inMemoryEventSource = InMemoryEventSource(EventSourceIdentifier(appId, attemptId), appName)
+
+  /**
+    * Constructor used by Spark
+    *
+    * @param conf SparkConf of the Spark job that this Listener attached to
+    */
   def this(conf: SparkConf) = {
-    this(conf.get("spark.app.id", "AppId"), conf.get("spark.app.name", "AppName"), new SparkConfSparklintConfig(conf))
+    this(conf.get("spark.app.id", "AppId"),
+      conf.get("spark.app.name", "AppName"),
+      conf.getOption("spark.yarn.app.attemptId"), new SparkConfSparklintConfig(conf))
   }
 
   override def onEvent(event: SparkListenerEvent): Unit = {
     // push unconsumed events to the queue so the listener can keep consuming on the main thread
-    buffer.push(event)
+    inMemoryEventSource.push(event)
   }
 
-  //TODO: support sparkConf based config
-  val meta = new EventSourceMeta(appId, appName)
-  val progress = new EventProgressTracker()
-  val stateManager =  new CompressedStateManager()
-  val buffer = BufferedEventSource(appId, Seq(meta, progress, stateManager))
-
-  val detail = SourceAndDetail(buffer, EventSourceDetail(appId, meta, progress, stateManager))
-  val eventSourceManager = new EventSourceManager(detail)
+  val eventSourceManager  = new RootEventSourceManager()
+  eventSourceManager.addInMemory(inMemoryEventSource)
   val uiServer = new UIServer(eventSourceManager, config)
 
   // ATTN: ordering?
   uiServer.startServer()
-  buffer.startConsuming()
+  inMemoryEventSource.startConsuming()
 }

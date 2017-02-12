@@ -20,7 +20,7 @@ import java.io.File
 
 import com.groupon.sparklint.common.TestUtils
 import com.groupon.sparklint.data._
-import com.groupon.sparklint.events.{CompressedStateManager, EventSourceMeta, FileEventSource}
+import com.groupon.sparklint.events._
 import org.apache.spark.scheduler.TaskLocality._
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 
@@ -30,16 +30,16 @@ import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
   */
 class SparklintStateAnalyzerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
 
-  var eventSource : FileEventSource        = _
-  var meta        : EventSourceMeta        = _
-  var stateManager: CompressedStateManager = _
+  var eventSource : FileEventSource       = _
+  var meta        : EventSourceMetaLike   = _
+  var stateManager: EventStateManagerLike = _
 
   override protected def beforeEach(): Unit = {
-    stateManager = new CompressedStateManager()
-    meta = new EventSourceMeta()
+    stateManager = eventSource.state
+    meta = eventSource.meta
 
     val file = new File(TestUtils.resource("spark_event_log_example"))
-    eventSource = FileEventSource(file, Seq(meta, stateManager))
+    eventSource = FileEventSource(file)
   }
 
   it should "getTimeUntilFirstTask correctly" in {

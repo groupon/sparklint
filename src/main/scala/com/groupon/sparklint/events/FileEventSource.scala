@@ -18,29 +18,58 @@ package com.groupon.sparklint.events
 
 import java.io.File
 
-import com.groupon.sparklint.common.Logging
 import org.apache.spark.groupon.StringToSparkEvent
-import org.apache.spark.scheduler.{SparkListenerEvent, SparkListenerTaskEnd, _}
+import org.apache.spark.scheduler._
 
 import scala.io.Source
 import scala.util.{Failure, Success, Try}
 
 /**
-  * The FileEventSource uses a file to populate an internal buffer that can then be used as an EventSourceLike
-  * implementation.
-  *
-  * @author swhitear
+  * @author rxue,swhitear
   * @since 8/18/16.
   */
-@throws[IllegalArgumentException]
-case class FileEventSource(fileSource: File, receivers: Seq[EventReceiverLike])
-  extends FreeScrollEventSource with Logging {
+case class FileEventSource(file: File) extends EventSourceLike with FreeScrollEventSource {
+
+  private val _progress = new EventProgressTracker()
+  private val _state    = new LosslessStateManager()
+  private val _meta     = EventSourceMeta.fromFile(file)
+
+  private class ScrollHandler(scrollNextEvent: => SparkListenerEvent,
+                              updateState: (SparkListenerEvent) => Unit,
+                              breaker: => Boolean) {
+    @throws[scala.IllegalArgumentException]
+    def scroll(milestones: Int, isMilestone: (SparkListenerEvent) => Boolean = (_) => true): Unit = {
+      require(milestones >= 0)
+
+      var remainingMilestones = milestones
+
+      while (remainingMilestones > 0 && !breaker) {
+        scrollNextEvent match {
+          case e if isMilestone(e) => remainingMilestones -= 1
+            updateState(e)
+          case e                   => updateState(e)
+        }
+      }
+    }
+  }
+
+  override def identifier: EventSourceIdentifier = meta.appIdentifier
+
+  override def friendlyName: String = meta.appName
+
+  override protected def receivers: Seq[EventReceiverLike] = Seq(_meta, _progress, _state)
+
+  override def progress: EventProgressTrackerLike = _progress
+
+  override def meta: EventSourceMetaLike = _meta
+
+  override def state: EventStateManagerLike = _state
+
+  override def getEventSourceDetail: EventSourceDetail = EventSourceDetail(_meta, _progress, _state)
 
   private val buffer    = new EventBuffer(fillBuffer())
   private val fwdScroll = new ScrollHandler(buffer.next, onEvent, !buffer.hasNext)
   private val rewScroll = new ScrollHandler(buffer.previous, unEvent, !buffer.hasPrevious)
-
-  override val eventSourceId: String = fileSource.getName
 
   @throws[IllegalArgumentException]
   def forwardEvents(count: Int = 1): Unit = fwdScroll.scroll(count)
@@ -75,11 +104,11 @@ case class FileEventSource(fileSource: File, receivers: Seq[EventReceiverLike])
   override def hasPrevious: Boolean = buffer.hasPrevious
 
   private def fillBuffer(): IndexedSeq[SparkListenerEvent] = {
-    Try(Source.fromFile(fileSource)) match {
+    Try(Source.fromFile(file)) match {
       case Success(sparkEventLog) =>
         sparkEventLog.getLines().flatMap(parseAndPreprocess).toIndexedSeq
       case Failure(ex)            =>
-        throw new IllegalArgumentException(s"Failure reading file event source from ${fileSource.getName}.", ex)
+        throw new IllegalArgumentException(s"Failure reading file event source from ${file.getName}.", ex)
     }
   }
 
@@ -95,25 +124,4 @@ case class FileEventSource(fileSource: File, receivers: Seq[EventReceiverLike])
 
   private def unEvent(event: SparkListenerEvent) = receivers.foreach(_.unEvent(event))
 
-}
-
-private class ScrollHandler(movefn: () => SparkListenerEvent,
-                            statefn: (SparkListenerEvent) => Unit,
-                            breaker: => Boolean) {
-
-  @throws[scala.IllegalArgumentException]
-  def scroll(count: Int, decrementfn: (SparkListenerEvent) => Boolean = (evt) => true) = {
-    require(count >= 0)
-
-    var counter = count
-
-    def decrementIfMatch(event: SparkListenerEvent): SparkListenerEvent = {
-      if (decrementfn(event)) counter -= 1
-      event
-    }
-
-    while (counter > 0 && !breaker) {
-      statefn(decrementIfMatch(movefn()))
-    }
-  }
 }

@@ -18,25 +18,11 @@ package com.groupon.sparklint.events
 
 /**
   * @author rxue, swhitear
-  * @since 8/18/16.
+  * @since 9/29/16.
   */
-trait EventSourceLike {
-  protected def receivers: Seq[EventReceiverLike]
-
-  def identifier: EventSourceIdentifier
-
-  def friendlyName: String
-
-  def meta: EventSourceMetaLike
-
-  def progress: EventProgressTrackerLike
-
-  def state: EventStateManagerLike
-
-  def getEventSourceDetail: EventSourceDetail
-
-  def forwardIfPossible(): Unit = this match {
-    case scrollable: FreeScrollEventSource => scrollable.toEnd()
-    case _                                 =>
+case class EventSourceIdentifier(appId: String, attemptId: Option[String]) {
+  override def toString: String = attemptId match {
+    case Some(attempt) => s"$appId-$attempt"
+    case None          => appId
   }
 }

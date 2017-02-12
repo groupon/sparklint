@@ -33,36 +33,48 @@ trait EventSourceManagerLike {
   def sourceCount: Int
 
   /**
+    * The name of this event source manager shown in UI
+    * @return
+    */
+  def displayName: String
+
+  /**
+    * The supplementary information of this event source manager shown in UI
+    * @return
+    */
+  def displayDetails: String
+
+  /**
     * An Iterable of EventSourceDetail instances returned in their insertion order.
     *
     * @return
     */
   def eventSourceDetails: Iterable[EventSourceDetail]
 
-  /** True if the current set of managed EventSourceLike instances contains the specified appId.
+  /** True if the current set of managed EventSourceLike instances contains the specified meta.
     *
-    * @param appId The appId to check for.
+    * @param id The eventSourceId to check for.
     * @return True if it exists, false otherwise.
     */
-  def containsEventSourceId(appId: String): Boolean
+  def containsEventSource(id: EventSourceIdentifier): Boolean
 
   /**
-    * Provides indexed access to the EventSourceDetail instances by appId.
+    * Provides indexed access to the EventSourceDetail instances by meta.
     *
-    * @param appId The appId of the EventSourceDetail instance to return.
-    * @throws NoSuchElementException When the specified appId does not exist.
+    * @param id The id of the EventSourceDetail instance to return.
+    * @throws NoSuchElementException When the specified meta does not exist.
     * @return The specified EventSourceDetail instance wrapping hte EventSource and associated receivers.
     */
   @throws[NoSuchElementException]
-  def getSourceDetail(appId: String): EventSourceDetail
+  def getSourceDetail(id: EventSourceIdentifier): EventSourceDetail
 
   /**
     * Provides indexed access to any wrapped EventSourceLike instances that extend FreeScrollEventSource.
     *
-    * @param appId The appId of the EventSourceDetail instance to return.
-    * @throws NoSuchElementException When the specified appId does not exist.
+    * @param id The id of the EventSourceDetail instance to return.
+    * @throws NoSuchElementException When the specified meta does not exist.
     * @return
     */
   @throws[NoSuchElementException]
-  def getScrollingSource(appId: String): FreeScrollEventSource
+  def getScrollingSource(id: EventSourceIdentifier): FreeScrollEventSource
 }
