@@ -17,6 +17,8 @@
 package com.groupon.sparklint.events
 
 
+import java.util.UUID
+
 import scala.collection.mutable
 import scala.util.Try
 
@@ -24,13 +26,15 @@ import scala.util.Try
   * @author rxue
   * @since 2/5/17.
   */
-class HistoryServerEventSourceManager(historyServer: HistoryServerApi) extends EventSourceManagerLike {
-  private val eventSources: mutable.Map[EventSourceIdentifier, EventSourceLike] = new mutable.LinkedHashMap[EventSourceIdentifier, EventSourceLike] with mutable.SynchronizedMap[EventSourceIdentifier, EventSourceLike]
+case class HistoryServerEventSourceManager(historyServer: HistoryServerApi, uuid: UUID = UUID.randomUUID()) extends EventSourceManagerLike {
+  private val eventSources: mutable.Map[String, EventSourceLike] = new mutable.LinkedHashMap[String, EventSourceLike] with mutable.SynchronizedMap[String, EventSourceLike]
+
+  def availableEventSources: Seq[EventSourceMeta] = ???
 
   // TODO: pull available logs from history api
   def pull(): Unit = ???
 
-  def pullEventSource(id: EventSourceIdentifier): Try[Unit] = Try {
+  def pullEventSource(id: String): Try[Unit] = Try {
     // TODO: download event logs
   }
 
@@ -42,11 +46,11 @@ class HistoryServerEventSourceManager(historyServer: HistoryServerApi) extends E
 
   override def eventSourceDetails: Iterable[EventSourceDetail] = eventSources.map(_._2.getEventSourceDetail)
 
-  override def getSourceDetail(id: EventSourceIdentifier): EventSourceDetail = eventSources(id).getEventSourceDetail
+  override def getSourceDetail(id: String): EventSourceDetail = eventSources(id).getEventSourceDetail
 
-  override def getScrollingSource(id: EventSourceIdentifier): FreeScrollEventSource = eventSources(id).asInstanceOf[FreeScrollEventSource]
+  override def getScrollingSource(id: String): FreeScrollEventSource = eventSources(id).asInstanceOf[FreeScrollEventSource]
 
-  override def containsEventSource(id: EventSourceIdentifier): Boolean = eventSources.contains(id)
+  override def containsEventSource(id: String): Boolean = eventSources.contains(id)
 }
 
 case class HistoryServerApi(host: String, port: Int, name: String)

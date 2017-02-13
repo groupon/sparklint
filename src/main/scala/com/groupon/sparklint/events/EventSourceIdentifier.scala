@@ -22,7 +22,7 @@ package com.groupon.sparklint.events
   */
 case class EventSourceIdentifier(appId: String, attemptId: Option[String]) {
   override def toString: String = attemptId match {
-    case Some(attempt) => s"$appId-$attempt"
+    case Some(attempt) => appId + "_"  + attempt
     case None          => appId
   }
 }

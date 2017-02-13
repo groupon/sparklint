@@ -17,24 +17,29 @@
 package com.groupon.sparklint.events
 
 import java.io.{File, FileFilter}
+import java.util.UUID
 
+import com.groupon.sparklint.common.Logging
 import org.apache.commons.io.filefilter.FileFileFilter
 
+import scala.collection.concurrent.TrieMap
 import scala.collection.mutable
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.util.{Success, Try}
 
 /**
   * @author rxue
   * @since 9/22/16.
   */
-case class DirectoryEventSourceManager(dir: File) extends EventSourceManagerLike {
+case class DirectoryEventSourceManager(dir: File, runImmediately: Boolean, uuid: UUID = UUID.randomUUID()) extends EventSourceManagerLike with Logging {
   require(dir.isDirectory)
 
-  case class PotentialEventSourceDescription(file: File)
+  case class PotentialEventSourceDescription(meta: EventSourceMetaLike, file: File)
 
-  private val eventSources: mutable.Map[EventSourceIdentifier, FileEventSource] = new mutable.LinkedHashMap[EventSourceIdentifier, FileEventSource] with mutable.SynchronizedMap[EventSourceIdentifier, FileEventSource]
+  private val eventSources: mutable.Map[String, FileEventSource] = TrieMap[String, FileEventSource]()
 
-  val availableEventSources: mutable.Map[EventSourceMeta, PotentialEventSourceDescription] = new mutable.LinkedHashMap[EventSourceMeta, PotentialEventSourceDescription] with mutable.SynchronizedMap[EventSourceMeta, PotentialEventSourceDescription]
+  val availableEventSources: mutable.Map[String, PotentialEventSourceDescription] = new mutable.LinkedHashMap[String, PotentialEventSourceDescription] with mutable.SynchronizedMap[String, PotentialEventSourceDescription]
 
   def pull(): Unit = {
     val isFile: FileFilter = FileFileFilter.FILE
@@ -45,7 +50,7 @@ case class DirectoryEventSourceManager(dir: File) extends EventSourceManagerLike
       } else {
         Try(EventSourceMeta.fromFile(f)) match {
           case Success(meta) =>
-            Some(meta -> PotentialEventSourceDescription(f))
+            Some(meta.appIdentifier.toString -> PotentialEventSourceDescription(meta, f))
           case _             => None
         }
       }
@@ -53,9 +58,18 @@ case class DirectoryEventSourceManager(dir: File) extends EventSourceManagerLike
     availableEventSources ++= newFiles
   }
 
-  def pullEventSource(meta: EventSourceMeta): Try[Unit] = Try {
-    if (!eventSources.contains(meta.appIdentifier)) {
-      eventSources += meta.appIdentifier -> FileEventSource(availableEventSources.remove(meta).get.file)
+  def pullEventSource(id: String): Try[Unit] = Try {
+    if (!eventSources.contains(id)) {
+      if (availableEventSources.contains(id)) {
+        logInfo(s"Activating event source $id")
+        val file = FileEventSource(availableEventSources.remove(id).get.file)
+        eventSources += id -> file
+        if (runImmediately) {
+          Future(file.forwardIfPossible())
+        }
+      } else {
+        throw new NoSuchElementException(s"$id can not be activated in event source manager ${uuid.toString}")
+      }
     }
   }
 
@@ -65,11 +79,11 @@ case class DirectoryEventSourceManager(dir: File) extends EventSourceManagerLike
 
   override def displayDetails: String = dir.getParentFile.getCanonicalPath
 
-  override def containsEventSource(id: EventSourceIdentifier): Boolean = eventSources.contains(id)
+  override def containsEventSource(id: String): Boolean = eventSources.contains(id)
 
   override def eventSourceDetails: Iterable[EventSourceDetail] = eventSources.map(_._2.getEventSourceDetail)
 
-  override def getSourceDetail(id: EventSourceIdentifier): EventSourceDetail = eventSources(id).getEventSourceDetail
+  override def getSourceDetail(id: String): EventSourceDetail = eventSources(id).getEventSourceDetail
 
-  override def getScrollingSource(id: EventSourceIdentifier): FreeScrollEventSource = eventSources(id)
+  override def getScrollingSource(id: String): FreeScrollEventSource = eventSources(id)
 }

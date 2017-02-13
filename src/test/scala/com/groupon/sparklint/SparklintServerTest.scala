@@ -61,10 +61,10 @@ class SparklintServerTest extends FlatSpec with BeforeAndAfterEach with Matchers
     server.addEventSourcesFromCommandLineArguments()
     server.startUI()
 
-    eventSourceManager.eventSourceDetails.size shouldEqual 1
+    eventSourceManager.eventSourceManagers.map(_.sourceCount).sum shouldEqual 1
     scheduler.scheduledTasks.isEmpty shouldBe true
 
-    val es = eventSourceManager.getScrollingSource(EventSourceIdentifier("GraphXTest", None))
+    val es = eventSourceManager.eventSourceManagers.head.getScrollingSource(EventSourceIdentifier("GraphXTest", None).toString)
     es.meta.appName shouldEqual "spark_event_log_example"
     es.hasNext shouldEqual true
     es.hasPrevious shouldEqual false
@@ -77,10 +77,10 @@ class SparklintServerTest extends FlatSpec with BeforeAndAfterEach with Matchers
     server.addEventSourcesFromCommandLineArguments()
     server.startUI()
 
-    eventSourceManager.eventSourceDetails.size shouldEqual 1
+    eventSourceManager.eventSourceManagers.map(_.sourceCount).sum shouldEqual 1
     scheduler.scheduledTasks.isEmpty shouldBe true
 
-    val es = eventSourceManager.getScrollingSource(EventSourceIdentifier("application_1462781278026_205691", None))
+    val es = eventSourceManager.eventSourceManagers.head.getScrollingSource("application_1462781278026_205691")
     es.meta.appName shouldEqual "spark_event_log_example"
     es.hasNext shouldEqual false
     es.hasPrevious shouldEqual true
@@ -94,19 +94,19 @@ class SparklintServerTest extends FlatSpec with BeforeAndAfterEach with Matchers
     server.addEventSourcesFromCommandLineArguments()
     server.startUI()
 
-    eventSourceManager.eventSourceDetails.size shouldEqual 0
+    eventSourceManager.eventSourceManagers.map(_.sourceCount).sum shouldEqual 0
     scheduler.scheduledTasks.size shouldEqual 1
 
     // fire the timed event to load from directory
     scheduler.scheduledTasks.head.run()
-    eventSourceManager.eventSourceDetails.size shouldEqual 2
+    eventSourceManager.eventSourceManagers.map(_.sourceCount).sum shouldEqual 2
 
-    var es = eventSourceManager.getScrollingSource(EventSourceIdentifier("application_1462781278026_205691", None))
+    var es = eventSourceManager.eventSourceManagers.head.getScrollingSource("application_1462781278026_205691")
     es.meta.appName shouldEqual "event_log_0"
     es.hasNext shouldEqual true
     es.hasPrevious shouldEqual false
 
-    es = eventSourceManager.getScrollingSource(EventSourceIdentifier("application_1472176676028_116806", None))
+    es = eventSourceManager.eventSourceManagers.head.getScrollingSource("application_1472176676028_116806")
     es.meta.appName shouldEqual "event_log_1"
     es.hasNext shouldEqual true
     es.hasPrevious shouldEqual false
@@ -118,19 +118,19 @@ class SparklintServerTest extends FlatSpec with BeforeAndAfterEach with Matchers
     server.addEventSourcesFromCommandLineArguments()
     server.startUI()
 
-    eventSourceManager.eventSourceDetails.size shouldEqual 0
+    eventSourceManager.eventSourceManagers.map(_.sourceCount).sum shouldEqual 0
     scheduler.scheduledTasks.size shouldEqual 1
 
     // fire the timed event to load from directory
     scheduler.scheduledTasks.head.run()
-    eventSourceManager.eventSourceDetails.size shouldEqual 2
+    eventSourceManager.eventSourceManagers.map(_.sourceCount).sum shouldEqual 2
 
-    var es = eventSourceManager.getScrollingSource(EventSourceIdentifier("application_1462781278026_205691", None))
+    var es = eventSourceManager.eventSourceManagers.head.getScrollingSource("application_1462781278026_205691")
     es.meta.appName shouldEqual "event_log_0"
     es.hasNext shouldEqual false
     es.hasPrevious shouldEqual true
 
-    es = eventSourceManager.getScrollingSource(EventSourceIdentifier("application_1472176676028_116806", None))
+    es = eventSourceManager.eventSourceManagers.head.getScrollingSource("application_1472176676028_116806")
     es.meta.appName shouldEqual "event_log_1"
     es.hasNext shouldEqual false
     es.hasPrevious shouldEqual true

@@ -16,11 +16,13 @@
 
 package com.groupon.sparklint.events
 
+import java.util.UUID
+
 /**
   * @author rxue
   * @since 2/5/17.
   */
-case class SingleFileEventSourceManager(fileEventSource: FileEventSource) extends EventSourceManagerLike {
+case class SingleFileEventSourceManager(fileEventSource: FileEventSource, uuid: UUID = UUID.randomUUID()) extends EventSourceManagerLike {
 
   override def sourceCount: Int = 1
 
@@ -28,17 +30,17 @@ case class SingleFileEventSourceManager(fileEventSource: FileEventSource) extend
 
   override def displayDetails: String = fileEventSource.file.getParentFile.getCanonicalPath
 
-  override def containsEventSource(id: EventSourceIdentifier): Boolean = fileEventSource.identifier == id
+  override def containsEventSource(id: String): Boolean = fileEventSource.identifier.toString == id
 
   override def eventSourceDetails: Iterable[EventSourceDetail] = Iterable(fileEventSource.getEventSourceDetail)
 
-  override def getSourceDetail(id: EventSourceIdentifier): EventSourceDetail = if (fileEventSource.identifier == id) {
+  override def getSourceDetail(id: String): EventSourceDetail = if (fileEventSource.identifier.toString == id) {
     fileEventSource.getEventSourceDetail
   } else {
     throw new NoSuchElementException
   }
 
-  override def getScrollingSource(id: EventSourceIdentifier): FreeScrollEventSource = if (fileEventSource.identifier == id) {
+  override def getScrollingSource(id: String): FreeScrollEventSource = if (fileEventSource.identifier.toString == id) {
     fileEventSource
   } else {
     throw new NoSuchElementException

@@ -16,12 +16,14 @@
 
 package com.groupon.sparklint.events
 
+import java.util.UUID
+
 
 /**
   * @author rxue
   * @since 2/5/17.
   */
-case class InMemoryEventSourceManager(inMemoryEventSource: InMemoryEventSource) extends EventSourceManagerLike {
+case class InMemoryEventSourceManager(inMemoryEventSource: InMemoryEventSource, uuid: UUID = UUID.randomUUID()) extends EventSourceManagerLike {
 
   override def sourceCount: Int = 1
 
@@ -38,15 +40,15 @@ case class InMemoryEventSourceManager(inMemoryEventSource: InMemoryEventSource) 
 
   override def eventSourceDetails: Iterable[EventSourceDetail] = Iterable(inMemoryEventSource.getEventSourceDetail)
 
-  override def containsEventSource(id: EventSourceIdentifier): Boolean = inMemoryEventSource.identifier == id
+  override def containsEventSource(id: String): Boolean = inMemoryEventSource.identifier.toString == id
 
-  override def getSourceDetail(id: EventSourceIdentifier): EventSourceDetail = if (inMemoryEventSource.identifier == id) {
+  override def getSourceDetail(id: String): EventSourceDetail = if (inMemoryEventSource.identifier.toString == id) {
     inMemoryEventSource.getEventSourceDetail
   } else {
     throw new NoSuchElementException
   }
 
-  override def getScrollingSource(id: EventSourceIdentifier): FreeScrollEventSource = {
+  override def getScrollingSource(id: String): FreeScrollEventSource = {
     throw new NoSuchElementException // InMemoryEventSource is not scrollable
   }
 }

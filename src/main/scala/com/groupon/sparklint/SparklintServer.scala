@@ -66,7 +66,7 @@ class SparklintServer(scheduler: SchedulerLike,
     }
     if (config.directorySource) {
       logInfo(s"Loading data from directory source ${config.directorySource.get}")
-      val directorySource = DirectoryEventSourceManager(config.directorySource.get)
+      val directorySource = DirectoryEventSourceManager(config.directorySource.get, runImmediately)
       eventSourceManager.addDirectory(directorySource)
       scheduleDirectoryPolling(directorySource)
     }

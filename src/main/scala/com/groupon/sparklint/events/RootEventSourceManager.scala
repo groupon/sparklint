@@ -16,56 +16,39 @@
 
 package com.groupon.sparklint.events
 
-import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
+import java.util.UUID
+
+import scala.collection.immutable.SortedMap
 
 /**
   * @author rxue
   * @since 2/5/17.
   */
-class RootEventSourceManager extends EventSourceManagerLike {
-  private val _eventSourceManagers: mutable.Buffer[EventSourceManagerLike] = new ArrayBuffer[EventSourceManagerLike] with mutable.SynchronizedBuffer[EventSourceManagerLike]
+class RootEventSourceManager {
+  private var _eventSourceManagers: SortedMap[UUID, EventSourceManagerLike] = SortedMap.empty
 
-  override def sourceCount: Int = eventSourceManagers.map(_.sourceCount).sum
+  def eventSourceManagers: Seq[EventSourceManagerLike] = _eventSourceManagers.toSeq.map(_._2)
 
-  override def displayName: String = "Root"
+  def eventSourceManager(uuid: String): Option[EventSourceManagerLike] = _eventSourceManagers.get(UUID.fromString(uuid))
 
-  override def displayDetails: String = ""
-
-  override def eventSourceDetails: Iterable[EventSourceDetail] = eventSourceManagers.flatMap(_.eventSourceDetails)
-
-  override def getSourceDetail(id: EventSourceIdentifier): EventSourceDetail = eventSourceManagers.find(_.containsEventSource(id)) match {
-    case Some(sourceManager) => sourceManager.getSourceDetail(id)
-    case None                => throw new NoSuchElementException
+  def addDirectory(esm: DirectoryEventSourceManager): Unit = {
+    _eventSourceManagers += esm.uuid -> esm
   }
 
-  override def getScrollingSource(id: EventSourceIdentifier): FreeScrollEventSource = eventSourceManagers.find(_.containsEventSource(id)) match {
-    case Some(sourceManager) => sourceManager.getScrollingSource(id)
-    case None                => throw new NoSuchElementException
+  def addHistoryServer(esm: HistoryServerEventSourceManager): Unit = {
+    _eventSourceManagers += esm.uuid -> esm
   }
 
-  override def containsEventSource(id: EventSourceIdentifier): Boolean = eventSourceManagers.exists(_.containsEventSource(id))
-
-  def eventSourceManagers: Seq[EventSourceManagerLike] = _eventSourceManagers
-
-  def addDirectory(directoryEventSourceManager: DirectoryEventSourceManager): Unit = {
-    _eventSourceManagers += directoryEventSourceManager
-  }
-
-  def addHistoryServer(historyServerEventSourceManager: HistoryServerEventSourceManager): Unit = {
-    _eventSourceManagers += historyServerEventSourceManager
-  }
-
-  protected def addFile(singleFileEventSourceManager: SingleFileEventSourceManager): Unit = {
-    _eventSourceManagers += singleFileEventSourceManager
+  protected def addFile(esm: SingleFileEventSourceManager): Unit = {
+    _eventSourceManagers += esm.uuid -> esm
   }
 
   def addFile(fileEventSource: FileEventSource): Unit = {
     addFile(SingleFileEventSourceManager(fileEventSource))
   }
 
-  protected def addInMemory(inMemoryEventSourceManager: InMemoryEventSourceManager): Unit = {
-    _eventSourceManagers += inMemoryEventSourceManager
+  protected def addInMemory(esm: InMemoryEventSourceManager): Unit = {
+    _eventSourceManagers += esm.uuid -> esm
   }
 
   def addInMemory(inMemoryEventSource: InMemoryEventSource): Unit = {

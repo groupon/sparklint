@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package com.groupon.sparklint.ui
+package com.groupon.sparklint.ui.views
 
-import com.groupon.sparklint.events.{RootEventSourceManager, _}
+import com.groupon.sparklint.events.EventType
 
 import scala.xml.Node
 
@@ -24,7 +24,7 @@ import scala.xml.Node
   * @author rxue
   * @since 6/14/16.
   */
-class SparklintHomepage(sourceManager: RootEventSourceManager) extends UITemplate {
+class SparklintHomepage extends UITemplate {
   /**
     * These are all the frontend libraries used by Sparklint UI
     * jquery (dom operation, required by d3)
@@ -38,6 +38,8 @@ class SparklintHomepage(sourceManager: RootEventSourceManager) extends UITemplat
   override val title      : String = "Sparklint"
   override val description: String = "Performance Analyzer for Apache Spark"
   override val author     : String = "Groupon"
+
+  override protected def extraCSS: Seq[Node] = <link rel="stylesheet" type="text/css" href="/static/css/sparklint.css"/>
 
   override protected def extraScripts: Seq[Node] = Seq(
     <script src="/static/js/sparklintHomepage.js"></script>
@@ -62,49 +64,14 @@ class SparklintHomepage(sourceManager: RootEventSourceManager) extends UITemplat
       <div class="navbar-default sidebar" role="navigation">
         <div class="sidebar-nav navbar-collapse">
           <ul class="nav" id="side-menu">
-            {for (eventSourceManager <- sourceManager.eventSourceManagers) yield
-            <li>
-              <a href="#">
-                {eventSourceManager.displayName}
-              </a>
-              <ul class="nav nav-second-level collapse in" aria-expanded="true">
-                {for (source <- eventSourceManager.eventSourceDetails)
-                yield navbarItem(source.meta.appIdentifier.toString, source.meta, source.progress)}{eventSourceManager match {
-                case esm: DirectoryEventSourceManager =>
-                  for ((meta, _) <- esm.availableEventSources) yield
-                    <li data-value={meta.appIdentifier.toString}>
-                      <a href="#" class="sparklintApp" data-value={meta.appIdentifier.toString}>
-                        <strong>App:</strong>{meta.appName}
-                      </a>
-                    </li>
-                      <li class="divider"></li>
-                case _                                =>
-              }}
-              </ul>
-            </li>}{navbarReplayControl}
+            {navbarReplayControl}
           </ul>
         </div>
       </div>
     </nav>
 
-  def navbarItem(esId: String, meta: EventSourceMetaLike, progress: EventProgressTrackerLike): Seq[Node] =
-    <li data-value={esId}>
-      <a href="#" class="sparklintApp" data-value={esId}>
-        <strong>App:</strong>{meta.appName}<p class="text-center" id={uniqueId(esId, "app-prog")}>
-        {progress.eventProgress.description}
-      </p>
-        <div class="progress active">
-          <div class="progress-bar" role="progressbar" id={uniqueId(esId, "progress-bar")}
-               aria-valuenow={progress.eventProgress.percent.toString} aria-valuemin="0" aria-valuemax="100"
-               style={widthStyle(progress.eventProgress)}>
-          </div>
-        </div>
-      </a>
-    </li>
-      <li class="divider"></li>
-
   def navbarReplayControl: Seq[Node] =
-    <li class="sidebar-search">
+    <li id="#navbarPlay">
       <div class="input-group custom-search-form disabled" id="replay-controls" style="display:None">
         <!--<form role="form"><fieldset disabled="true">-->
         <div class="input-group-btn">
@@ -313,8 +280,4 @@ class SparklintHomepage(sourceManager: RootEventSourceManager) extends UITemplat
       </div>
       <!-- /.panel-body -->
     </div>
-
-  private def widthStyle(esp: EventProgress) = s"width: ${esp.percent}%"
-
-  private def uniqueId(appId: String, idType: String) = s"$appId-$idType"
 }
