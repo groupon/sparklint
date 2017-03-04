@@ -96,7 +96,16 @@ object UIEventSourceNavigation {
         eventSourceListItem(source.meta.appIdentifier.toString, source.meta, source.progress)
       }
     }
-    // TODO: Add an input box to accept application id
+    {
+      for (meta <- esm.availableEventSources) yield {
+        <li data-value={meta.appIdentifier.toString}>
+          <a href="#" class="inactiveApp" data-value={meta.appIdentifier.toString}>
+            <div><i class="fa fa-file fa-tw"></i> {meta.appName}</div>
+            <div><small>{meta.appIdentifier.toString}</small></div>
+          </a>
+        </li>
+      }
+    }
     </ul>
 
   def eventSourceListItem(esId: String, meta: EventSourceMetaLike, progress: EventProgressTrackerLike): Seq[Node] =

@@ -18,8 +18,9 @@ package com.groupon.sparklint
 
 import com.frugalmechanic.optparse.OptParse
 import com.groupon.sparklint.common._
-import com.groupon.sparklint.events.{DirectoryEventSourceManager, FileEventSource, RootEventSourceManager, SingleFileEventSourceManager}
+import com.groupon.sparklint.events._
 import com.groupon.sparklint.ui.UIServer
+import org.http4s.Uri
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future, Promise}
@@ -78,7 +79,14 @@ class SparklintServer(scheduler: SchedulerLike,
           if (runImmediately) fileSource.forwardIfPossible()
         case Failure(ex) => logger.logError(s"Failed to create file source from ${config.fileSource.get}, reason ${ex.getMessage}")
       }
-    } else {
+    }
+    if (config.historySource) {
+      logInfo(s"Initializing history server source ${config.historySource.get}")
+      val historySource = HistoryServerEventSourceManager(HistoryServerApi("history server", Uri.fromString(config.historySource.get).toOption.get))
+      eventSourceManager.addHistoryServer(historySource)
+      scheduleHistoryServerPolling(historySource)
+    }
+    if (eventSourceManager.eventSourceManagers.isEmpty) {
       logWarn("No source specified, add source through UI.")
     }
   }
@@ -88,6 +96,13 @@ class SparklintServer(scheduler: SchedulerLike,
     val taskName = s"Directory source poller [${directoryEventSource.dir.getName}]"
     val pollRate = config.pollRate.getOrElse(DEFAULT_POLL)
     val task = ScheduledTask(taskName, directoryEventSource.pull, periodSeconds = pollRate)
+    scheduler.scheduleTask(task)
+  }
+
+  private def scheduleHistoryServerPolling(historySource: HistoryServerEventSourceManager) = {
+    val taskName = s"History source poller [${historySource.historyServer.uri.toString()}]"
+    val pollRate = config.pollRate.getOrElse(DEFAULT_POLL)
+    val task = ScheduledTask(taskName, historySource.pull, periodSeconds = pollRate)
     scheduler.scheduleTask(task)
   }
 

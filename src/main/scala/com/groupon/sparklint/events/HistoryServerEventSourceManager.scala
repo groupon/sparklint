@@ -17,7 +17,7 @@
 package com.groupon.sparklint.events
 
 
-import java.util.UUID
+import java.util.{Date, UUID}
 
 import scala.collection.mutable
 import scala.util.Try
@@ -29,10 +29,20 @@ import scala.util.Try
 case class HistoryServerEventSourceManager(historyServer: HistoryServerApi, uuid: UUID = UUID.randomUUID()) extends EventSourceManagerLike {
   private val eventSources: mutable.Map[String, EventSourceLike] = new mutable.LinkedHashMap[String, EventSourceLike] with mutable.SynchronizedMap[String, EventSourceLike]
 
-  def availableEventSources: Seq[EventSourceMeta] = ???
+  private var _availableEventSources: Seq[EventSourceMeta] = Seq.empty
 
-  // TODO: pull available logs from history api
-  def pull(): Unit = ???
+  def availableEventSources: Seq[EventSourceMeta] = _availableEventSources
+
+  def pull(): Unit = {
+    // TODO: Allow user to override this
+    // By default list the past 24 hrs app
+    val apps = historyServer.getApplications(new Date(System.currentTimeMillis() - 24 * 60 * 60 * 1000L))
+    _availableEventSources = apps.flatMap(l =>
+      l.attempts.map(att => {
+        new EventSourceMeta(EventSourceIdentifier(l.id, att.attemptId), l.name)
+      })
+    ).filterNot(meta => eventSources.contains(meta.appIdentifier.toString))
+  }
 
   def pullEventSource(id: String): Try[Unit] = Try {
     // TODO: download event logs
@@ -42,7 +52,7 @@ case class HistoryServerEventSourceManager(historyServer: HistoryServerApi, uuid
 
   override def displayName: String = historyServer.name
 
-  override def displayDetails: String = s"${historyServer.host}:${historyServer.port}"
+  override def displayDetails: String = s"${historyServer.uri.host}:${historyServer.uri.port}"
 
   override def eventSourceDetails: Iterable[EventSourceDetail] = eventSources.map(_._2.getEventSourceDetail)
 
@@ -52,5 +62,3 @@ case class HistoryServerEventSourceManager(historyServer: HistoryServerApi, uuid
 
   override def containsEventSource(id: String): Boolean = eventSources.contains(id)
 }
-
-case class HistoryServerApi(host: String, port: Int, name: String)

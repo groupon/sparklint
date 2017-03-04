@@ -22,9 +22,9 @@ unmanagedSourceDirectories in Test += (sourceDirectory in Test).value / BuildUti
 lazy val sparkVersion = SettingKey[String]("spark-version", "The version of spark library to compile against")
 sparkVersion := "1.6.1"
 // Non-spark
-lazy val http4s = "0.13.2"
+lazy val http4s = "0.15.5"
 lazy val optparse = "1.1.2"
-lazy val scalatest = "2.2.6"
+lazy val scalatest = "3.0.1"
 lazy val slf4j = "1.7.16"
 lazy val log4j = "1.2.17"
 lazy val json4s = "3.2.11"
@@ -38,12 +38,14 @@ libraryDependencies ++= Seq(
   "com.frugalmechanic" %% "scala-optparse" % optparse,
   "org.http4s" %% "http4s-dsl" % http4s,
   "org.http4s" %% "http4s-blaze-server" % http4s,
+  "org.http4s" %% "http4s-json4s-jackson" % http4s,
+  "org.http4s" %% "http4s-blaze-client" % http4s,
+"com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.8.2",
   "org.slf4j" % "slf4j-api" % slf4j,
   "org.slf4j" % "slf4j-log4j12" % slf4j,
   "log4j" % "log4j" % log4j,
   "org.json4s" %% "json4s-jackson" % json4s,
-  "org.scalatest" %% "scalatest" % scalatest % "test",
-  "org.http4s" %% "http4s-blaze-client" % http4s % "test"
+  "org.scalatest" %% "scalatest" % scalatest % "test"
 )
 
 // Run
