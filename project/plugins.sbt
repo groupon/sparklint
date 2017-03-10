@@ -1,4 +1,4 @@
-addSbtPlugin("io.get-coursier" % "sbt-coursier" % "1.0.0-M13")
+resolvers += "JBoss" at "https://repository.jboss.org/"
 
 addSbtPlugin("com.github.gseitz" % "sbt-release" % "1.0.3")
 

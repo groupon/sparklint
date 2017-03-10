@@ -20,6 +20,8 @@ import org.apache.spark.scheduler.{SparkListenerEvent, SparkListenerLogStart}
 import org.apache.spark.util.JsonProtocol
 import org.json4s.jackson.JsonMethods.parse
 
+import scala.util.Try
+
 /**
   * A helper class. This is under org.apache.spark to utilize the private function JsonProtocal.sparkEventFromJson
   * so we can replay a spark event log from file system.
@@ -29,7 +31,7 @@ import org.json4s.jackson.JsonMethods.parse
   */
 object StringToSparkEvent {
 
-  def apply(line: String): SparkListenerEvent = shimIfNeeded(JsonProtocol.sparkEventFromJson(parse(line)))
+  def apply(line: String): Option[SparkListenerEvent] = Try(shimIfNeeded(JsonProtocol.sparkEventFromJson(parse(line)))).toOption
 
   def as[T <: SparkListenerEvent](line: String): T = JsonProtocol.sparkEventFromJson(parse(line)).asInstanceOf[T]
 
