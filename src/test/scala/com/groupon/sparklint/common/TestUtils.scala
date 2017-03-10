@@ -20,6 +20,7 @@ import java.util.Properties
 
 import com.groupon.sparklint.events.FreeScrollEventSource
 import org.apache.spark.executor.TaskMetrics
+import org.apache.spark.groupon.SparkPrivateMethodDelegate
 import org.apache.spark.scheduler._
 import org.apache.spark.storage.RDDInfo
 import org.apache.spark.{Success, TaskEndReason}
@@ -101,7 +102,7 @@ object TestUtils {
     new TaskInfo(taskId, index, attempt, launchTime, executorId, host, locality, false)
   }
 
-  def sparkTaskMetrics(): TaskMetrics = new TaskMetrics
+  def sparkTaskMetrics(): TaskMetrics = SparkPrivateMethodDelegate.sparkTaskMetrics()
 
   def sparkStageCompletedFromId(stageId: Int): SparkListenerStageCompleted = {
     sparkStageCompleted(sparkStageInfo(stageId = stageId))

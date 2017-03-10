@@ -4,7 +4,7 @@ import sbt.{Command, Help, State}
 
 object BuildUtils {
   private val SPARK_1_6_VERSIONS = Seq("1.6.0", "1.6.1", "1.6.2", "1.6.3")
-  private val SPARK_2_0_VERSIONS = Seq("2.0.0", "2.0.1", "2.0.2")
+  private val SPARK_2_0_VERSIONS = Seq("2.0.0", "2.0.1", "2.0.2", "2.1.0")
 
   val SUPPORTED_SPARK_VERSIONS: Seq[String] = SPARK_1_6_VERSIONS ++ SPARK_2_0_VERSIONS
 

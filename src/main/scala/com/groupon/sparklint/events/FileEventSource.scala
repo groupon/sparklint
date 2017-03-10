@@ -85,8 +85,8 @@ case class FileEventSource(fileSource: File, receivers: Seq[EventReceiverLike])
 
   private def parseAndPreprocess(line: String): Option[SparkListenerEvent] = {
     val event = StringToSparkEvent(line)
-    preprocessEvent(event)
-    Some(event)
+    event.foreach(preprocessEvent)
+    event
   }
 
   private def preprocessEvent(event: SparkListenerEvent) = receivers.foreach(_.preprocess(event))
