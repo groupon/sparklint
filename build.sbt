@@ -43,13 +43,18 @@ libraryDependencies ++= Seq(
   "org.slf4j" % "slf4j-api" % slf4j,
   "org.slf4j" % "slf4j-log4j12" % slf4j,
   "log4j" % "log4j" % log4j,
-  "org.json4s" %% "json4s-jackson" % json4s,
-  "org.scalatest" %% "scalatest" % scalatest % "test",
-  "org.http4s" %% "http4s-blaze-client" % http4s % "test"
+  "org.json4s" %% "json4s-jackson" % json4s
 )
 
 // Run
 mainClass in run := Some("com.groupon.sparklint.SparklintServer")
+
+// Test
+libraryDependencies ++= Seq(
+  "org.scalatest" %% "scalatest" % scalatest,
+  "org.http4s" %% "http4s-blaze-client" % http4s
+) map (_  % "test")
+fork in Test := true
 
 // Package fat jar
 assemblyMergeStrategy in assembly := {
