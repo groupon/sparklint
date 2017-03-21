@@ -55,7 +55,9 @@ case class CliSparklintConfig(exitOnError: Boolean = true) extends SparklintConf
     desc = "Set the flag in order to run each buffer through to their end state on startup."
   )
 
-  val historySource = StrOpt(desc = "Url of the Spark History Server to use.")
+  val historySource = StrOpt(
+    long = "historySource", 
+    desc = "Url of the Spark History Server to use.")
 
   val pollRate = IntOpt(
     long = "pollRate", short = 'p',
