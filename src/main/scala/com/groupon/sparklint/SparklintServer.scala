@@ -16,10 +16,13 @@
 
 package com.groupon.sparklint
 
+import java.util.regex.Pattern
+
 import com.frugalmechanic.optparse.OptParse
 import com.groupon.sparklint.common._
-import com.groupon.sparklint.events.{EventSourceDirectory, FileEventSourceManager}
+import com.groupon.sparklint.events.{EventSourceDirectory, EventSourceHistory, FileEventSourceManager}
 import com.groupon.sparklint.ui.UIServer
+import org.http4s.Uri
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future, Promise}
@@ -61,9 +64,14 @@ class SparklintServer(eventSourceManager: FileEventSourceManager,
   def buildEventSources(): Unit = {
     val runImmediately = config.runImmediately.getOrElse(DEFAULT_RUN_IMMEDIATELY)
     if (config.historySource) {
-      logError("historySource unsupported.")
+      logInfo(s"Loading data from history source ${config.historySource}")
+      scheduleHistoryPolling(new EventSourceHistory(
+        eventSourceManager,
+        Uri.fromString(config.historySource.get).toOption.get,
+        Pattern.compile(config.historyFilter.getOrElse(".*")),
+        runImmediately))
     } else if (config.directorySource) {
-      logInfo(s"Loading data from directory source $config.directorySource")
+      logInfo(s"Loading data from directory source ${config.directorySource}")
       val directoryEventSource = new EventSourceDirectory(eventSourceManager, config.directorySource.get, runImmediately)
       scheduleDirectoryPolling(directoryEventSource)
     } else if (config.fileSource) {
@@ -78,6 +86,12 @@ class SparklintServer(eventSourceManager: FileEventSourceManager,
     }
   }
 
+  private def scheduleHistoryPolling(historyEventSource: EventSourceHistory) = {
+    val taskName = s"History source poller [${historyEventSource.uri}]"
+    val pollRate = config.pollRate.getOrElse(DEFAULT_POLL)
+    val task = ScheduledTask(taskName, historyEventSource.poll, periodSeconds = pollRate)
+    scheduler.scheduleTask(task)
+  }
 
   private def scheduleDirectoryPolling(directoryEventSource: EventSourceDirectory) = {
     val taskName = s"Directory source poller [${directoryEventSource.dir}]"

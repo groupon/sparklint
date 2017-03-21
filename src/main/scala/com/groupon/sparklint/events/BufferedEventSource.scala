@@ -1,51 +1,56 @@
-/*
- * Copyright 2016 Groupon, Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.groupon.sparklint.events
 
-import java.util.concurrent.{BlockingQueue, LinkedBlockingDeque}
-
-import org.apache.spark.scheduler.SparkListenerEvent
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import org.apache.spark.scheduler._
 
 /**
-  * An EventSource that uses an intermediary queue to buffer live events before updating receivers.
+  * An event source which maintains an internal buffer that can then be used
+  * as an [[EventSourceLike]] implementation.
   *
-  * @author swhitear
-  * @since 8/18/16.
+  * @author superbobry
+  * @since 1/11/17.
   */
-case class BufferedEventSource(eventSourceId: String, receivers: Seq[EventReceiverLike])
-  extends EventSourceLike {
+private[events] abstract class BufferedEventSource extends FreeScrollEventSource {
 
-  val buffer: BlockingQueue[SparkListenerEvent] = new LinkedBlockingDeque()
+  private val buffer = new EventBuffer(fillBuffer())
+  private val fwdScroll = new ScrollHandler(buffer.next, onEvent, !buffer.hasNext)
+  private val rewScroll = new ScrollHandler(buffer.previous, unEvent, !buffer.hasPrevious)
 
-  def push(event: SparkListenerEvent): Unit = {
-    buffer.add(event)
-  }
+  @throws[IllegalArgumentException]
+  def forwardEvents(count: Int = 1): Unit = fwdScroll.scroll(count)
 
-  def startConsuming() = Future {
-    while (true) {
-      val event = buffer.take()
-      receivers.foreach(r => {
-        r.preprocess(event)
-        r.onEvent(event)
-      })
-    }
-    // TODO make cancelable
-  }
+  @throws[IllegalArgumentException]
+  def rewindEvents(count: Int = 1): Unit = rewScroll.scroll(count)
+
+  @throws[IllegalArgumentException]
+  def forwardTasks(count: Int = 1): Unit = fwdScroll.scroll(count, (evt) => evt.isInstanceOf[SparkListenerTaskEnd])
+
+  @throws[IllegalArgumentException]
+  def rewindTasks(count: Int = 1): Unit = rewScroll.scroll(count, (evt) => evt.isInstanceOf[SparkListenerTaskStart])
+
+  @throws[IllegalArgumentException]
+  def forwardStages(count: Int = 1): Unit = fwdScroll.scroll(count, (evt) => evt.isInstanceOf[SparkListenerStageCompleted])
+
+  @throws[IllegalArgumentException]
+  def rewindStages(count: Int = 1): Unit = rewScroll.scroll(count, (evt) => evt.isInstanceOf[SparkListenerStageSubmitted])
+
+  @throws[IllegalArgumentException]
+  def forwardJobs(count: Int = 1): Unit = fwdScroll.scroll(count, (evt) => evt.isInstanceOf[SparkListenerJobEnd])
+
+  @throws[IllegalArgumentException]
+  def rewindJobs(count: Int = 1): Unit = rewScroll.scroll(count, (evt) => evt.isInstanceOf[SparkListenerJobStart])
+
+  override def toEnd(): Unit = fwdScroll.scroll(Int.MaxValue)
+
+  override def toStart(): Unit = rewScroll.scroll(Int.MaxValue)
+
+  override def hasNext: Boolean = buffer.hasNext
+
+  override def hasPrevious: Boolean = buffer.hasPrevious
+
+  protected def fillBuffer(): IndexedSeq[SparkListenerEvent]
+
+  protected def onEvent(event: SparkListenerEvent): Unit
+
+  protected def unEvent(event: SparkListenerEvent): Unit
 }
+
