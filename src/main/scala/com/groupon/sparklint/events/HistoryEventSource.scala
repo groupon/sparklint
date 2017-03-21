@@ -19,10 +19,11 @@ case class HistoryEventSource(
 
   override def fillBuffer(): IndexedSeq[SparkListenerEvent] = {
     Source.fromChars(contents).getLines().map { line =>
-      val event = StringToSparkEvent(line)
-      preprocessEvent(event)
-      event
-    }.toIndexedSeq
+      StringToSparkEvent(line).map { event =>
+        preprocessEvent(event)
+        event
+      }
+    }.flatten.toIndexedSeq
   }
 
   private def preprocessEvent(event: SparkListenerEvent) = receivers.foreach(_.preprocess(event))
