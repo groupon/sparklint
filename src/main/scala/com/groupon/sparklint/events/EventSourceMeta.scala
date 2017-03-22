@@ -16,12 +16,16 @@
 
 package com.groupon.sparklint.events
 
+import java.io.File
+
 import com.groupon.sparklint.common.Utils._
-import org.apache.spark.groupon.SparkListenerLogStartShim
+import org.apache.spark.groupon.{SparkListenerLogStartShim, StringToSparkEvent}
 import org.apache.spark.scheduler._
 
 import scala.collection.Map
 import scala.collection.immutable.HashMap
+import scala.io.Source
+import scala.util.{Failure, Success, Try}
 
 /**
   * The EventSourceMeta receiver routes the early events in the event log in order to extract information
@@ -30,23 +34,11 @@ import scala.collection.immutable.HashMap
   * @author swhitear
   * @since 9/29/16.
   */
-class EventSourceMeta extends EventSourceMetaLike with EventReceiverLike {
-
-  def this(appId: String, appName: String) = {
-    this()
-    appIdOpt = Some(appId)
-    appNameOpt = Some(appName)
-  }
+class EventSourceMeta(identifier: EventSourceIdentifier, override val appName: String) extends EventSourceMetaLike with EventReceiverLike {
 
   type EnvironmentData = Map[String, Seq[(String, String)]]
 
-  private var appIdOpt: Option[String] = None
-
-  def appId: String = appIdOpt.getOrElse(UNKNOWN_STRING)
-
-  private var appNameOpt: Option[String] = None
-
-  def appName: String = appNameOpt.getOrElse(UNKNOWN_STRING)
+  def appIdentifier: EventSourceIdentifier = identifier
 
   private var userOpt: Option[String] = None
 
@@ -80,7 +72,7 @@ class EventSourceMeta extends EventSourceMetaLike with EventReceiverLike {
 
   def environment: EnvironmentData = environmentOpt.getOrElse(HashMap.empty)
 
-  def fullName = s"$appName ($appId)"
+  def fullName = s"$appName ($appIdentifier)"
 
 
   override protected def preprocLogStart(event: SparkListenerLogStartShim): Unit = {
@@ -98,8 +90,6 @@ class EventSourceMeta extends EventSourceMetaLike with EventReceiverLike {
   }
 
   override protected def preprocAddApp(event: SparkListenerApplicationStart): Unit = {
-    appIdOpt = event.appId
-    appNameOpt = Some(event.appName)
     userOpt = Some(event.sparkUser)
     startTimeOpt = Some(event.time)
   }
@@ -108,5 +98,22 @@ class EventSourceMeta extends EventSourceMetaLike with EventReceiverLike {
     endTimeOpt = Some(event.time)
   }
 
-  override def toString: String = s"AppId: $appId, Name: $appName"
+  override def toString: String = s"AppId: $appIdentifier, Name: $appName"
+}
+
+object EventSourceMeta {
+  def fromFile(file: File): EventSourceMeta = {
+    Try(Source.fromFile(file)) match {
+      case Success(sparkEventLog) =>
+        sparkEventLog.getLines().map(StringToSparkEvent.apply).collectFirst({
+          case e: SparkListenerApplicationStart =>
+            new EventSourceMeta(EventSourceIdentifier(e.appId.getOrElse(file.getName), e.appAttemptId), e.appName)
+        }) match {
+          case Some(meta) => meta
+          case None       => throw new NoSuchElementException(s"Cannot find SparkListenerApplicationStart event from ${file.getName}.")
+        }
+      case Failure(ex)            =>
+        throw ex
+    }
+  }
 }

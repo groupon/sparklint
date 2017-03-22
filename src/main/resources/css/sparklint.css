@@ -15,6 +15,10 @@
     margin-bottom: 0;
 }
 
+.sidebar ul li {
+    word-break: break-all;
+}
+
 .col-xl-1, .col-xl-2, .col-xl-3, .col-xl-4, .col-xl-5, .col-xl-6, .col-xl-7, .col-xl-8, .col-xl-9, .col-xl-10, .col-xl-11, .col-xl-12 {
     position: relative;
     min-height: 1px;
@@ -37,7 +41,25 @@
     top : 0;
 }
 
+@media (min-width: 1920px) {
+    .sidebar {
+        width: 300px;
+    }
+
+    #page-wrapper {
+        margin: 0 0 0 300px;
+    }
+}
+
 @media (min-width: 2400px) {
+    .sidebar {
+        width: 400px;
+    }
+
+    #page-wrapper {
+        margin: 0 0 0 400px;
+    }
+
     .col-xl-1, .col-xl-2, .col-xl-3, .col-xl-4, .col-xl-5, .col-xl-6, .col-xl-7, .col-xl-8, .col-xl-9, .col-xl-10, .col-xl-11, .col-xl-12 {
         float: left;
     }

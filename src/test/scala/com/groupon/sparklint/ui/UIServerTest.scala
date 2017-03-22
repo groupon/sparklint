@@ -19,7 +19,7 @@ package com.groupon.sparklint.ui
 import java.io.File
 
 import com.groupon.sparklint.common.{SparklintConfig, TestUtils}
-import com.groupon.sparklint.events.{CompressedStateManager, FileEventSourceManager}
+import com.groupon.sparklint.events.{CompressedStateManager, FileEventSource, RootEventSourceManager, SingleFileEventSourceManager}
 import org.http4s.client.blaze.PooledHttp1Client
 import org.json4s.JValue
 import org.json4s.jackson.JsonMethods._
@@ -31,16 +31,14 @@ import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
   */
 class UIServerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
 
-  var evSourceManager: FileEventSourceManager = _
+  var evSourceManager: RootEventSourceManager = _
   var server         : UIServer               = _
 
   override protected def beforeEach(): Unit = {
     val file = new File(TestUtils.resource("spark_event_log_example"))
-    evSourceManager = new FileEventSourceManager() {
-      override def newStateManager = new CompressedStateManager(30)
-    }
+    evSourceManager = new RootEventSourceManager()
+    evSourceManager.addFile(FileEventSource(file))
 
-    evSourceManager.addFile(file)
     val config = new SparklintConfig {
       override def port: Int = defaultPort
     }

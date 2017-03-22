@@ -28,6 +28,7 @@ lazy val scalatest = "3.0.1"
 lazy val slf4j = "1.7.16"
 lazy val log4j = "1.2.17"
 lazy val json4s = "3.2.11"
+lazy val jackson = "2.6.5"
 
 resolvers in ThisBuild ++= Seq(
   Resolver.sonatypeRepo("snapshot"),
@@ -40,6 +41,10 @@ libraryDependencies ++= Seq(
   "com.frugalmechanic" %% "scala-optparse" % optparse,
   "org.http4s" %% "http4s-dsl" % http4s,
   "org.http4s" %% "http4s-blaze-server" % http4s,
+  "org.http4s" %% "http4s-json4s-jackson" % http4s
+    exclude("org.json4s", "*"),
+  "org.http4s" %% "http4s-blaze-client" % http4s,
+  "com.fasterxml.jackson.module" %% "jackson-module-scala" % jackson,
   "org.slf4j" % "slf4j-api" % slf4j,
   "org.slf4j" % "slf4j-log4j12" % slf4j,
   "log4j" % "log4j" % log4j,

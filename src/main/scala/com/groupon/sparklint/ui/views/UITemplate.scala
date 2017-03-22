@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.groupon.sparklint.ui
+package com.groupon.sparklint.ui.views
 
 import scala.xml.Node
 
@@ -67,7 +67,7 @@ trait UITemplate {
     *
     * @return
     */
-  protected def extraCSS: Seq[Node] = <link rel="stylesheet" type="text/css" href="/static/css/sparklint.css"/>
+  protected def extraCSS: Seq[Node] = Seq.empty
 
   /**
     * Add extra js here

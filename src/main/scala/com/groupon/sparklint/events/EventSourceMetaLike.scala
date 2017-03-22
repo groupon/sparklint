@@ -16,8 +16,6 @@
 
 package com.groupon.sparklint.events
 
-import com.groupon.sparklint.common.Utils
-
 /**
   * An extension of EventSourceReceiverLike that collects metadata about the underlying EventSource.
   *
@@ -25,10 +23,6 @@ import com.groupon.sparklint.common.Utils
   * @since 11/21/16.
   */
 trait EventSourceMetaLike {
-  private val STANDARD_APP_PREFIX = "application_"
-
-  lazy val trimmedId: String = appId.replace(STANDARD_APP_PREFIX, "")
-
   def version: String
 
   def host: String
@@ -37,7 +31,7 @@ trait EventSourceMetaLike {
 
   def maxMemory: Long
 
-  def appId: String
+  def appIdentifier: EventSourceIdentifier
 
   def appName: String
 
@@ -48,9 +42,4 @@ trait EventSourceMetaLike {
   def endTime: Long
 
   def fullName: String
-
-  def nameOrId: String = if (missingName) appId else appName
-
-  private def missingName = appName.isEmpty || appName == Utils.UNKNOWN_STRING
-
 }
