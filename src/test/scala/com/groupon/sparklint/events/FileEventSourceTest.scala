@@ -253,7 +253,7 @@ class FileEventSourceTest extends FlatSpec with Matchers with BeforeAndAfterEach
   }
 
   private def testEvents(testFile: File): Seq[SparkListenerEvent] = {
-    Source.fromFile(testFile).getLines().map(StringToSparkEvent.apply).toSeq
+    Source.fromFile(testFile).getLines().flatMap(StringToSparkEvent.apply).toSeq
   }
 
   private def testIdsMatchForRange(test: Seq[SparkListenerEvent], expected: Seq[SparkListenerEvent],

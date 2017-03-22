@@ -114,8 +114,8 @@ case class FileEventSource(file: File) extends EventSourceLike with FreeScrollEv
 
   private def parseAndPreprocess(line: String): Option[SparkListenerEvent] = {
     val event = StringToSparkEvent(line)
-    preprocessEvent(event)
-    Some(event)
+    event.foreach(preprocessEvent)
+    event
   }
 
   private def preprocessEvent(event: SparkListenerEvent) = receivers.foreach(_.preprocess(event))

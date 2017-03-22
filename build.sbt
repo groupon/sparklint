@@ -12,7 +12,7 @@ licenses := Seq("Apache License, Version 2.0" -> url("https://www.apache.org/lic
 // Compile
 enablePlugins(AutomateHeaderPlugin)
 name := s"sparklint-spark${BuildUtils.getProjectNameSuffix(sparkVersion.value)}"
-scalaVersion := "2.10.6"
+scalaVersion := "2.11.6"
 crossScalaVersions := Seq("2.10.6", "2.11.8")
 unmanagedSourceDirectories in Compile += (sourceDirectory in Compile).value / BuildUtils.getSparkMajorVersion(sparkVersion.value)
 unmanagedSourceDirectories in Test += (sourceDirectory in Test).value / BuildUtils.getSparkMajorVersion(sparkVersion.value)
@@ -20,7 +20,7 @@ unmanagedSourceDirectories in Test += (sourceDirectory in Test).value / BuildUti
 // Dependency
 // Spark
 lazy val sparkVersion = SettingKey[String]("spark-version", "The version of spark library to compile against")
-sparkVersion := "1.6.1"
+sparkVersion := "2.0.1"
 // Non-spark
 lazy val http4s = "0.15.5"
 lazy val optparse = "1.1.2"
@@ -28,6 +28,7 @@ lazy val scalatest = "3.0.1"
 lazy val slf4j = "1.7.16"
 lazy val log4j = "1.2.17"
 lazy val json4s = "3.2.11"
+lazy val jackson = "2.6.5"
 
 resolvers in ThisBuild ++= Seq(
   Resolver.sonatypeRepo("snapshot"),
@@ -35,21 +36,30 @@ resolvers in ThisBuild ++= Seq(
 )
 libraryDependencies ++= Seq(
   "org.apache.spark" %% "spark-core" % sparkVersion.value,
+  "org.apache.spark" %% "spark-sql" % sparkVersion.value,
+  "org.apache.spark" %% "spark-streaming" % sparkVersion.value,
   "com.frugalmechanic" %% "scala-optparse" % optparse,
   "org.http4s" %% "http4s-dsl" % http4s,
   "org.http4s" %% "http4s-blaze-server" % http4s,
-  "org.http4s" %% "http4s-json4s-jackson" % http4s,
+  "org.http4s" %% "http4s-json4s-jackson" % http4s
+    exclude("org.json4s", "*"),
   "org.http4s" %% "http4s-blaze-client" % http4s,
-"com.fasterxml.jackson.module" %% "jackson-module-scala" % "2.8.2",
+  "com.fasterxml.jackson.module" %% "jackson-module-scala" % jackson,
   "org.slf4j" % "slf4j-api" % slf4j,
   "org.slf4j" % "slf4j-log4j12" % slf4j,
   "log4j" % "log4j" % log4j,
-  "org.json4s" %% "json4s-jackson" % json4s,
-  "org.scalatest" %% "scalatest" % scalatest % "test"
+  "org.json4s" %% "json4s-jackson" % json4s
 )
 
 // Run
 mainClass in run := Some("com.groupon.sparklint.SparklintServer")
+
+// Test
+libraryDependencies ++= Seq(
+  "org.scalatest" %% "scalatest" % scalatest,
+  "org.http4s" %% "http4s-blaze-client" % http4s
+) map (_  % "test")
+fork in Test := true
 
 // Package fat jar
 assemblyMergeStrategy in assembly := {
