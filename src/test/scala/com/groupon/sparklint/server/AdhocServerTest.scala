@@ -100,11 +100,11 @@ class AdhocServerTest extends FlatSpec with BeforeAndAfterAll with Matchers {
 
     val secret = 4242
 
-    routingMap("") = HttpService {
+    registerService("", HttpService {
       case GET -> Root                         =>
         Ok(secret.toString)
       case GET -> Root / "secret" / yourSecret =>
         Ok((secret + yourSecret.toInt).toString)
-    }
+    })
   }
 }

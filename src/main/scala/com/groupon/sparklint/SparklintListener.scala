@@ -17,9 +17,7 @@
 package com.groupon.sparklint
 
 import com.groupon.sparklint.common.{SparkConfSparklintConfig, SparklintConfig}
-import com.groupon.sparklint.events._
-import com.groupon.sparklint.ui.UIServer
-import org.apache.spark.scheduler.SparkListenerEvent
+import com.groupon.sparklint.event.{GenericEventSourceGroupManager, ListenerEventSource}
 import org.apache.spark.{SparkConf, SparkFirehoseListener}
 
 /**
@@ -34,22 +32,10 @@ class SparklintListener(appId: String, appName: String, config: SparklintConfig)
     this(conf.get("spark.app.id", "AppId"), conf.get("spark.app.name", "AppName"), new SparkConfSparklintConfig(conf))
   }
 
-  override def onEvent(event: SparkListenerEvent): Unit = {
-    // push unconsumed events to the queue so the listener can keep consuming on the main thread
-    buffer.push(event)
-  }
-
-  //TODO: support sparkConf based config
-  val meta = new EventSourceMeta(appId, appName)
-  val progress = new EventProgressTracker()
-  val stateManager =  new CompressedStateManager()
-  val buffer = BufferedEventSource(appId, Seq(meta, progress, stateManager))
-
-  val detail = SourceAndDetail(buffer, EventSourceDetail(appId, meta, progress, stateManager))
-  val eventSourceManager = new EventSourceManager(detail)
-  val uiServer = new UIServer(eventSourceManager, config)
-
-  // ATTN: ordering?
-  uiServer.startServer()
-  buffer.startConsuming()
+  val sparklint = new Sparklint(config)
+  val esgm = GenericEventSourceGroupManager("SparklintListener", closeable = false)
+  val liveEventSource = new ListenerEventSource()
+  esgm.registerEventSource(liveEventSource)
+  sparklint.backend.append(esgm)
+  sparklint.startServer()
 }

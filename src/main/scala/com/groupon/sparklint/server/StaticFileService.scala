@@ -29,7 +29,7 @@ import scalaz.concurrent.Task
   */
 trait StaticFileService {
   this: RoutingMap =>
-  routingMap("/static") = staticFileService
+  registerService("/static", staticFileService)
 
   def staticFileService = HttpService {
     case req@GET -> path =>

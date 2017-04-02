@@ -18,8 +18,6 @@ package com.groupon.sparklint
 
 import com.frugalmechanic.optparse.OptParse
 import com.groupon.sparklint.common._
-import com.groupon.sparklint.events.{EventSourceDirectory, FileEventSourceManager}
-import com.groupon.sparklint.ui.UIServer
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future, Promise}
@@ -28,74 +26,12 @@ import scala.concurrent.{Await, Future, Promise}
   * @author rxue, swhitear
   * @since 8/15/16.
   */
-class SparklintServer(eventSourceManager: FileEventSourceManager,
-                      scheduler: SchedulerLike,
-                      config: CliSparklintConfig)
-  extends Logging {
-
-  implicit val logger: Logging = this
-
-  private val DEFAULT_RUN_IMMEDIATELY = false
-  private val DEFAULT_POLL            = 5
-
-  private var ui: Option[UIServer] = None
-
-  /**
-    * Main entry point for the server based version of SparkLint.
-    */
-  def startUI(): Unit = {
-    shutdownUI()
-    // wire up the front end server using the analyzer to adapt state via models
-    val uiServer = new UIServer(eventSourceManager, config)
-    ui = Some(uiServer)
-    uiServer.startServer()
-  }
-
-  def shutdownUI(): Unit = {
-    if (ui.isDefined) {
-      logInfo(s"Shutting down...")
-      ui.get.stopServer()
-    }
-  }
-
-  def buildEventSources(): Unit = {
-    val runImmediately = config.runImmediately.getOrElse(DEFAULT_RUN_IMMEDIATELY)
-    if (config.historySource) {
-      logError("historySource unsupported.")
-    } else if (config.directorySource) {
-      logInfo(s"Loading data from directory source $config.directorySource")
-      val directoryEventSource = new EventSourceDirectory(eventSourceManager, config.directorySource.get, runImmediately)
-      scheduleDirectoryPolling(directoryEventSource)
-    } else if (config.fileSource) {
-      logInfo(s"Loading data from file source ${config.fileSource.get}")
-      eventSourceManager.addFile(config.fileSource.get) match {
-        case Some(source) =>
-          if (runImmediately) source.forwardIfPossible()
-        case _            => logger.logError(s"Failed to create file source from ${config.fileSource.get}")
-      }
-    } else {
-      logWarn("No source specified, require one of fileSource, directorySource or historySource to be set.")
-    }
-  }
-
-
-  private def scheduleDirectoryPolling(directoryEventSource: EventSourceDirectory) = {
-    val taskName = s"Directory source poller [${directoryEventSource.dir}]"
-    val pollRate = config.pollRate.getOrElse(DEFAULT_POLL)
-    val task = ScheduledTask(taskName, directoryEventSource.poll, periodSeconds = pollRate)
-    scheduler.scheduleTask(task)
-  }
-
-  buildEventSources()
-}
-
 object SparklintServer extends Logging with OptParse {
   def main(args: Array[String]): Unit = {
-    val eventSourceManager = new FileEventSourceManager()
-    val scheduler = new Scheduler()
     val config = CliSparklintConfig().parseCliArgs(args)
-    val server = new SparklintServer(eventSourceManager, scheduler, config)
-    server.startUI()
+    val server = new Sparklint(config)
+    // register initial event sources
+    server.startServer()
     waitForever
   }
 

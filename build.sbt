@@ -12,7 +12,7 @@ licenses := Seq("Apache License, Version 2.0" -> url("https://www.apache.org/lic
 // Compile
 enablePlugins(AutomateHeaderPlugin)
 name := s"sparklint-spark${BuildUtils.getProjectNameSuffix(sparkVersion.value)}"
-scalaVersion := "2.11.6"
+scalaVersion := "2.11.8"
 crossScalaVersions := Seq("2.10.6", "2.11.8")
 unmanagedSourceDirectories in Compile += (sourceDirectory in Compile).value / BuildUtils.getSparkMajorVersion(sparkVersion.value)
 unmanagedSourceDirectories in Test += (sourceDirectory in Test).value / BuildUtils.getSparkMajorVersion(sparkVersion.value)
@@ -34,9 +34,9 @@ resolvers in ThisBuild ++= Seq(
   Resolver.sonatypeRepo("releases")
 )
 libraryDependencies ++= Seq(
-  "org.apache.spark" %% "spark-core" % sparkVersion.value,
-  "org.apache.spark" %% "spark-sql" % sparkVersion.value,
-  "org.apache.spark" %% "spark-streaming" % sparkVersion.value,
+  "org.apache.spark" %% "spark-core" % sparkVersion.value % "provided",
+  "org.apache.spark" %% "spark-sql" % sparkVersion.value % "provided",
+  "org.apache.spark" %% "spark-streaming" % sparkVersion.value % "provided",
   "com.frugalmechanic" %% "scala-optparse" % optparse,
   "org.http4s" %% "http4s-dsl" % http4s,
   "org.http4s" %% "http4s-blaze-server" % http4s,
