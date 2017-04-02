@@ -26,7 +26,7 @@ import org.apache.spark.scheduler._
   */
 class LosslessStateManager(metricsBuckets: Int = 1000) extends EventStateManagerLike with EventReceiverLike {
 
-  var state: LosslessState = LosslessState.empty
+  private var state: LosslessState = LosslessState.empty
 
   override def getState: SparklintStateLike = state
 

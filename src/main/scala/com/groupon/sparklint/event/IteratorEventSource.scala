@@ -16,6 +16,8 @@
 
 package com.groupon.sparklint.event
 
+import com.groupon.sparklint.data.SparklintStateLike
+import com.groupon.sparklint.events.{EventProgressTracker, LosslessStateManager}
 import org.apache.spark.scheduler.SparkListenerEvent
 
 import scala.collection.mutable
@@ -24,30 +26,55 @@ import scala.collection.mutable
   * @author rxue
   * @since 1.0.5
   */
-class IteratorEventSource(val appMeta: SparkAppMeta, inputIterator: Iterator[SparkListenerEvent]) extends EventSource {
+class IteratorEventSource(val appMeta: SparkAppMeta, inputIterator: Iterator[SparkListenerEvent]) extends EventSource
+  with FreeScrollEventSource {
+  override val progressTracker: EventProgressTracker = new EventProgressTracker()
   private val processedMessage = mutable.Stack[SparkListenerEvent]()
   private val unprocessedMessage = mutable.Stack[SparkListenerEvent]()
+  private val stateManager = new LosslessStateManager()
+  private val receivers = Seq(progressTracker, stateManager)
 
-  def nextEvent(): Boolean = {
-    if (unprocessedMessage.isEmpty) {
-      if (inputIterator.hasNext) {
-        processedMessage.push(inputIterator.next())
-        true
+  override def appState: SparklintStateLike = stateManager.getState
+
+  def processNext(): Boolean = synchronized {
+    if (hasNext) {
+      val event = if (unprocessedMessage.nonEmpty) {
+        unprocessedMessage.pop()
       } else {
-        false
+        val e = inputIterator.next()
+        receivers.foreach(r => {
+          r.preprocess(e)
+        })
+        e
       }
-    } else {
-      processedMessage.push(unprocessedMessage.pop())
+      receivers.foreach(r => {
+        r.onEvent(event)
+      })
+      processedMessage.push(event)
       true
+    } else {
+      false
     }
   }
 
-  def previous(): Boolean = {
-    if (processedMessage.isEmpty) {
-      false
-    } else {
-      unprocessedMessage.push(processedMessage.pop())
+  def hasNext: Boolean = {
+    unprocessedMessage.nonEmpty || inputIterator.hasNext
+  }
+
+  def processPrevious(): Boolean = synchronized {
+    if (hasPrevious) {
+      val event = processedMessage.pop()
+      receivers.foreach(r => {
+        r.unEvent(event)
+      })
+      unprocessedMessage.push(event)
       true
+    } else {
+      false
     }
+  }
+
+  def hasPrevious: Boolean = {
+    processedMessage.nonEmpty
   }
 }

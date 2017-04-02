@@ -19,13 +19,15 @@ package com.groupon.sparklint.event
 import java.io.File
 import java.util.zip.ZipInputStream
 
-import scala.collection.JavaConverters._
+import com.groupon.sparklint.data.SparklintStateLike
+import com.groupon.sparklint.events.EventProgressTracker
 import org.apache.commons.io.{FilenameUtils, IOUtils}
 import org.apache.spark.SparkConf
 import org.apache.spark.groupon.{SparkListenerLogStartShim, StringToSparkEvent}
 import org.apache.spark.io.{LZ4CompressionCodec, LZFCompressionCodec, SnappyCompressionCodec}
 import org.apache.spark.scheduler.SparkListenerApplicationStart
 
+import scala.collection.JavaConverters._
 import scala.io.Source
 
 /**
@@ -34,6 +36,20 @@ import scala.io.Source
   */
 trait EventSource {
   val appMeta: SparkAppMeta
+
+  def appState: SparklintStateLike
+
+  val progressTracker: EventProgressTracker
+
+  def hasNext: Boolean
+
+  def processNext(): Boolean
+}
+
+trait FreeScrollEventSource {
+  def hasPrevious: Boolean
+
+  def processPrevious(): Boolean
 }
 
 object EventSource {

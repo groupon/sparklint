@@ -18,6 +18,8 @@ package com.groupon.sparklint.event
 
 import java.util.concurrent.{BlockingQueue, LinkedBlockingDeque}
 
+import com.groupon.sparklint.data.SparklintStateLike
+import com.groupon.sparklint.events.{CompressedStateManager, EventProgressTracker}
 import org.apache.spark.SparkFirehoseListener
 import org.apache.spark.scheduler.SparkListenerEvent
 
@@ -25,17 +27,26 @@ import org.apache.spark.scheduler.SparkListenerEvent
   * @author Roboxue
   */
 class ListenerEventSource(appId: String, appName: String) extends SparkFirehoseListener with EventSource {
+  override val progressTracker: EventProgressTracker = new EventProgressTracker()
   override val appMeta: SparkAppMeta = SparkAppMeta(Some(appId), None, appName, None)
-
   private val buffer: BlockingQueue[SparkListenerEvent] = new LinkedBlockingDeque()
+  private val stateManager = new CompressedStateManager()
+  private val receivers = Seq(progressTracker, stateManager)
+
+  override def appState: SparklintStateLike = stateManager.getState
 
   override def onEvent(event: SparkListenerEvent): Unit = {
     buffer.add(event)
   }
 
-  def eventIterator = new Iterator[SparkListenerEvent] {
-    override def hasNext: Boolean = true
+  override def hasNext: Boolean = true
 
-    override def next(): SparkListenerEvent = buffer.take()
+  override def processNext(): Boolean = {
+    val event = buffer.take()
+    receivers.foreach(r => {
+      r.preprocess(event)
+      r.onEvent(event)
+    })
+    true
   }
 }
