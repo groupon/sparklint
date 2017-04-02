@@ -14,23 +14,9 @@
  * limitations under the License.
  */
 
-package com.groupon.sparklint
-
-import com.groupon.sparklint.common.SparklintConfig
-import com.groupon.sparklint.server.AdhocServer
+package com.groupon.sparklint.event
 
 /**
-  * The class that contains the backend and ui
-  *
-  * @author rxue
-  * @since 1.0.5
+  * @author Roboxue
   */
-class Sparklint(config: SparklintConfig) extends AdhocServer {
-  val backend = new SparklintBackend()
-  val frontend = new SparklintFrontend()
-  registerService("", frontend.uiService)
-  registerService("backend", backend.backendService)
-
-  override def DEFAULT_PORT: Int = config.defaultPort
-
-}
+case class SparkAppMeta(appId: Option[String], attempt: Option[String], appName: String, sparkVersion: Option[String])
