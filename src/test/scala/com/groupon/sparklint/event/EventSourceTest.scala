@@ -16,9 +16,12 @@
 
 package com.groupon.sparklint.event
 
-import java.io.File
+import java.io.{File, FileInputStream, InputStream}
+import java.util.zip.{ZipFile, ZipInputStream}
 
 import org.scalatest.{FlatSpec, Matchers}
+
+import scala.io.Source
 
 /**
   * Created by Roboxue on 2017/4/2.
@@ -42,5 +45,12 @@ class EventSourceTest extends FlatSpec with Matchers {
   it should "collect meta data correctly" in {
     val es = EventSource.fromFile(new File(getClass.getClassLoader.getResource("spark_event_log_example").getFile))
     es.appMeta shouldBe SparkAppMeta(Some("application_1462781278026_205691"), None, "MyAppName", Some("1.5.2"))
+  }
+
+  it should "decompress a plain logfile zip" in {
+    val file = getClass.getClassLoader.getResource("history_source/eventLogs-application_1489705648216_1600.zip").getFile
+    val zipFile = new ZipInputStream(new FileInputStream(file))
+    val es = EventSource.fromZipStream(zipFile, "eventLogs-application_1489705648216_1600.zip")
+    es.appMeta shouldBe SparkAppMeta(Some("application_1489705648216_1600"), None, "SEM_Feed_Generator", Some("1.6.1"))
   }
 }

@@ -16,10 +16,15 @@
 
 package com.groupon.sparklint.event
 
-import java.io.{File, InputStream}
+import java.io.File
+import java.util.zip.ZipInputStream
 
+import scala.collection.JavaConverters._
+import org.apache.commons.io.{FilenameUtils, IOUtils}
+import org.apache.spark.SparkConf
 import org.apache.spark.groupon.{SparkListenerLogStartShim, StringToSparkEvent}
-import org.apache.spark.scheduler.{SparkListenerApplicationStart, SparkListenerEnvironmentUpdate}
+import org.apache.spark.io.{LZ4CompressionCodec, LZFCompressionCodec, SnappyCompressionCodec}
+import org.apache.spark.scheduler.SparkListenerApplicationStart
 
 import scala.io.Source
 
@@ -34,6 +39,21 @@ trait EventSource {
 object EventSource {
   def fromFile(file: File): EventSource = {
     fromStringIterator(Source.fromFile(file).getLines(), file.getName)
+  }
+
+  def fromZipStream(zis: ZipInputStream, sourceName: String): EventSource = {
+    if (zis.available() > 0) {
+      val entry = zis.getNextEntry
+      val decompressedStream = FilenameUtils.getExtension(entry.getName) match {
+        case "" => zis
+        case "lz4" => new LZ4CompressionCodec(new SparkConf()).compressedInputStream(zis)
+        case "lzf" => new LZFCompressionCodec(new SparkConf()).compressedInputStream(zis)
+        case "snappy" => new SnappyCompressionCodec(new SparkConf()).compressedInputStream(zis)
+      }
+      fromStringIterator(IOUtils.lineIterator(decompressedStream, null).asScala, sourceName)
+    } else {
+      throw UnrecognizedLogFileException(sourceName, Some(s"no zip entry available"))
+    }
   }
 
   def fromStringIterator(stringIterator: Iterator[String], sourceName: String): EventSource = {
