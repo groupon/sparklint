@@ -16,12 +16,9 @@
 
 package com.groupon.sparklint.event
 
-import java.io.{File, FileNotFoundException}
-
-import scala.collection.mutable.ListBuffer
-
 /**
-  * Created by Roboxue on 2017/4/2.
+  * @author rxue
+  * @since 1.0.5
   */
 trait EventSourceGroupManager {
   /**
@@ -36,37 +33,4 @@ trait EventSourceGroupManager {
 
   def eventSources: Seq[EventSource]
 
-}
-
-/**
-  * @throws FileNotFoundException if the folder provided doesn't exist or is a file
-  * @param folder the folder of the log files
-  */
-@throws[FileNotFoundException]
-class FolderEventSourceGroupManager(folder: File) extends GenericEventSourceGroupManager(folder.getName, true) {
-  if (!folder.exists() || folder.isFile) {
-    throw new FileNotFoundException(folder.getAbsolutePath)
-  }
-
-}
-
-class GenericEventSourceGroupManager(override val name: String, override val closeable: Boolean) extends EventSourceGroupManager {
-  private val esList: ListBuffer[EventSource] = ListBuffer.empty
-
-  /**
-    * Register an event source
-    *
-    * @param es the [[EventSource]] to register
-    * @return true if success, false if the event source has been registered already
-    */
-  def registerEventSource(es: EventSource): Boolean = {
-    if (esList.exists(_.appMeta == es.appMeta)) {
-      false
-    } else {
-      esList.append(es)
-      true
-    }
-  }
-
-  override def eventSources: Seq[EventSource] = esList
 }

@@ -19,8 +19,9 @@ package com.groupon.sparklint
 import java.io.File
 
 import com.groupon.sparklint.common.Logging
-import com.groupon.sparklint.event.{EventSourceGroupManager, FolderEventSourceGroupManager}
-import org.http4s.HttpService
+import com.groupon.sparklint.event.{EventSourceGroupManager, FolderEventSourceGroupManager, HistoryServerApi, HistoryServerEventSourceGroupManager}
+import org.http4s.{HttpService, Uri}
+import org.http4s.dsl._
 
 import scala.collection.mutable.ListBuffer
 
@@ -39,16 +40,21 @@ class SparklintBackend
     */
   def listEventSourceGroupManagers: Seq[EventSourceGroupManager] = esgManagers
 
-  /** Appends the given [[EventSourceGroupManager]]
-    *
-    * @param elems the [[EventSourceGroupManager]] to append.
-    */
-  def append(elems: EventSourceGroupManager*): Unit = esgManagers.append(elems: _*)
-
   def backendService: HttpService = ???
 
   protected def appendFolderManager(folder: File): Unit = {
     append(new FolderEventSourceGroupManager(folder))
   }
+
+  protected def appendHistoryServer(serverName: String, historyServerHost: String): Unit = {
+    val api = HistoryServerApi(serverName, Uri.fromString(historyServerHost).toOption.get)
+    append(new HistoryServerEventSourceGroupManager(api))
+  }
+
+  /** Appends the given [[EventSourceGroupManager]]
+    *
+    * @param elems the [[EventSourceGroupManager]] to append.
+    */
+  def append(elems: EventSourceGroupManager*): Unit = esgManagers.append(elems: _*)
 
 }

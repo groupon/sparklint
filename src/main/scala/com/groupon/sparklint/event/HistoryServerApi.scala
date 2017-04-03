@@ -1,0 +1,89 @@
+/*
+ * Copyright 2016 Groupon, Inc.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.groupon.sparklint.event
+
+import java.io.BufferedInputStream
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.zip.ZipInputStream
+
+import com.groupon.sparklint.common.Logging
+import org.apache.spark.status.api.v1.ApplicationAttemptInfo
+import org.http4s._
+import org.http4s.client.blaze.PooledHttp1Client
+import org.http4s.json4s.jackson._
+import org.json4s.{DefaultFormats, FieldSerializer}
+
+import scalaz.concurrent.Task
+import scalaz.stream.io.toInputStream
+
+/**
+  * @author superbobry
+  * @since 1/11/17.
+  */
+case class HistoryServerApi(name: String, host: Uri) extends Logging {
+  private implicit val formats = new DefaultFormats {
+    override def dateFormatter = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSSz")
+  } +
+    FieldSerializer[ApplicationHistoryInfo]() +
+    FieldSerializer[ApplicationAttemptInfo]()
+
+  private val httpClient = PooledHttp1Client()
+
+  /**
+    * Fetches the event log for a given app and attempt.
+    */
+  def getLogs(appMeta: SparkAppMeta): Task[EventSource] = {
+    val uri = appMeta.attempt match {
+      case Some(attemptId) =>
+        apiUri / "applications" / appMeta.appId.get / attemptId / "logs"
+      case None =>
+        apiUri / "applications" / appMeta.appId.get / "logs"
+    }
+    val request = Request(uri = uri)
+    httpClient.expect(request)(eventLogDecoder(appMeta.appId.get))
+  }
+
+  /** Base Spark History API URI. */
+  private def apiUri = host / "api" / "v1"
+
+  private def eventLogDecoder(appId: String): EntityDecoder[EventSource] =
+    EntityDecoder.decodeBy(MediaRange.fromKey("*")) { msg =>
+      val zis = new ZipInputStream(toInputStream(msg.body))
+      try {
+        DecodeResult.success(EventSource.fromZipStream(zis, appId))
+      } catch {
+        case ex: Throwable =>
+          DecodeResult.failure(MalformedMessageBodyFailure(ex.getMessage))
+      } finally {
+        zis.closeEntry()
+        zis.close()
+      }
+    }
+
+  /** Returns a list of applications completed today. */
+  def getApplications(minDate: Date = new Date()): List[ApplicationHistoryInfo] = {
+    val request = Request(uri = (apiUri / "applications")
+      .withQueryParam("status", "completed")
+      .withQueryParam("minDate", new SimpleDateFormat("yyyy-MM-dd").format(minDate)))
+    httpClient.expect(request)(jsonExtract[List[ApplicationHistoryInfo]]).run
+  }
+
+  def shutdownNow(): Unit = httpClient.shutdownNow()
+}
+
+case class ApplicationHistoryInfo(id: String, name: String, attempts: List[ApplicationAttemptInfo])
