@@ -16,12 +16,15 @@
 
 package com.groupon.sparklint.events
 
+import scala.collection.mutable
+
 /**
   * Simple data structure to track event source playback progress
+ *
   * @author swhitear, rxue
   * @since 9/12/16.
   */
-class EventProgress(var count: Int, var started: Int, var complete: Int, var active: Set[String]) {
+class EventProgress(var count: Int, var started: Int, var complete: Int, val active: mutable.Set[String]) {
   require(count >= 0)
   require(started >= 0 && started <= count)
   require(complete >= 0 && complete <= count)
@@ -45,5 +48,5 @@ class EventProgress(var count: Int, var started: Int, var complete: Int, var act
 }
 
 object EventProgress {
-  def empty(): EventProgress = new EventProgress(0, 0, 0, Set.empty)
+  def empty(): EventProgress = new EventProgress(0, 0, 0, mutable.Set.empty)
 }

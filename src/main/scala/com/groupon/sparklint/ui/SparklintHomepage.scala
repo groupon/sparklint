@@ -71,6 +71,7 @@ class SparklintHomepage extends UITemplate {
       </div>
     </nav>
 
+  //noinspection MutatorLikeMethodIsParameterless
   def addEventSourceGroupManagerControl: Seq[Node] =
     <li id="addEventSourceGroupManager">
       <a href="#"><i class="fa fa-plus fa-fw"></i> Add Sources<span class="fa arrow"></span></a>

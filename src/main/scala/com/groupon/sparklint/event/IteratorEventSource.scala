@@ -16,6 +16,8 @@
 
 package com.groupon.sparklint.event
 
+import java.util.UUID
+
 import com.groupon.sparklint.data.SparklintStateLike
 import com.groupon.sparklint.events.{CompressedStateManager, EventProgressTracker, LosslessStateManager}
 import org.apache.spark.scheduler.SparkListenerEvent
@@ -23,13 +25,13 @@ import org.apache.spark.scheduler.SparkListenerEvent
 import scala.collection.mutable
 
 /**
-  * @param appMeta the meta data of the app
-  * @param inputIterator the source of the event stream
+  * @param appMeta         the meta data of the app
+  * @param inputIterator   the source of the event stream
   * @param compressStorage use a compressed storage (less memory required, can lose resolution)
   * @author rxue
   * @since 1.0.5
   */
-class IteratorEventSource(val appMeta: SparkAppMeta, inputIterator: Iterator[SparkListenerEvent], compressStorage: Boolean) extends FreeScrollEventSource {
+class IteratorEventSource(val uuid: UUID, val appMeta: SparkAppMeta, inputIterator: Iterator[SparkListenerEvent], compressStorage: Boolean) extends FreeScrollEventSource {
   override val progressTracker: EventProgressTracker = new EventProgressTracker()
   private val processedMessage = mutable.Stack[SparkListenerEvent]()
   private val unprocessedMessage = mutable.Stack[SparkListenerEvent]()
@@ -39,58 +41,16 @@ class IteratorEventSource(val appMeta: SparkAppMeta, inputIterator: Iterator[Spa
   override def appState: SparklintStateLike = stateManager.getState
 
   override def toStart(): Unit = {
-    while (hasPrevious) {
-      rewind()
-    }
-  }
-
-  def rewind(): Boolean = synchronized {
-    if (hasPrevious) {
-      val event = processedMessage.pop()
-      receivers.foreach(r => {
-        r.unEvent(event)
-      })
-      unprocessedMessage.push(event)
-      true
-    } else {
-      false
-    }
-  }
-
-  def hasPrevious: Boolean = {
-    processedMessage.nonEmpty
+    while (rewind()) {}
   }
 
   override def toEnd(): Unit = {
-    while (hasNext) {
-      forward()
-    }
+    while (forward()) {}
   }
 
   override def forwardEvents(count: Int): Unit = {
     val currentEvents = progressTracker.eventProgress.complete
     while (progressTracker.eventProgress.complete - currentEvents < count && hasNext) {
-      forward()
-    }
-  }
-
-  override def forwardJobs(count: Int): Unit = {
-    val currentJobs = progressTracker.jobProgress.complete
-    while (progressTracker.jobProgress.complete - currentJobs < count && hasNext) {
-      forward()
-    }
-  }
-
-  override def forwardStages(count: Int): Unit = {
-    val currentStages = progressTracker.stageProgress.complete
-    while (progressTracker.stageProgress.complete - currentStages < count && hasNext) {
-      forward()
-    }
-  }
-
-  override def forwardTasks(count: Int): Unit = {
-    val currentTasks = progressTracker.taskProgress.complete
-    while (progressTracker.taskProgress.complete - currentTasks < count && hasNext) {
       forward()
     }
   }
@@ -120,31 +80,69 @@ class IteratorEventSource(val appMeta: SparkAppMeta, inputIterator: Iterator[Spa
     unprocessedMessage.nonEmpty || inputIterator.hasNext
   }
 
+  override def forwardJobs(count: Int): Unit = {
+    val currentJobs = progressTracker.jobProgress.complete
+    while (progressTracker.jobProgress.complete - currentJobs < count && hasNext) {
+      forward()
+    }
+  }
+
+  override def forwardStages(count: Int): Unit = {
+    val currentStages = progressTracker.stageProgress.complete
+    while (progressTracker.stageProgress.complete - currentStages < count && hasNext) {
+      forward()
+    }
+  }
+
+  override def forwardTasks(count: Int): Unit = {
+    val currentTasks = progressTracker.taskProgress.complete
+    while (progressTracker.taskProgress.complete - currentTasks < count && hasNext) {
+      forward()
+    }
+  }
+
   override def rewindEvents(count: Int): Unit = {
     val currentEvents = progressTracker.eventProgress.complete
-    while (currentEvents - progressTracker.eventProgress.complete < count && hasNext) {
+    while (currentEvents - progressTracker.eventProgress.complete < count && hasPrevious) {
       rewind()
     }
   }
 
   override def rewindJobs(count: Int): Unit = {
     val currentJobs = progressTracker.jobProgress.complete
-    while (currentJobs - progressTracker.jobProgress.complete < count && hasNext) {
+    while (currentJobs - progressTracker.jobProgress.complete < count && hasPrevious) {
       rewind()
     }
   }
 
   override def rewindStages(count: Int): Unit = {
     val currentStages = progressTracker.stageProgress.complete
-    while (currentStages - progressTracker.stageProgress.complete < count && hasNext) {
+    while (currentStages - progressTracker.stageProgress.complete < count && hasPrevious) {
       rewind()
     }
   }
 
   override def rewindTasks(count: Int): Unit = {
     val currentTasks = progressTracker.taskProgress.complete
-    while (currentTasks - progressTracker.taskProgress.complete < count && hasNext) {
+    while (currentTasks - progressTracker.taskProgress.complete < count && hasPrevious) {
       rewind()
     }
+  }
+
+  def rewind(): Boolean = synchronized {
+    if (hasPrevious) {
+      val event = processedMessage.pop()
+      receivers.foreach(r => {
+        r.unEvent(event)
+      })
+      unprocessedMessage.push(event)
+      true
+    } else {
+      false
+    }
+  }
+
+  override def hasPrevious: Boolean = {
+    processedMessage.nonEmpty
   }
 }

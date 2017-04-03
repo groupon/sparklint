@@ -29,7 +29,7 @@ class Sparklint(config: SparklintConfig) extends AdhocServer with StaticFileServ
   val backend = new SparklintBackend()
   val frontend = new SparklintFrontend(backend)
   registerService("", frontend.uiService)
-  registerService("backend", backend.backendService)
+  registerService("/backend", backend.backendService)
 
   override def DEFAULT_PORT: Int = config.defaultPort
 

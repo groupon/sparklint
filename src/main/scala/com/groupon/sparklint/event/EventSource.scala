@@ -16,7 +16,7 @@
 
 package com.groupon.sparklint.event
 
-import java.io.File
+import java.io.{File, FileInputStream}
 import java.util.UUID
 import java.util.zip.ZipInputStream
 
@@ -29,29 +29,27 @@ import org.apache.spark.io.{LZ4CompressionCodec, LZFCompressionCodec, SnappyComp
 import org.apache.spark.scheduler.SparkListenerApplicationStart
 
 import scala.collection.JavaConverters._
-import scala.io.Source
 
 /**
   * @author rxue
   * @since 1.0.5
   */
 trait EventSource {
-  val uuid: UUID = UUID.randomUUID()
+  val uuid: UUID
 
   val appMeta: SparkAppMeta
+  val progressTracker: EventProgressTracker
 
   def appState: SparklintStateLike
-
-  val progressTracker: EventProgressTracker
 
   def hasNext: Boolean
 
   def forward(): Boolean
+
+  def hasPrevious: Boolean = false
 }
 
 trait FreeScrollEventSource extends EventSource {
-  def hasPrevious: Boolean
-
   def rewind(): Boolean
 
   //noinspection AccessorLikeMethodIsUnit
@@ -79,25 +77,18 @@ trait FreeScrollEventSource extends EventSource {
 
 object EventSource {
   def fromFile(file: File, compressStorage: Boolean = false): FreeScrollEventSource = {
-    fromStringIterator(Source.fromFile(file).getLines(), file.getName, compressStorage)
+    fromStringIterator(IOUtils.lineIterator(new FileInputStream(file), null: String).asScala, file.getName, compressStorage)
   }
 
-  def fromZipStream(zis: ZipInputStream, sourceName: String, compressStorage: Boolean = false): FreeScrollEventSource = {
-    if (zis.available() > 0) {
-      val entry = zis.getNextEntry
-      val decompressedStream = FilenameUtils.getExtension(entry.getName) match {
-        case "" => zis
-        case "lz4" => new LZ4CompressionCodec(new SparkConf()).compressedInputStream(zis)
-        case "lzf" => new LZFCompressionCodec(new SparkConf()).compressedInputStream(zis)
-        case "snappy" => new SnappyCompressionCodec(new SparkConf()).compressedInputStream(zis)
-      }
-      fromStringIterator(IOUtils.lineIterator(decompressedStream, null).asScala, sourceName, compressStorage)
-    } else {
-      throw UnrecognizedLogFileException(sourceName, Some(s"no zip entry available"))
-    }
-  }
-
-  def fromStringIterator(stringIterator: Iterator[String], sourceName: String, compressStorage: Boolean): FreeScrollEventSource = {
+  /**
+    *
+    * @param stringIterator
+    * @param sourceName
+    * @param compressStorage
+    * @throws UnrecognizedLogFileException if the file cannot be parsed
+    * @return
+    */
+  def fromStringIterator(stringIterator: Iterator[String], sourceName: String, compressStorage: Boolean, uuid: UUID = UUID.randomUUID()): FreeScrollEventSource = {
     if (!stringIterator.hasNext) {
       throw UnrecognizedLogFileException(sourceName, Some(s"content is empty"))
     }
@@ -118,6 +109,25 @@ object EventSource {
     val appStartEvent = StringToSparkEvent(lineBuffer).get.asInstanceOf[SparkListenerApplicationStart]
     val appMeta = SparkAppMeta(appStartEvent.appId, appStartEvent.appAttemptId, appStartEvent.appName, Some(sparkVersion), appStartEvent.time)
     val eventIterator = stringIterator.flatMap(StringToSparkEvent.apply)
-    new IteratorEventSource(appMeta, eventIterator, compressStorage)
+    new IteratorEventSource(uuid, appMeta, eventIterator, compressStorage)
+  }
+
+  def fromZipStream(zis: ZipInputStream, esUuid: String, sourceName: String, compressStorage: Boolean = false): FreeScrollEventSource = {
+    if (zis.available() > 0) {
+      val entry = zis.getNextEntry
+      if (entry == null) {
+        throw UnrecognizedLogFileException(sourceName, Some(s"no zip entry available"))
+      }
+      val decompressedStream = FilenameUtils.getExtension(entry.getName) match {
+        case "" => zis
+        case "lz4" => new LZ4CompressionCodec(new SparkConf()).compressedInputStream(zis)
+        case "lzf" => new LZFCompressionCodec(new SparkConf()).compressedInputStream(zis)
+        case "snappy" => new SnappyCompressionCodec(new SparkConf()).compressedInputStream(zis)
+        case ext => throw UnrecognizedLogFileException(sourceName, Some(s"no depressing codec available for file extension '$ext'"))
+      }
+      fromStringIterator(IOUtils.toString(decompressedStream, null: String).split("\n").iterator, sourceName, compressStorage, UUID.fromString(esUuid))
+    } else {
+      throw UnrecognizedLogFileException(sourceName, Some(s"no zip entry available"))
+    }
   }
 }

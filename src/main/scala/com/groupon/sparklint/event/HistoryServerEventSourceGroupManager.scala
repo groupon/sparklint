@@ -17,6 +17,9 @@
 package com.groupon.sparklint.event
 
 import java.io.FileNotFoundException
+import java.util.UUID
+
+import org.http4s.MalformedMessageBodyFailure
 
 import scala.collection.mutable
 import scala.util.{Failure, Success, Try}
@@ -29,16 +32,27 @@ import scalaz.{-\/, \/-}
 class HistoryServerEventSourceGroupManager(api: HistoryServerApi) extends GenericEventSourceGroupManager(api.name, true) {
   private val availableSourceMap: mutable.Map[String, SparkAppMeta] = mutable.Map.empty
 
-  def availableSources: Seq[(String, SparkAppMeta)] = availableSourceMap.toSeq
+  def availableSources: Seq[(String, SparkAppMeta)] = availableSourceMap.toSeq.sortBy(_._2.fullAppId).reverse
 
-  def pullEventSource(esUuid: String): Try[EventSource] = {
+  def pull(): Unit = {
+    availableSourceMap.clear()
+    availableSourceMap ++= api.getApplications().flatMap(r => {
+      r.attempts.map(attempt => {
+        UUID.randomUUID().toString -> SparkAppMeta(Some(r.id), attempt.attemptId, r.name, None, attempt.startTime.getTime)
+      })
+    })
+  }
+
+  def pullEventSource(esUuid: String): Try[FreeScrollEventSource] = {
     if (availableSourceMap.contains(esUuid)) {
       val meta = availableSourceMap.remove(esUuid).get
-      api.getLogs(meta).attemptRun match {
+      api.getLogs(esUuid, meta).attemptRun match {
         case \/-(es) =>
           registerEventSource(es)
           Success(es)
-        case -\/(ex)=>
+        case -\/(ex: MalformedMessageBodyFailure) =>
+          Failure(ex)
+        case -\/(ex) =>
           availableSourceMap(esUuid) = meta
           Failure(ex)
       }

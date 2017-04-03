@@ -16,18 +16,17 @@
 
 package com.groupon.sparklint.event
 
-import java.io.BufferedInputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.zip.ZipInputStream
 
 import com.groupon.sparklint.common.Logging
-import org.apache.spark.status.api.v1.ApplicationAttemptInfo
 import org.http4s._
 import org.http4s.client.blaze.PooledHttp1Client
 import org.http4s.json4s.jackson._
 import org.json4s.{DefaultFormats, FieldSerializer}
 
+import scala.util.{Failure, Success, Try}
 import scalaz.concurrent.Task
 import scalaz.stream.io.toInputStream
 
@@ -47,7 +46,7 @@ case class HistoryServerApi(name: String, host: Uri) extends Logging {
   /**
     * Fetches the event log for a given app and attempt.
     */
-  def getLogs(appMeta: SparkAppMeta): Task[EventSource] = {
+  def getLogs(uuid: String, appMeta: SparkAppMeta): Task[FreeScrollEventSource] = {
     val uri = appMeta.attempt match {
       case Some(attemptId) =>
         apiUri / "applications" / appMeta.appId.get / attemptId / "logs"
@@ -55,25 +54,30 @@ case class HistoryServerApi(name: String, host: Uri) extends Logging {
         apiUri / "applications" / appMeta.appId.get / "logs"
     }
     val request = Request(uri = uri)
-    httpClient.expect(request)(eventLogDecoder(appMeta.appId.get))
+    httpClient.expect(request)(eventLogDecoder(uuid, appMeta.appId.get))
   }
+
+  private def eventLogDecoder(uuid: String, appId: String): EntityDecoder[FreeScrollEventSource] =
+    EntityDecoder.decodeBy(MediaRange.fromKey("*")) { msg =>
+      val zis = new ZipInputStream(toInputStream(msg.body))
+      Try {
+        EventSource.fromZipStream(zis, uuid, appId)
+      } match {
+        case Success(es) =>
+          zis.closeEntry()
+          zis.close()
+          DecodeResult.success(es)
+        case Failure(ex) =>
+          zis.closeEntry()
+          zis.close()
+          DecodeResult.failure({
+            MalformedMessageBodyFailure(ex.getMessage)
+          })
+      }
+    }
 
   /** Base Spark History API URI. */
   private def apiUri = host / "api" / "v1"
-
-  private def eventLogDecoder(appId: String): EntityDecoder[EventSource] =
-    EntityDecoder.decodeBy(MediaRange.fromKey("*")) { msg =>
-      val zis = new ZipInputStream(toInputStream(msg.body))
-      try {
-        DecodeResult.success(EventSource.fromZipStream(zis, appId))
-      } catch {
-        case ex: Throwable =>
-          DecodeResult.failure(MalformedMessageBodyFailure(ex.getMessage))
-      } finally {
-        zis.closeEntry()
-        zis.close()
-      }
-    }
 
   /** Returns a list of applications completed today. */
   def getApplications(minDate: Date = new Date()): List[ApplicationHistoryInfo] = {
@@ -87,3 +91,18 @@ case class HistoryServerApi(name: String, host: Uri) extends Logging {
 }
 
 case class ApplicationHistoryInfo(id: String, name: String, attempts: List[ApplicationAttemptInfo])
+
+/**
+  * A clone of the Spark's [[ApplicationAttemptInfo]], to keep the minimum set of information between version
+  * So a sparklint for spark 2.0.1 can still parse the response from a history server with spark 1.6.1
+  */
+case class ApplicationAttemptInfo(attemptId: Option[String],
+                                  startTime: Date,
+                                  endTime: Date,
+                                  sparkUser: String,
+                                  completed: Boolean = false) {
+  def getStartTimeEpoch: Long = startTime.getTime
+
+  def getEndTimeEpoch: Long = endTime.getTime
+}
+

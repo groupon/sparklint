@@ -21,6 +21,8 @@ import com.groupon.sparklint.common.Utils
 import org.apache.spark.scheduler.TaskLocality
 import org.scalatest.{FlatSpec, Matchers}
 
+import scala.collection.mutable
+
 /**
   * @author swhitear 
   * @since 9/14/16.
@@ -256,7 +258,7 @@ class EventProgressTest extends FlatSpec with Matchers {
   }
 
   it should "represent progress correctly" in {
-    val progress = new EventProgress(10, 6, 4, Set("test-in-flight1", "test-in-flight2"))
+    val progress = new EventProgress(10, 6, 4, mutable.Set("test-in-flight1", "test-in-flight2"))
 
     progress.count shouldEqual 10
     progress.started shouldEqual 6
@@ -270,7 +272,7 @@ class EventProgressTest extends FlatSpec with Matchers {
   }
 
   it should "represent end of events correctly" in {
-    val progress = new EventProgress(10, 10, 10, Set())
+    val progress = new EventProgress(10, 10, 10, mutable.Set())
 
     progress.count shouldEqual 10
     progress.started shouldEqual 10

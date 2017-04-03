@@ -38,8 +38,10 @@ class LosslessMetricsSink(val dataRange: Option[Interval],
     var _resolution = 1L
     if (dataRange.nonEmpty) {
       val desiredRange = dataRange.get.merge(Interval(origin, origin)).length
-      while ((desiredRange / _resolution + 1) >= numBuckets) {
-        _resolution *= CompressedMetricsSink.getCompactRatio(_resolution)
+      if (desiredRange > 0) {
+        while ((desiredRange / _resolution + 1) >= numBuckets) {
+          _resolution *= CompressedMetricsSink.getCompactRatio(_resolution)
+        }
       }
     }
     _resolution

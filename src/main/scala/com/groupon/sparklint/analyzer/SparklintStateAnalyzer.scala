@@ -29,10 +29,10 @@ import scala.util.Try
   *
   * @author rxue
   * @since 9/23/16.
-  * @param source the source to analyze
+  * @param meta the source to analyze
   * @param state  the state to analyze
   */
-class SparklintStateAnalyzer(val source: SparkAppMeta, val state: SparklintStateLike)
+class SparklintStateAnalyzer(val meta: SparkAppMeta, val state: SparklintStateLike)
   extends SparklintAnalyzerLike {
 
   override lazy val getCurrentCores: Option[Int] = getRunningTasks
@@ -54,7 +54,7 @@ class SparklintStateAnalyzer(val source: SparkAppMeta, val state: SparklintState
   }
 
   override lazy val getTimeUntilFirstTask: Option[Long] = Try {
-    state.firstTaskAt.get - source.startTime
+    state.firstTaskAt.get - meta.startTime
   }.toOption
 
   override lazy val getCoreUtilizationPercentage: Option[Double] = {
@@ -152,7 +152,7 @@ class SparklintStateAnalyzer(val source: SparkAppMeta, val state: SparklintState
     * @return the metricsSink that stores the number of CPU millis allocated for each interval
     */
   private[analyzer] def getAllocatedCores(numBuckets: Int): MetricsSink = {
-    var sink = CompressedMetricsSink.empty(source.startTime, numBuckets)
+    var sink = CompressedMetricsSink.empty(meta.startTime, numBuckets)
     state.executorInfo.values.foreach(executorInfo => {
       sink = sink.addUsage(executorInfo.startTime, executorInfo.endTime.getOrElse(state.lastUpdatedAt), executorInfo.cores)
     })

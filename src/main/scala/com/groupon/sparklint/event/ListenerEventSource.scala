@@ -16,6 +16,7 @@
 
 package com.groupon.sparklint.event
 
+import java.util.UUID
 import java.util.concurrent.{BlockingQueue, LinkedBlockingDeque}
 
 import com.groupon.sparklint.data.SparklintStateLike
@@ -27,6 +28,7 @@ import org.apache.spark.scheduler.SparkListenerEvent
   * @author Roboxue
   */
 class ListenerEventSource(appId: String, appName: String) extends SparkFirehoseListener with EventSource {
+  override val uuid: UUID = UUID.randomUUID()
   override val progressTracker: EventProgressTracker = new EventProgressTracker()
   override val appMeta: SparkAppMeta = SparkAppMeta(Some(appId), None, appName, None)
   private val buffer: BlockingQueue[SparkListenerEvent] = new LinkedBlockingDeque()

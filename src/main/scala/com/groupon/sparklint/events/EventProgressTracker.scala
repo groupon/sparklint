@@ -65,62 +65,62 @@ class EventProgressTracker(val eventProgress: EventProgress = EventProgress.empt
 
   override def onTaskStart(event: SparkListenerTaskStart): Unit = {
     taskProgress.started += 1
-    taskProgress.active = taskProgress.active + taskNameFromInfo(event.taskInfo)
+    taskProgress.active += taskNameFromInfo(event.taskInfo)
   }
 
   override def onTaskEnd(event: SparkListenerTaskEnd): Unit = {
     taskProgress.complete += 1
-    taskProgress.active = taskProgress.active - taskNameFromInfo(event.taskInfo)
+    taskProgress.active -= taskNameFromInfo(event.taskInfo)
   }
 
   override def unTaskStart(event: SparkListenerTaskStart): Unit = {
     taskProgress.started -= 1
-    taskProgress.active = taskProgress.active - taskNameFromInfo(event.taskInfo)
+    taskProgress.active -= taskNameFromInfo(event.taskInfo)
   }
 
   override def unTaskEnd(event: SparkListenerTaskEnd): Unit = {
     taskProgress.complete -= 1
-    taskProgress.active = taskProgress.active + taskNameFromInfo(event.taskInfo)
+    taskProgress.active += taskNameFromInfo(event.taskInfo)
   }
 
   override def onStageSubmitted(event: SparkListenerStageSubmitted): Unit = {
     stageProgress.started += 1
-    stageProgress.active = stageProgress.active + event.stageInfo.name
+    stageProgress.active += event.stageInfo.name
   }
 
   override def onStageCompleted(event: SparkListenerStageCompleted): Unit = {
     stageProgress.complete += 1
-    stageProgress.active = stageProgress.active - event.stageInfo.name
+    stageProgress.active -= event.stageInfo.name
   }
 
   override def unStageSubmitted(event: SparkListenerStageSubmitted): Unit = {
     stageProgress.started -= 1
-    stageProgress.active = stageProgress.active - event.stageInfo.name
+    stageProgress.active -= event.stageInfo.name
   }
 
   override def unStageCompleted(event: SparkListenerStageCompleted): Unit = {
     stageProgress.complete -= 1
-    stageProgress.active = taskProgress.active + event.stageInfo.name
+    stageProgress.active += event.stageInfo.name
   }
 
   override def onJobStart(event: SparkListenerJobStart): Unit = {
     jobProgress.started += 1
-    jobProgress.active = jobProgress.active + jobNameFromInfo(event)
+    jobProgress.active += jobNameFromInfo(event)
   }
 
   override def onJobEnd(event: SparkListenerJobEnd): Unit = {
     jobProgress.complete += 1
-    jobProgress.active = jobProgress.active - jobNameFromId(event.jobId)
+    jobNameFromId(event.jobId).foreach(jobName => jobProgress.active -= jobName)
   }
 
   override def unJobStart(event: SparkListenerJobStart): Unit = {
     jobProgress.started -= 1
-    jobProgress.active = jobProgress.active - jobNameFromInfo(event)
+    jobNameFromId(event.jobId).foreach(jobName => jobProgress.active -= jobName)
   }
 
   override def unJobEnd(event: SparkListenerJobEnd): Unit = {
     jobProgress.complete -= 1
-    jobProgress.active = jobProgress.active + jobNameFromId(event.jobId)
+    jobNameFromId(event.jobId).foreach(jobName => jobProgress.active += jobName)
   }
 
   override def toString: String =
@@ -136,8 +136,8 @@ class EventProgressTracker(val eventProgress: EventProgress = EventProgress.empt
     jobTracker.getOrElseUpdate(event.jobId, name)
   }
 
-  private def jobNameFromId(id: Int): String = {
-    jobTracker(id)
+  private def jobNameFromId(id: Int): Option[String] = {
+    jobTracker.get(id)
   }
 }
 

@@ -45,10 +45,12 @@ function inactiveAppClicked(ev) {
             console.log(exMsg);
             displayErrorMessage(exMsg.responseText);
         }
-    }).done(function() {
-        refreshEventSourceManagerList(function() {
+    }).done(function () {
+        refreshEventSourceManagerList(function () {
             loadApp(esmId, appId);
         });
+    }).fail(function () {
+        refreshEventSourceManagerList();
     });
     // Refresh the list when ready
 }
@@ -60,14 +62,11 @@ function refreshEventSourceManagerList(onFinish) {
         var sideMenu = $("#side-menu");
         sideMenu.metisMenu('dispose');
         sideMenu.children(".eventSourceManager").remove();
-        sideMenu.prepend(responseHtml);
+        sideMenu.append(responseHtml);
         sideMenu.metisMenu();
         sideMenu.find(".inactiveApp").click(inactiveAppClicked);
         sideMenu.find(".sparklintApp").click(appSelectorClicked);
-        if (onFinish) {
-            onFinish();
-        }
-    });
+    }).always(onFinish);
 }
 
 function displayAppState(appId, appState) {
@@ -317,9 +316,50 @@ function moveEventsToEnd(end) {
     });
 }
 
+function addSingleFile() {
+    var fileName = window.prompt("Provide the uri of the file", "/path/to/file");
+    if (fileName !== null) {
+        addEventSourceManager("/backend/esm/singleFile", fileName.trim());
+    }
+    return false;
+}
+
+function addDirectory() {
+    var folderName = window.prompt("Provide the uri of the folder", "/path/to/folder");
+    if (folderName !== null) {
+        addEventSourceManager("/backend/esm/folder", folderName.trim());
+    }
+    return false;
+}
+
+function addHistoryServer() {
+    var historyServerUri = window.prompt("Provide the uri of the history server", "http://url/to/server");
+    if (historyServerUri !== null) {
+        addEventSourceManager("/backend/esm/historyServer", historyServerUri);
+    }
+    return false;
+}
+
+function addEventSourceManager(url, data) {
+    $.ajax({
+        url: url,
+        dataType: 'json',
+        method: 'POST',
+        data: data
+    }).done(function (data) {
+        hideErrorMessage();
+        console.info(data);
+    }).fail(function (xhr) {
+        console.error(xhr);
+        displayErrorMessage(xhr.responseText);
+    }).always(function () {
+        refreshEventSourceManagerList();
+    });
+}
+
 function handleJSON(url, successFn) {
     hideErrorMessage();
-    $.ajax({
+    return $.ajax({
         url: url,
         dataType: 'json',
         success: successFn,
@@ -331,7 +371,7 @@ function handleJSON(url, successFn) {
 }
 
 function handleHTML(url, successFn) {
-    $.ajax({
+    return $.ajax({
         url: url,
         dataType: 'html',
         success: successFn,
@@ -358,6 +398,9 @@ $(function () {
     $("#eventsToEnd").click(eventsToEnd);
     $("#eventsBackward").click(eventsBackward);
     $("#eventsForward").click(eventsForward);
+    $("#addSingleFile").click(addSingleFile);
+    $("#addDirectory").click(addDirectory);
+    $("#addHistoryServer").click(addHistoryServer);
 
     console.log("------Setting start state--------");
     $(".loading-spinner").hide();
