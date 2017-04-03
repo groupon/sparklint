@@ -40,7 +40,7 @@ trait RoutingMap {
     val service = Router(routingMap.toSeq: _*)
     HttpService {
       case req =>
-        logInfo(s"${req.method.name} ${req.uri.toString()}")
+        logDebug(s"${req.method.name} ${req.uri.toString()}")
         service.run(req)
     }
   }

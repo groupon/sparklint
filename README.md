@@ -58,8 +58,10 @@ You can feed Sparklint an event log file to playback activities.
 
 - Checking out the repo
 - Make sure you have [SBT](http://www.scala-sbt.org/) installed.
-- Copy spark event log files to analyze into a directory then `sbt "run -d /path/to/log/dir -r"`
-- Or analyze a single log file `sbt "run -f /path/to/logfile -r"`
+- Execute `sbt run` to start the server. You can add a directory, log file, or a remote history server via UI
+    - You can also load a directory of log files on startup like `sbt "run -d /path/to/log/dir -r"`
+    - Or analyze a single log file on startup like `sbt "run -f /path/to/logfile -r"`
+    - Or connect to a history server on startup like `sbt "run --historyServer http://path/to/server -r"`
 - Then open browser and navigate to `http://localhost:23763`
 - Spark version doesn't matter in server mode
 - Docker support available at https://hub.docker.com/r/roboxue/sparklint/
@@ -72,6 +74,7 @@ You can feed Sparklint an event log file to playback activities.
 * Server only config
     - `-f [FileName]`: Filename of an Spark event log source to use.
     - `-d [DirectoryName]`: Directory of an Spark event log sources to use. Read in filename sort order.
+    - `--historyServer [DirectoryName]`: Directory of an Spark event log sources to use. Read in filename sort order.
     - `-p [pollRate]`: The interval (in seconds) between polling for changes in directory and history event sources.
     - `-r`: Set the flag in order to run each buffer through to their end state on startup.
 
