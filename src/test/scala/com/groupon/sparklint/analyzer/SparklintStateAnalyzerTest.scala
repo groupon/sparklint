@@ -35,7 +35,7 @@ class SparklintStateAnalyzerTest extends FlatSpec with Matchers with BeforeAndAf
   override protected def beforeEach(): Unit = {
 
     val file = new File(TestUtils.resource("spark_event_log_example"))
-    eventSource = EventSource.fromFile(file).asInstanceOf[FreeScrollEventSource]
+    eventSource = EventSource.fromFile(file, compressStorage = true)
   }
 
   it should "getTimeUntilFirstTask correctly" in {
@@ -84,7 +84,7 @@ class SparklintStateAnalyzerTest extends FlatSpec with Matchers with BeforeAndAf
   it should "getCurrentTaskByExecutors correctly" in {
     // Starts with 0
     new SparklintStateAnalyzer(eventSource.appMeta, eventSource.appState).getCurrentTaskByExecutors shouldBe None
-    TestUtils.replay(eventSource, count = 100)
+    TestUtils.replay(eventSource, count = 96)
 
     // Accumulate to 4 during run
     new SparklintStateAnalyzer(eventSource.appMeta, eventSource.appState).getCurrentTaskByExecutors.get shouldEqual

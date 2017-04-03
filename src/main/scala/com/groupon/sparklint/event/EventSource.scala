@@ -78,11 +78,11 @@ trait FreeScrollEventSource extends EventSource {
 }
 
 object EventSource {
-  def fromFile(file: File): EventSource = {
-    fromStringIterator(Source.fromFile(file).getLines(), file.getName)
+  def fromFile(file: File, compressStorage: Boolean = false): FreeScrollEventSource = {
+    fromStringIterator(Source.fromFile(file).getLines(), file.getName, compressStorage)
   }
 
-  def fromZipStream(zis: ZipInputStream, sourceName: String): EventSource = {
+  def fromZipStream(zis: ZipInputStream, sourceName: String, compressStorage: Boolean = false): FreeScrollEventSource = {
     if (zis.available() > 0) {
       val entry = zis.getNextEntry
       val decompressedStream = FilenameUtils.getExtension(entry.getName) match {
@@ -91,13 +91,13 @@ object EventSource {
         case "lzf" => new LZFCompressionCodec(new SparkConf()).compressedInputStream(zis)
         case "snappy" => new SnappyCompressionCodec(new SparkConf()).compressedInputStream(zis)
       }
-      fromStringIterator(IOUtils.lineIterator(decompressedStream, null).asScala, sourceName)
+      fromStringIterator(IOUtils.lineIterator(decompressedStream, null).asScala, sourceName, compressStorage)
     } else {
       throw UnrecognizedLogFileException(sourceName, Some(s"no zip entry available"))
     }
   }
 
-  def fromStringIterator(stringIterator: Iterator[String], sourceName: String): EventSource = {
+  def fromStringIterator(stringIterator: Iterator[String], sourceName: String, compressStorage: Boolean): FreeScrollEventSource = {
     if (!stringIterator.hasNext) {
       throw UnrecognizedLogFileException(sourceName, Some(s"content is empty"))
     }
@@ -118,6 +118,6 @@ object EventSource {
     val appStartEvent = StringToSparkEvent(lineBuffer).get.asInstanceOf[SparkListenerApplicationStart]
     val appMeta = SparkAppMeta(appStartEvent.appId, appStartEvent.appAttemptId, appStartEvent.appName, Some(sparkVersion), appStartEvent.time)
     val eventIterator = stringIterator.flatMap(StringToSparkEvent.apply)
-    new IteratorEventSource(appMeta, eventIterator)
+    new IteratorEventSource(appMeta, eventIterator, compressStorage)
   }
 }

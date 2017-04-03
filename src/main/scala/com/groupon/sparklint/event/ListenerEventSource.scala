@@ -28,7 +28,7 @@ import org.apache.spark.scheduler.SparkListenerEvent
   */
 class ListenerEventSource(appId: String, appName: String) extends SparkFirehoseListener with EventSource {
   override val progressTracker: EventProgressTracker = new EventProgressTracker()
-  override val appMeta: SparkAppMeta = SparkAppMeta(Some(appId), None, appName, None, System.currentTimeMillis())
+  override val appMeta: SparkAppMeta = SparkAppMeta(Some(appId), None, appName, None)
   private val buffer: BlockingQueue[SparkListenerEvent] = new LinkedBlockingDeque()
   private val stateManager = new CompressedStateManager()
   private val receivers = Seq(appMeta, progressTracker, stateManager)

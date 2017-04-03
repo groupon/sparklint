@@ -18,7 +18,7 @@ package com.groupon.sparklint.common
 
 import java.util.Properties
 
-import com.groupon.sparklint.event.FreeScrollEventSource
+import com.groupon.sparklint.event.{EventSource, FreeScrollEventSource}
 import org.apache.spark.executor.TaskMetrics
 import org.apache.spark.groupon.SparkPrivateMethodDelegate
 import org.apache.spark.scheduler._

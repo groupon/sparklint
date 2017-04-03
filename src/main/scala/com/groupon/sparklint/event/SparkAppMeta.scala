@@ -17,13 +17,21 @@
 package com.groupon.sparklint.event
 
 import com.groupon.sparklint.events.EventReceiverLike
-import org.apache.spark.scheduler.SparkListenerApplicationEnd
+import org.apache.spark.scheduler.{SparkListenerApplicationEnd, SparkListenerApplicationStart}
 
 /**
   * @author Roboxue
   */
-case class SparkAppMeta(appId: Option[String], attempt: Option[String], appName: String, sparkVersion: Option[String], startTime: Long) extends EventReceiverLike {
+case class SparkAppMeta(appId: Option[String],
+                        attempt: Option[String],
+                        appName: String,
+                        sparkVersion: Option[String],
+                        var startTime: Long = System.currentTimeMillis()) extends EventReceiverLike {
   var endTime: Option[Long] = None
+
+  override protected def preprocAddApp(event: SparkListenerApplicationStart): Unit = {
+    startTime = event.time
+  }
 
   override protected def preprocEndApp(event: SparkListenerApplicationEnd): Unit = {
     endTime = Some(event.time)

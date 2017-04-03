@@ -35,14 +35,13 @@ class CompressedStateManagerTest extends FlatSpec with Matchers with BeforeAndAf
   var file       : File                   = _
 
   override protected def beforeEach(): Unit = {
-    eventState = new CompressedStateManager()
     file = new File(resource("spark_event_log_example"))
-    eventSource = EventSource.fromFile(file).asInstanceOf[FreeScrollEventSource]
+    eventSource = EventSource.fromFile(file, compressStorage = true)
   }
 
   it should "accumulate core usage correctly" in {
     replay(eventSource)
-    val state = eventState.getState
+    val state = eventSource.appState
     val coreUsage = state.coreUsage
     coreUsage.size shouldBe 5
     // should be when first task was submitted
@@ -69,7 +68,7 @@ class CompressedStateManagerTest extends FlatSpec with Matchers with BeforeAndAf
 
   it should "accumulate stage metrics correctly" in {
     replay(eventSource)
-    val state = eventState.getState
+    val state = eventSource.appState
     val stageMetrics = state.stageMetrics
 
     stageMetrics.size shouldBe 1
@@ -84,13 +83,12 @@ class CompressedStateManagerTest extends FlatSpec with Matchers with BeforeAndAf
   it should "undo events correctly" in {
     eventSource.forwardEvents(300)
 
-    val eventState2 = new CompressedStateManager()
-    val eventSource2 = EventSource.fromFile(file).asInstanceOf[FreeScrollEventSource]
+    val eventSource2 = EventSource.fromFile(file, compressStorage = true)
 
-    val expected = eventState.getState
+    val expected = eventSource.appState
     eventSource2.forwardEvents(350)
     eventSource2.rewindEvents(50)
-    val actual = eventState2.getState
+    val actual = eventSource.appState
     actual.coreUsage.size shouldBe expected.coreUsage.size
     actual.coreUsage.foreach({
       // The resolution can be different but the sum should be the same

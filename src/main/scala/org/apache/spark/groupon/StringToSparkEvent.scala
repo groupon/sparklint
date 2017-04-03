@@ -31,7 +31,9 @@ import scala.util.Try
   */
 object StringToSparkEvent {
 
-  def apply(line: String): Option[SparkListenerEvent] = Try(shimIfNeeded(JsonProtocol.sparkEventFromJson(parse(line)))).toOption
+  def apply(line: String): Option[SparkListenerEvent] = Try {
+    shimIfNeeded(JsonProtocol.sparkEventFromJson(parse(line)))
+  }.toOption
 
   def as[T <: SparkListenerEvent](line: String): T = JsonProtocol.sparkEventFromJson(parse(line)).asInstanceOf[T]
 

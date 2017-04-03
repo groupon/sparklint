@@ -17,20 +17,23 @@
 package com.groupon.sparklint.event
 
 import com.groupon.sparklint.data.SparklintStateLike
-import com.groupon.sparklint.events.{EventProgressTracker, LosslessStateManager}
+import com.groupon.sparklint.events.{CompressedStateManager, EventProgressTracker, LosslessStateManager}
 import org.apache.spark.scheduler.SparkListenerEvent
 
 import scala.collection.mutable
 
 /**
+  * @param appMeta the meta data of the app
+  * @param inputIterator the source of the event stream
+  * @param compressStorage use a compressed storage (less memory required, can lose resolution)
   * @author rxue
   * @since 1.0.5
   */
-class IteratorEventSource(val appMeta: SparkAppMeta, inputIterator: Iterator[SparkListenerEvent]) extends FreeScrollEventSource {
+class IteratorEventSource(val appMeta: SparkAppMeta, inputIterator: Iterator[SparkListenerEvent], compressStorage: Boolean) extends FreeScrollEventSource {
   override val progressTracker: EventProgressTracker = new EventProgressTracker()
   private val processedMessage = mutable.Stack[SparkListenerEvent]()
   private val unprocessedMessage = mutable.Stack[SparkListenerEvent]()
-  private val stateManager = new LosslessStateManager()
+  private val stateManager = if (compressStorage) new CompressedStateManager() else new LosslessStateManager()
   private val receivers = Seq(appMeta, progressTracker, stateManager)
 
   override def appState: SparklintStateLike = stateManager.getState
