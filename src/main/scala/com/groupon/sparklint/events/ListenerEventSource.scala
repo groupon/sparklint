@@ -24,7 +24,8 @@ import org.apache.spark.SparkFirehoseListener
 import org.apache.spark.scheduler.SparkListenerEvent
 
 /**
-  * @author Roboxue
+  * @author rxue
+  * @since 1.0.5
   */
 class ListenerEventSource(appId: String, appName: String) extends SparkFirehoseListener with EventSource {
   override val uuid: UUID = UUID.randomUUID()

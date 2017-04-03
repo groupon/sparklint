@@ -19,7 +19,8 @@ package com.groupon.sparklint.events
 import org.apache.spark.scheduler.{SparkListenerApplicationEnd, SparkListenerApplicationStart}
 
 /**
-  * @author Roboxue
+  * @author rxue
+  * @since 1.0.5
   */
 case class EventSourceMeta(appId: Option[String],
                            attempt: Option[String],

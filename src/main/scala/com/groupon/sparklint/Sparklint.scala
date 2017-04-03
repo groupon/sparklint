@@ -17,7 +17,7 @@
 package com.groupon.sparklint
 
 import com.groupon.sparklint.common.SparklintConfig
-import com.groupon.sparklint.server.{AdhocServer, StaticFileService}
+import com.groupon.sparklint.server.{AdhocServer, HeartBeatService, StaticFileService}
 
 /**
   * The class that contains the backend and ui
@@ -25,7 +25,9 @@ import com.groupon.sparklint.server.{AdhocServer, StaticFileService}
   * @author rxue
   * @since 1.0.5
   */
-class Sparklint(config: SparklintConfig) extends AdhocServer with StaticFileService {
+class Sparklint(config: SparklintConfig) extends AdhocServer
+  with StaticFileService
+  with HeartBeatService {
   val backend = new SparklintBackend()
   val frontend = new SparklintFrontend(backend)
   registerService("", frontend.uiService)

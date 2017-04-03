@@ -32,7 +32,7 @@ import scalaz.stream.io.toInputStream
 
 /**
   * @author superbobry
-  * @since 1/11/17.
+  * @since 1.0.5
   */
 case class HistoryServerApi(name: String, host: Uri) extends Logging {
   private implicit val formats = new DefaultFormats {

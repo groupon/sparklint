@@ -48,42 +48,12 @@ trait EventSource {
   def hasPrevious: Boolean = false
 }
 
-trait FreeScrollEventSource extends EventSource {
-  def rewind(): Boolean
-
-  //noinspection AccessorLikeMethodIsUnit
-  def toStart(): Unit
-
-  //noinspection AccessorLikeMethodIsUnit
-  def toEnd(): Unit
-
-  def forwardEvents(count: Int): Unit
-
-  def forwardJobs(count: Int): Unit
-
-  def forwardStages(count: Int): Unit
-
-  def forwardTasks(count: Int): Unit
-
-  def rewindEvents(count: Int): Unit
-
-  def rewindJobs(count: Int): Unit
-
-  def rewindStages(count: Int): Unit
-
-  def rewindTasks(count: Int): Unit
-}
-
 object EventSource {
   def fromFile(file: File, compressStorage: Boolean = false): FreeScrollEventSource = {
     fromStringIterator(IOUtils.lineIterator(new FileInputStream(file), null: String).asScala, file.getName, compressStorage)
   }
 
   /**
-    *
-    * @param stringIterator
-    * @param sourceName
-    * @param compressStorage
     * @throws UnrecognizedLogFileException if the file cannot be parsed
     * @return
     */
