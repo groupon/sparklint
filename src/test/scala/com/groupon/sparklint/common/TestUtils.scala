@@ -18,7 +18,7 @@ package com.groupon.sparklint.common
 
 import java.util.Properties
 
-import com.groupon.sparklint.events.FreeScrollEventSource
+import com.groupon.sparklint.event.FreeScrollEventSource
 import org.apache.spark.executor.TaskMetrics
 import org.apache.spark.groupon.SparkPrivateMethodDelegate
 import org.apache.spark.scheduler._
@@ -46,12 +46,8 @@ object TestUtils {
     ResourceHelper.convertResourcePathToFilePath(getClass.getClassLoader, name)
   }
 
-  def replay(eventSource: FreeScrollEventSource, count: Long = Long.MaxValue) = {
-    var counter = 0
-    while (counter < count && eventSource.hasNext) {
-      eventSource.forwardEvents()
-      counter += 1
-    }
+  def replay(eventSource: FreeScrollEventSource, count: Int = Int.MaxValue): Unit = {
+    eventSource.forwardEvents(count)
   }
 
   def sparkStageSubmittedEvent(id: Int, name: String): SparkListenerEvent = {

@@ -20,6 +20,7 @@ import java.io.File
 
 import com.groupon.sparklint.common.TestUtils._
 import com.groupon.sparklint.data.SparklintStageIdentifier
+import com.groupon.sparklint.event.{EventSource, FreeScrollEventSource}
 import org.apache.spark.scheduler.TaskLocality._
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 
@@ -29,14 +30,14 @@ import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
   */
 class CompressedStateManagerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
 
-  var eventSource: FileEventSource        = _
+  var eventSource: FreeScrollEventSource        = _
   var eventState : CompressedStateManager = _
   var file       : File                   = _
 
   override protected def beforeEach(): Unit = {
     eventState = new CompressedStateManager()
     file = new File(resource("spark_event_log_example"))
-    eventSource = FileEventSource(file, Seq(eventState))
+    eventSource = EventSource.fromFile(file).asInstanceOf[FreeScrollEventSource]
   }
 
   it should "accumulate core usage correctly" in {
@@ -84,7 +85,7 @@ class CompressedStateManagerTest extends FlatSpec with Matchers with BeforeAndAf
     eventSource.forwardEvents(300)
 
     val eventState2 = new CompressedStateManager()
-    val eventSource2 = FileEventSource(file, Seq(eventState2))
+    val eventSource2 = EventSource.fromFile(file).asInstanceOf[FreeScrollEventSource]
 
     val expected = eventState.getState
     eventSource2.forwardEvents(350)

@@ -16,6 +16,7 @@
 
 package com.groupon.sparklint.ui
 
+import com.groupon.sparklint.event.{EventSourceGroupManager, SparkAppMeta}
 import com.groupon.sparklint.events._
 
 import scala.xml.Node
@@ -24,7 +25,7 @@ import scala.xml.Node
   * @author rxue
   * @since 6/14/16.
   */
-class SparklintHomepage(sourceManager: EventSourceManagerLike) extends UITemplate {
+class SparklintHomepage(sourceManager: EventSourceGroupManager) extends UITemplate {
   /**
     * These are all the frontend libraries used by Sparklint UI
     * jquery (dom operation, required by d3)
@@ -60,18 +61,18 @@ class SparklintHomepage(sourceManager: EventSourceManagerLike) extends UITemplat
       <div class="navbar-default sidebar" role="navigation">
         <div class="sidebar-nav navbar-collapse">
           <ul class="nav" id="side-menu">
-            {for (source <- sourceManager.eventSourceDetails)
-            yield navbarItem(source.eventSourceId, source.meta, source.progress)}
+            {for (source <- sourceManager.eventSources)
+            yield navbarItem(source.appMeta.appId.getOrElse("No-AppId"), source.appMeta, source.progressTracker)}
             {navbarReplayControl}
           </ul>
         </div>
       </div>
     </nav>
 
-  def navbarItem(esId: String, meta: EventSourceMetaLike, progress: EventProgressTrackerLike): Seq[Node] =
+  def navbarItem(esId: String, meta: SparkAppMeta, progress: EventProgressTrackerLike): Seq[Node] =
     <li data-value={esId}>
       <a href="#" class="sparklintApp" data-value={esId}>
-        <strong>App: </strong>{meta.nameOrId}
+        <strong>App: </strong>{meta.appName}
         <p class="text-center" id={uniqueId(esId, "app-prog")}>
         {progress.eventProgress.description}
       </p>

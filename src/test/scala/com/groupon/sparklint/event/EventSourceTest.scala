@@ -47,7 +47,7 @@ class EventSourceTest extends FlatSpec with Matchers {
     es.appMeta shouldBe SparkAppMeta(Some("application_1462781278026_205691"), None, "MyAppName", Some("1.5.2"), 1466087746466L)
   }
 
-  it should "decompress a plain logfile zip" in {
+  "fromZipStream" should "decompress a plain logfile zip" in {
     val file = getClass.getClassLoader.getResource("history_source/eventLogs-application_1489705648216_1600.zip").getFile
     val zipFile = new ZipInputStream(new FileInputStream(file))
     val es = EventSource.fromZipStream(zipFile, "eventLogs-application_1489705648216_1600.zip")
