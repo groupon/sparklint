@@ -29,6 +29,8 @@ import scalaz.{-\/, \/-}
 class HistoryServerEventSourceGroupManager(api: HistoryServerApi) extends GenericEventSourceGroupManager(api.name, true) {
   private val availableSourceMap: mutable.Map[String, SparkAppMeta] = mutable.Map.empty
 
+  def availableSources: Seq[(String, SparkAppMeta)] = availableSourceMap.toSeq
+
   def pullEventSource(esUuid: String): Try[EventSource] = {
     if (availableSourceMap.contains(esUuid)) {
       val meta = availableSourceMap.remove(esUuid).get

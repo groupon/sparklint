@@ -36,4 +36,6 @@ case class SparkAppMeta(appId: Option[String],
   override protected def preprocEndApp(event: SparkListenerApplicationEnd): Unit = {
     endTime = Some(event.time)
   }
+
+  lazy val fullAppId: String = s"${appId.getOrElse("no-appId")}${attempt.map(att => s"-$att").getOrElse("")}"
 }

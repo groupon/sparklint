@@ -127,8 +127,6 @@ class SparklintBackend
   private def activateApp(esgmUuid: String, appId: String): Task[Response] = {
     val esgm = esgManagers(esgmUuid)
     val t = esgm match {
-      case folder: FolderEventSourceGroupManager =>
-        folder.pullEventSource(appId)
       case history: HistoryServerEventSourceGroupManager =>
         history.pullEventSource(appId)
       case _ =>

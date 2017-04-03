@@ -33,22 +33,11 @@ class FolderEventSourceGroupManager(folder: File) extends GenericEventSourceGrou
     throw new FileNotFoundException(folder.getAbsolutePath)
   }
 
-  private val availableSourceMap: mutable.Map[String, File] = mutable.Map.empty
   private val ignoredFiles: mutable.Map[String, File] = mutable.Map.empty
 
-  def pullEventSource(esUuid: String): Try[EventSource] = {
-    if (availableSourceMap.contains(esUuid)) {
-      val file = availableSourceMap.remove(esUuid).get
-      val readAttempt = Try(EventSource.fromFile(file))
-      readAttempt match {
-        case Success(es) =>
-          registerEventSource(es)
-        case Failure(ex) =>
-          ignoredFiles(esUuid) = file
-      }
-      readAttempt
-    } else {
-      Failure(new FileNotFoundException(s"EventSource $esUuid doesn't exist in FolderEventSourceGroupManager $name"))
-    }
-  }
+  private def pullEventSource(file: File): Try[EventSource] = Try({
+    val es = EventSource.fromFile(file)
+    registerEventSource(es)
+    es
+  })
 }

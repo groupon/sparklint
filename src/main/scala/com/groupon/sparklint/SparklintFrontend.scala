@@ -16,6 +16,7 @@
 
 package com.groupon.sparklint
 
+import com.groupon.sparklint.ui.{SparklintHomepage, UIEventSourceNavigation}
 import org.http4s.MediaType.`text/html`
 import org.http4s.dsl._
 import org.http4s.headers.`Content-Type`
@@ -27,14 +28,20 @@ import scalaz.concurrent.Task
   * @author rxue
   * @since 1.0.5
   */
-class SparklintFrontend {
+class SparklintFrontend(backend: SparklintBackend) {
   private def htmlResponse(textResponse: Task[Response]): Task[Response] = {
     textResponse.withContentType(Some(`Content-Type`(`text/html`)))
   }
 
   def uiService: HttpService = HttpService {
     case GET -> Root => htmlResponse(Ok(homepage))
+    case GET -> Root / "eventSourceManagerList" =>
+      htmlResponse(Ok(eventSourceManagerList))
   }
 
-  private def homepage: String = ???
+  private def homepage: String = new SparklintHomepage().HTML.toString
+
+  private def eventSourceManagerList: String = {
+    UIEventSourceNavigation(backend).mkString("\n")
+  }
 }
