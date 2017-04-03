@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.groupon.sparklint.event
+package com.groupon.sparklint.events
 
 import java.io.FileNotFoundException
 import java.util.UUID
@@ -30,15 +30,15 @@ import scalaz.{-\/, \/-}
   * @since 1.0.5
   */
 class HistoryServerEventSourceGroupManager(api: HistoryServerApi) extends GenericEventSourceGroupManager(api.name, true) {
-  private val availableSourceMap: mutable.Map[String, SparkAppMeta] = mutable.Map.empty
+  private val availableSourceMap: mutable.Map[String, EventSourceMeta] = mutable.Map.empty
 
-  def availableSources: Seq[(String, SparkAppMeta)] = availableSourceMap.toSeq.sortBy(_._2.fullAppId).reverse
+  def availableSources: Seq[(String, EventSourceMeta)] = availableSourceMap.toSeq.sortBy(_._2.fullAppId).reverse
 
   def pull(): Unit = {
     availableSourceMap.clear()
     availableSourceMap ++= api.getApplications().flatMap(r => {
       r.attempts.map(attempt => {
-        UUID.randomUUID().toString -> SparkAppMeta(Some(r.id), attempt.attemptId, r.name, None, attempt.startTime.getTime)
+        UUID.randomUUID().toString -> EventSourceMeta(Some(r.id), attempt.attemptId, r.name, None, attempt.startTime.getTime)
       })
     })
   }

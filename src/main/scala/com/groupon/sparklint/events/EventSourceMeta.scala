@@ -14,19 +14,19 @@
  * limitations under the License.
  */
 
-package com.groupon.sparklint.event
+package com.groupon.sparklint.events
 
-import com.groupon.sparklint.events.EventReceiverLike
 import org.apache.spark.scheduler.{SparkListenerApplicationEnd, SparkListenerApplicationStart}
 
 /**
   * @author Roboxue
   */
-case class SparkAppMeta(appId: Option[String],
-                        attempt: Option[String],
-                        appName: String,
-                        sparkVersion: Option[String],
-                        var startTime: Long = System.currentTimeMillis()) extends EventReceiverLike {
+case class EventSourceMeta(appId: Option[String],
+                           attempt: Option[String],
+                           appName: String,
+                           sparkVersion: Option[String],
+                           var startTime: Long = System.currentTimeMillis()) extends EventReceiverLike {
+  lazy val fullAppId: String = s"${appId.getOrElse("no-appId")}${attempt.map(att => s"-$att").getOrElse("")}"
   var endTime: Option[Long] = None
 
   override protected def preprocAddApp(event: SparkListenerApplicationStart): Unit = {
@@ -36,6 +36,4 @@ case class SparkAppMeta(appId: Option[String],
   override protected def preprocEndApp(event: SparkListenerApplicationEnd): Unit = {
     endTime = Some(event.time)
   }
-
-  lazy val fullAppId: String = s"${appId.getOrElse("no-appId")}${attempt.map(att => s"-$att").getOrElse("")}"
 }

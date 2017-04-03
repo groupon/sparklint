@@ -32,7 +32,7 @@ import scala.collection.mutable
 class EventProgressTracker(val eventProgress: EventProgress = EventProgress.empty(),
                            val taskProgress: EventProgress = EventProgress.empty(),
                            val stageProgress: EventProgress = EventProgress.empty(),
-                           val  jobProgress: EventProgress = EventProgress.empty())
+                           val jobProgress: EventProgress = EventProgress.empty())
   extends EventProgressTrackerLike with EventReceiverLike {
 
   private val jobTracker = mutable.Map.empty[Int, String]
@@ -83,6 +83,9 @@ class EventProgressTracker(val eventProgress: EventProgress = EventProgress.empt
     taskProgress.active += taskNameFromInfo(event.taskInfo)
   }
 
+  private def taskNameFromInfo(taskInf: TaskInfo) =
+    s"ID${taskInf.taskId}:${taskInf.taskLocality}:${taskInf.host}(attempt ${taskInf.attemptNumber})"
+
   override def onStageSubmitted(event: SparkListenerStageSubmitted): Unit = {
     stageProgress.started += 1
     stageProgress.active += event.stageInfo.name
@@ -108,9 +111,20 @@ class EventProgressTracker(val eventProgress: EventProgress = EventProgress.empt
     jobProgress.active += jobNameFromInfo(event)
   }
 
+  private def jobNameFromInfo(event: SparkListenerJobStart): String = {
+    val props = event.properties
+    val propertyExtract = s"${props.getProperty("spark.job.description", Utils.UNKNOWN_STRING)}"
+    val name = s"ID${event.jobId}:$propertyExtract"
+    jobTracker.getOrElseUpdate(event.jobId, name)
+  }
+
   override def onJobEnd(event: SparkListenerJobEnd): Unit = {
     jobProgress.complete += 1
     jobNameFromId(event.jobId).foreach(jobName => jobProgress.active -= jobName)
+  }
+
+  private def jobNameFromId(id: Int): Option[String] = {
+    jobTracker.get(id)
   }
 
   override def unJobStart(event: SparkListenerJobStart): Unit = {
@@ -125,20 +139,6 @@ class EventProgressTracker(val eventProgress: EventProgress = EventProgress.empt
 
   override def toString: String =
     s"Event: $eventProgress, Task: $taskProgress, Stage: $stageProgress, Job: $jobProgress"
-
-  private def taskNameFromInfo(taskInf: TaskInfo) =
-    s"ID${taskInf.taskId}:${taskInf.taskLocality}:${taskInf.host}(attempt ${taskInf.attemptNumber})"
-
-  private def jobNameFromInfo(event: SparkListenerJobStart): String = {
-    val props = event.properties
-    val propertyExtract = s"${props.getProperty("spark.job.description", Utils.UNKNOWN_STRING)}"
-    val name = s"ID${event.jobId}:$propertyExtract"
-    jobTracker.getOrElseUpdate(event.jobId, name)
-  }
-
-  private def jobNameFromId(id: Int): Option[String] = {
-    jobTracker.get(id)
-  }
 }
 
 

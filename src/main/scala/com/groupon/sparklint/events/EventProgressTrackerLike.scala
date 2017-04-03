@@ -22,7 +22,7 @@ package com.groupon.sparklint.events
   */
 trait EventProgressTrackerLike {
   val eventProgress: EventProgress
-  val taskProgress : EventProgress
+  val taskProgress: EventProgress
   val stageProgress: EventProgress
-  val jobProgress  : EventProgress
+  val jobProgress: EventProgress
 }

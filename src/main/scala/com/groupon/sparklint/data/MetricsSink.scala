@@ -24,15 +24,23 @@ import scala.collection.mutable.ArrayBuffer
   * @since 9/23/16.
   */
 trait MetricsSink {
-  val resolution: Long
-  val dataRange : Option[Interval]
-  private[sparklint] val origin : Long
-  private[sparklint] val storage: Array[Long]
   lazy val length: Int = storage.length
   lazy val bucketStart: Long = origin - origin % resolution
-  lazy val bucketEnd: Long   = bucketStart + resolution * length
+  lazy val bucketEnd: Long = bucketStart + resolution * length
+  val resolution: Long
+  val dataRange: Option[Interval]
+  private[sparklint] val origin: Long
+  private[sparklint] val storage: Array[Long]
 
   def apply(index: Int): Long = storage(index)
+
+  def getAvgValueForTime(time: Long): Option[Double] = {
+    getValueForTime(time).map(_.toDouble / resolution)
+  }
+
+  def getValueForTime(time: Long): Option[Long] = {
+    getBucket(getBucketIndex(time))
+  }
 
   def getBucket(index: Int): Option[Long] = {
     if (index < 0 || index >= length) {
@@ -42,19 +50,11 @@ trait MetricsSink {
     }
   }
 
-  def getValueForTime(time: Long): Option[Long] = {
-    getBucket(getBucketIndex(time))
-  }
-
-  def getAvgValueForTime(time: Long): Option[Double] = {
-    getValueForTime(time).map(_.toDouble / resolution)
-  }
-
-  def nonEmpty: Boolean = dataRange.nonEmpty
-
   def getBucketIndex(time: Long): Int = {
     ((time - bucketStart) / resolution).toInt
   }
+
+  def nonEmpty: Boolean = dataRange.nonEmpty
 
   def changeResolution(toResolution: Long): MetricsSink
 
@@ -89,7 +89,7 @@ trait MetricsSink {
             (value.toDouble / duration).round.toInt -> duration
           }).groupBy(_._1).mapValues(_.map(_._2).sum)
         }
-      case None           =>
+      case None =>
         Map.empty
     }
   }

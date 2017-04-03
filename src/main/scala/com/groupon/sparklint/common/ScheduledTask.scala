@@ -41,7 +41,7 @@ case class ScheduledTask[T](name: String, fn: () => Unit,
     logger.logInfo(s"Executing ScheduledTask $name.")
     fn()
   }) match {
-    case Success(_)  => logger.logInfo(s"Execution of $name completed")
+    case Success(_) => logger.logInfo(s"Execution of $name completed")
     case Failure(ex) => logger.logError(s"Execution of $name failed with exception.", ex)
   }
 }

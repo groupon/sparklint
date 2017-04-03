@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.groupon.sparklint.event
+package com.groupon.sparklint.events
 
 import java.io.{File, FileNotFoundException}
 
@@ -33,19 +33,18 @@ class FolderEventSourceGroupManager(folder: File) extends GenericEventSourceGrou
     throw new FileNotFoundException(folder.getAbsolutePath)
   }
 
+  private val ignoredFiles: mutable.Set[String] = mutable.Set.empty
+
   def pull(): Unit = {
     for (file <- folder.listFiles().filter(_.isFile).filter(f => !ignoredFiles.contains(f.getAbsolutePath))) {
       tryPullEventSource(file) match {
         case Success(_) | Failure(_: UnrecognizedLogFileException) =>
           ignoredFiles.add(file.getAbsolutePath)
         case _ =>
-          // allow retry for failures other than UnrecognizedLogFileException
+        // allow retry for failures other than UnrecognizedLogFileException
       }
     }
   }
-
-
-  private val ignoredFiles: mutable.Set[String] = mutable.Set.empty
 
   private def tryPullEventSource(file: File): Try[EventSource] = Try({
     val es = EventSource.fromFile(file)

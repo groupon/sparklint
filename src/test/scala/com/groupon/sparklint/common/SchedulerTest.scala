@@ -32,6 +32,7 @@ class SchedulerTest extends FlatSpec with Matchers {
   it should "schedule a task with period and no delay" in {
 
     val counter = new AtomicInteger(0)
+
     def set(): Unit = {
       counter.incrementAndGet()
     }
@@ -51,9 +52,11 @@ class SchedulerTest extends FlatSpec with Matchers {
   it should "schedule a task with period and delay" in {
 
     val counter = new AtomicInteger(0)
+
     def set(): Unit = {
       counter.incrementAndGet()
     }
+
     val task = ScheduledTask[AtomicInteger]("test", set, delaySeconds = 1)
     val scheduler = new Scheduler()
 

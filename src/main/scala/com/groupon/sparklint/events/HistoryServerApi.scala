@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.groupon.sparklint.event
+package com.groupon.sparklint.events
 
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -46,7 +46,7 @@ case class HistoryServerApi(name: String, host: Uri) extends Logging {
   /**
     * Fetches the event log for a given app and attempt.
     */
-  def getLogs(uuid: String, appMeta: SparkAppMeta): Task[FreeScrollEventSource] = {
+  def getLogs(uuid: String, appMeta: EventSourceMeta): Task[FreeScrollEventSource] = {
     val uri = appMeta.attempt match {
       case Some(attemptId) =>
         apiUri / "applications" / appMeta.appId.get / attemptId / "logs"

@@ -20,7 +20,7 @@ import java.io.File
 
 import com.groupon.sparklint.common.TestUtils
 import com.groupon.sparklint.data._
-import com.groupon.sparklint.event.{EventSource, FreeScrollEventSource}
+import com.groupon.sparklint.events.{EventSource, FreeScrollEventSource}
 import org.apache.spark.scheduler.TaskLocality._
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 

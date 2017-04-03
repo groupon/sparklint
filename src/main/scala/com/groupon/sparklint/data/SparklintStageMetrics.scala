@@ -25,6 +25,7 @@ import org.apache.spark.scheduler.TaskLocality.TaskLocality
 trait SparklintStageMetrics {
   /**
     * (TaskLocality, TaskType) -> TaskMetrics, to provide metrics group by TaskLocality and TaskType
+    *
     * @return
     */
   def metricsRepo: Map[(TaskLocality, Symbol), SparklintTaskCounter]

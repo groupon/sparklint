@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package com.groupon.sparklint.event
+package com.groupon.sparklint.events
 
 import java.util.UUID
 
 import com.groupon.sparklint.data.SparklintStateLike
-import com.groupon.sparklint.events.{CompressedStateManager, EventProgressTracker, LosslessStateManager}
 import org.apache.spark.scheduler.SparkListenerEvent
 
 import scala.collection.mutable
@@ -31,7 +30,7 @@ import scala.collection.mutable
   * @author rxue
   * @since 1.0.5
   */
-class IteratorEventSource(val uuid: UUID, val appMeta: SparkAppMeta, inputIterator: Iterator[SparkListenerEvent], compressStorage: Boolean) extends FreeScrollEventSource {
+class IteratorEventSource(val uuid: UUID, val appMeta: EventSourceMeta, inputIterator: Iterator[SparkListenerEvent], compressStorage: Boolean) extends FreeScrollEventSource {
   override val progressTracker: EventProgressTracker = new EventProgressTracker()
   private val processedMessage = mutable.Stack[SparkListenerEvent]()
   private val unprocessedMessage = mutable.Stack[SparkListenerEvent]()
@@ -46,13 +45,6 @@ class IteratorEventSource(val uuid: UUID, val appMeta: SparkAppMeta, inputIterat
 
   override def toEnd(): Unit = {
     while (forward()) {}
-  }
-
-  override def forwardEvents(count: Int): Unit = {
-    val currentEvents = progressTracker.eventProgress.complete
-    while (progressTracker.eventProgress.complete - currentEvents < count && hasNext) {
-      forward()
-    }
   }
 
   def forward(): Boolean = synchronized {
@@ -78,6 +70,13 @@ class IteratorEventSource(val uuid: UUID, val appMeta: SparkAppMeta, inputIterat
 
   def hasNext: Boolean = {
     unprocessedMessage.nonEmpty || inputIterator.hasNext
+  }
+
+  override def forwardEvents(count: Int): Unit = {
+    val currentEvents = progressTracker.eventProgress.complete
+    while (progressTracker.eventProgress.complete - currentEvents < count && hasNext) {
+      forward()
+    }
   }
 
   override def forwardJobs(count: Int): Unit = {
@@ -108,6 +107,23 @@ class IteratorEventSource(val uuid: UUID, val appMeta: SparkAppMeta, inputIterat
     }
   }
 
+  def rewind(): Boolean = synchronized {
+    if (hasPrevious) {
+      val event = processedMessage.pop()
+      receivers.foreach(r => {
+        r.unEvent(event)
+      })
+      unprocessedMessage.push(event)
+      true
+    } else {
+      false
+    }
+  }
+
+  override def hasPrevious: Boolean = {
+    processedMessage.nonEmpty
+  }
+
   override def rewindJobs(count: Int): Unit = {
     val currentJobs = progressTracker.jobProgress.complete
     while (currentJobs - progressTracker.jobProgress.complete < count && hasPrevious) {
@@ -127,22 +143,5 @@ class IteratorEventSource(val uuid: UUID, val appMeta: SparkAppMeta, inputIterat
     while (currentTasks - progressTracker.taskProgress.complete < count && hasPrevious) {
       rewind()
     }
-  }
-
-  def rewind(): Boolean = synchronized {
-    if (hasPrevious) {
-      val event = processedMessage.pop()
-      receivers.foreach(r => {
-        r.unEvent(event)
-      })
-      unprocessedMessage.push(event)
-      true
-    } else {
-      false
-    }
-  }
-
-  override def hasPrevious: Boolean = {
-    processedMessage.nonEmpty
   }
 }

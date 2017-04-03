@@ -20,7 +20,6 @@ import java.io.File
 
 import com.groupon.sparklint.analyzer.SparklintStateAnalyzer
 import com.groupon.sparklint.common.Logging
-import com.groupon.sparklint.event._
 import com.groupon.sparklint.events._
 import org.http4s.MediaType.`application/json`
 import org.http4s.dsl._
@@ -178,7 +177,7 @@ class SparklintBackend
       ("uuid" -> esgm.uuid.toString))
   }
 
-  protected def appendSingleFileManager(file: File): EventSourceGroupManager = {
+  def appendSingleFileManager(file: File): EventSourceGroupManager = {
     val manager = new GenericEventSourceGroupManager(file.getName, true)
     val es = EventSource.fromFile(file)
     Future(es.toEnd())
@@ -201,7 +200,7 @@ class SparklintBackend
       ("uuid" -> esgm.uuid.toString))
   }
 
-  protected def appendFolderManager(folder: File): EventSourceGroupManager = {
+  def appendFolderManager(folder: File): EventSourceGroupManager = {
     val manager = new FolderEventSourceGroupManager(folder)
     manager.pull()
     append(manager)
@@ -218,7 +217,7 @@ class SparklintBackend
     }
   }
 
-  protected def appendHistoryServer(serverName: String, historyServerHost: Uri): EventSourceGroupManager = {
+  def appendHistoryServer(serverName: String, historyServerHost: Uri): EventSourceGroupManager = {
     val api = HistoryServerApi(serverName, historyServerHost)
     val manager = new HistoryServerEventSourceGroupManager(api)
     manager.pull()

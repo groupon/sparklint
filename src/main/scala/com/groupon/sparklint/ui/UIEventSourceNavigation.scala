@@ -17,7 +17,6 @@
 package com.groupon.sparklint.ui
 
 import com.groupon.sparklint.SparklintBackend
-import com.groupon.sparklint.event._
 import com.groupon.sparklint.events._
 
 import scala.xml.Node
@@ -55,16 +54,13 @@ object UIEventSourceNavigation {
   def listGenericEventSourceGroupManager(esm: GenericEventSourceGroupManager): Seq[Node] =
     <ul class="nav nav-second-level collapse in" aria-expanded="false">
       {for (source <- esm.eventSources)
-      yield eventSourceListItem(source.uuid.toString, source.appMeta, source.progressTracker)
-      }
+      yield eventSourceListItem(source.uuid.toString, source.appMeta, source.progressTracker)}
     </ul>
 
   def listHistoryServerEventSourceGroupManager(esm: HistoryServerEventSourceGroupManager): Seq[Node] =
     <ul class="nav nav-second-level collapse in" aria-expanded="false">
       {for (source <- esm.eventSources)
-      yield eventSourceListItem(source.uuid.toString, source.appMeta, source.progressTracker)
-      }
-      {for ((esUuid, meta) <- esm.availableSources) yield {
+      yield eventSourceListItem(source.uuid.toString, source.appMeta, source.progressTracker)}{for ((esUuid, meta) <- esm.availableSources) yield {
       <li data-value={esUuid}>
         <a href="#" class="inactiveApp" data-value={esUuid}>
           <div>
@@ -80,7 +76,7 @@ object UIEventSourceNavigation {
     }}
     </ul>
 
-  def eventSourceListItem(esUuid: String, meta: SparkAppMeta, progress: EventProgressTrackerLike): Seq[Node] = {
+  def eventSourceListItem(esUuid: String, meta: EventSourceMeta, progress: EventProgressTrackerLike): Seq[Node] = {
     <li data-value={esUuid}>
       <a href="#" class="sparklintApp" data-value={esUuid}>
         <strong>App:</strong>{meta.appName}<p class="text-center" id={uniqueId(esUuid, "app-prog")}>

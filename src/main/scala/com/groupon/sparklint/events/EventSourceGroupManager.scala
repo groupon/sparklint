@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.groupon.sparklint.event
+package com.groupon.sparklint.events
 
 import java.util.UUID
 

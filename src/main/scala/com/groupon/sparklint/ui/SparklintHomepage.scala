@@ -35,15 +35,9 @@ class SparklintHomepage extends UITemplate {
     * @return
     */
 
-  override val title      : String = "Sparklint"
+  override val title: String = "Sparklint"
   override val description: String = "Performance Analyzer for Apache Spark"
-  override val author     : String = "Groupon"
-
-  override protected def extraCSS: Seq[Node] = <link rel="stylesheet" type="text/css" href="/static/css/sparklint.css"/>
-
-  override protected def extraScripts: Seq[Node] = Seq(
-    <script src="/static/js/sparklintHomepage.js"></script>
-  )
+  override val author: String = "Groupon"
 
   override def content: Seq[Node] =
     <div id="wrapper">
@@ -64,8 +58,7 @@ class SparklintHomepage extends UITemplate {
       <div class="navbar-default sidebar" role="navigation">
         <div class="sidebar-nav navbar-collapse">
           <ul class="nav" id="side-menu">
-            {addEventSourceGroupManagerControl}
-            {navbarReplayControl}
+            {addEventSourceGroupManagerControl}{navbarReplayControl}
           </ul>
         </div>
       </div>
@@ -74,7 +67,11 @@ class SparklintHomepage extends UITemplate {
   //noinspection MutatorLikeMethodIsParameterless
   def addEventSourceGroupManagerControl: Seq[Node] =
     <li id="addEventSourceGroupManager">
-      <a href="#"><i class="fa fa-plus fa-fw"></i> Add Sources<span class="fa arrow"></span></a>
+      <a href="#">
+        <i class="fa fa-plus fa-fw"></i>
+        Add Sources
+        <span class="fa arrow"></span>
+      </a>
       <ul class="nav nav-second-level collapse">
         <li>
           <a href="#" id="addSingleFile">Single File</a>
@@ -298,4 +295,10 @@ class SparklintHomepage extends UITemplate {
       </div>
       <!-- /.panel-body -->
     </div>
+
+  override protected def extraCSS: Seq[Node] = <link rel="stylesheet" type="text/css" href="/static/css/sparklint.css"/>
+
+  override protected def extraScripts: Seq[Node] = Seq(
+    <script src="/static/js/sparklintHomepage.js"></script>
+  )
 }

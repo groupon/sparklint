@@ -18,6 +18,7 @@ package com.groupon.sparklint
 
 import com.frugalmechanic.optparse.OptParse
 import com.groupon.sparklint.common._
+import org.http4s.Uri
 
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, Future, Promise}
@@ -30,6 +31,16 @@ object SparklintServer extends Logging with OptParse {
   def main(args: Array[String]): Unit = {
     val config = CliSparklintConfig().parseCliArgs(args)
     val server = new Sparklint(config)
+    if (config.historySource) {
+      val uri = Uri.fromString(config.historySource.get).toOption.get
+      server.backend.appendHistoryServer(uri.host.get.value, uri)
+    }
+    if (config.fileSource) {
+      server.backend.appendSingleFileManager(config.fileSource.get)
+    }
+    if (config.directorySource) {
+      server.backend.appendFolderManager(config.directorySource.get)
+    }
     // register initial event sources
     server.startServer()
     waitForever

@@ -29,14 +29,14 @@ import scalaz.concurrent.Task
   * @since 1.0.5
   */
 class SparklintFrontend(backend: SparklintBackend) {
-  private def htmlResponse(textResponse: Task[Response]): Task[Response] = {
-    textResponse.withContentType(Some(`Content-Type`(`text/html`)))
-  }
-
   def uiService: HttpService = HttpService {
     case GET -> Root => htmlResponse(Ok(homepage))
     case GET -> Root / "eventSourceManagerList" =>
       htmlResponse(Ok(eventSourceManagerList))
+  }
+
+  private def htmlResponse(textResponse: Task[Response]): Task[Response] = {
+    textResponse.withContentType(Some(`Content-Type`(`text/html`)))
   }
 
   private def homepage: String = new SparklintHomepage().HTML.toString

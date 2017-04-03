@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package com.groupon.sparklint.event
+package com.groupon.sparklint.events
 
 import java.util.UUID
 import java.util.concurrent.{BlockingQueue, LinkedBlockingDeque}
 
 import com.groupon.sparklint.data.SparklintStateLike
-import com.groupon.sparklint.events.{CompressedStateManager, EventProgressTracker}
 import org.apache.spark.SparkFirehoseListener
 import org.apache.spark.scheduler.SparkListenerEvent
 
@@ -30,7 +29,7 @@ import org.apache.spark.scheduler.SparkListenerEvent
 class ListenerEventSource(appId: String, appName: String) extends SparkFirehoseListener with EventSource {
   override val uuid: UUID = UUID.randomUUID()
   override val progressTracker: EventProgressTracker = new EventProgressTracker()
-  override val appMeta: SparkAppMeta = SparkAppMeta(Some(appId), None, appName, None)
+  override val appMeta: EventSourceMeta = EventSourceMeta(Some(appId), None, appName, None)
   private val buffer: BlockingQueue[SparkListenerEvent] = new LinkedBlockingDeque()
   private val stateManager = new CompressedStateManager()
   private val receivers = Seq(appMeta, progressTracker, stateManager)

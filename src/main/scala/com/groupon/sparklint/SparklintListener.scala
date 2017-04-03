@@ -17,7 +17,7 @@
 package com.groupon.sparklint
 
 import com.groupon.sparklint.common.{SparkConfSparklintConfig, SparklintConfig}
-import com.groupon.sparklint.event.{GenericEventSourceGroupManager, ListenerEventSource}
+import com.groupon.sparklint.events.{GenericEventSourceGroupManager, ListenerEventSource}
 import org.apache.spark.scheduler.SparkListenerEvent
 import org.apache.spark.{SparkConf, SparkFirehoseListener}
 
@@ -29,6 +29,10 @@ import org.apache.spark.{SparkConf, SparkFirehoseListener}
   */
 class SparklintListener(appId: String, appName: String, config: SparklintConfig) extends SparkFirehoseListener {
 
+  val sparklint = new Sparklint(config)
+  val esgm = new GenericEventSourceGroupManager("SparklintListener", closeable = false)
+  val liveEventSource = new ListenerEventSource(appId, appName)
+
   def this(conf: SparkConf) = {
     this(conf.get("spark.app.id", "AppId"), conf.get("spark.app.name", "AppName"), new SparkConfSparklintConfig(conf))
   }
@@ -36,10 +40,6 @@ class SparklintListener(appId: String, appName: String, config: SparklintConfig)
   override def onEvent(event: SparkListenerEvent): Unit = {
     liveEventSource.onEvent(event)
   }
-
-  val sparklint = new Sparklint(config)
-  val esgm = new GenericEventSourceGroupManager("SparklintListener", closeable = false)
-  val liveEventSource = new ListenerEventSource(appId, appName)
   esgm.registerEventSource(liveEventSource)
   sparklint.backend.append(esgm)
   sparklint.startServer()

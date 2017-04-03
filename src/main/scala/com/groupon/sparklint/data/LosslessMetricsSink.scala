@@ -65,26 +65,6 @@ class LosslessMetricsSink(val dataRange: Option[Interval],
     _storage.toArray
   }
 
-  private[data] def getBucketIndexWithNewResolution(time: Long, resolutionToUse: Long): Int = {
-    ((time - bucketStart) / resolutionToUse).toInt
-  }
-
-
-  override def batchAddUsage(pairs: Seq[(Long, Long)], weight: Int): LosslessMetricsSink = {
-    val inputInterval = Interval(pairs.map(_._1).min, pairs.map(_._2).max)
-    val newDataRange = Some(dataRange.fold(inputInterval)(_.merge(inputInterval)))
-    val newStorage = mutable.Map(losslessStorage.toSeq: _*)
-    pairs.foreach({ case (startTime, endTime) =>
-      val interval = Interval(startTime, endTime)
-      newStorage.get(interval) match {
-        case None                       => newStorage(interval) = weight
-        case Some(x) if x + weight == 0 => newStorage.remove(interval)
-        case Some(x)                    => newStorage(interval) = x + weight
-      }
-    })
-    new LosslessMetricsSink(newDataRange, numBuckets, origin, newStorage.toMap)
-  }
-
   override def changeResolution(toResolution: Long): MetricsSink = {
     val numBucketsNeeded = if (dataRange.nonEmpty) {
       val desiredRange = dataRange.get.merge(Interval(origin, origin)).length
@@ -98,8 +78,27 @@ class LosslessMetricsSink(val dataRange: Option[Interval],
   override def addUsage(startTime: Long, endTime: Long, weight: Int = 1): LosslessMetricsSink =
     batchAddUsage(Seq(startTime -> endTime), weight)
 
+  override def batchAddUsage(pairs: Seq[(Long, Long)], weight: Int): LosslessMetricsSink = {
+    val inputInterval = Interval(pairs.map(_._1).min, pairs.map(_._2).max)
+    val newDataRange = Some(dataRange.fold(inputInterval)(_.merge(inputInterval)))
+    val newStorage = mutable.Map(losslessStorage.toSeq: _*)
+    pairs.foreach({ case (startTime, endTime) =>
+      val interval = Interval(startTime, endTime)
+      newStorage.get(interval) match {
+        case None => newStorage(interval) = weight
+        case Some(x) if x + weight == 0 => newStorage.remove(interval)
+        case Some(x) => newStorage(interval) = x + weight
+      }
+    })
+    new LosslessMetricsSink(newDataRange, numBuckets, origin, newStorage.toMap)
+  }
+
   override def removeUsage(startTime: Long, endTime: Long, weight: Int = 1): LosslessMetricsSink =
     batchAddUsage(Seq(startTime -> endTime), -weight)
+
+  private[data] def getBucketIndexWithNewResolution(time: Long, resolutionToUse: Long): Int = {
+    ((time - bucketStart) / resolutionToUse).toInt
+  }
 }
 
 object LosslessMetricsSink {

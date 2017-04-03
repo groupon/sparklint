@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.groupon.sparklint.event
+package com.groupon.sparklint.events
 
 import scala.collection.mutable
 
@@ -42,9 +42,9 @@ class GenericEventSourceGroupManager(override val name: String, override val clo
 
   override def containsEventSources(uuid: String): Boolean = eventSourceMap.contains(uuid)
 
-  override def getEventSources(uuid: String): EventSource = eventSourceMap(uuid)
-
   override def getFreeScrollEventSource(uuid: String): FreeScrollEventSource = getEventSources(uuid).asInstanceOf[FreeScrollEventSource]
+
+  override def getEventSources(uuid: String): EventSource = eventSourceMap(uuid)
 
   override def eventSources: Seq[EventSource] = eventSourceMap.values.toList
 }

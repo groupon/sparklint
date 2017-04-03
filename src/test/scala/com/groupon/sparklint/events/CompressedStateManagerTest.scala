@@ -20,7 +20,6 @@ import java.io.File
 
 import com.groupon.sparklint.common.TestUtils._
 import com.groupon.sparklint.data.SparklintStageIdentifier
-import com.groupon.sparklint.event.{EventSource, FreeScrollEventSource}
 import org.apache.spark.scheduler.TaskLocality._
 import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
 
@@ -30,9 +29,9 @@ import org.scalatest.{BeforeAndAfterEach, FlatSpec, Matchers}
   */
 class CompressedStateManagerTest extends FlatSpec with Matchers with BeforeAndAfterEach {
 
-  var eventSource: FreeScrollEventSource        = _
-  var eventState : CompressedStateManager = _
-  var file       : File                   = _
+  var eventSource: FreeScrollEventSource = _
+  var eventState: CompressedStateManager = _
+  var file: File = _
 
   override protected def beforeEach(): Unit = {
     file = new File(resource("spark_event_log_example"))

@@ -216,20 +216,20 @@ class EventProgressTrackerTest extends FlatSpec with Matchers {
   }
 
 
-  private def testProgress(progress: EventProgress, count: Int,
-                           started: Int, complete: Int, active: String*): Unit = {
-    progress.count shouldEqual count
-    progress.started shouldEqual started
-    progress.complete shouldEqual complete
-    progress.active shouldEqual active.toSet
-  }
-
   private def testProgress(progress: EventProgress, count: Int): Unit = {
     testProgress(progress, count, 0, 0)
   }
 
   private def testProgress(progress: EventProgress, started: Int, complete: Int, active: String*): Unit = {
     testProgress(progress, 0, started, complete, active: _*)
+  }
+
+  private def testProgress(progress: EventProgress, count: Int,
+                           started: Int, complete: Int, active: String*): Unit = {
+    progress.count shouldEqual count
+    progress.started shouldEqual started
+    progress.complete shouldEqual complete
+    progress.active shouldEqual active.toSet
   }
 
   private def taskName(taskId: Int, host: String, attemptId: Int = 0) = {

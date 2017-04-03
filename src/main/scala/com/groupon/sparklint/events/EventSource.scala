@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package com.groupon.sparklint.event
+package com.groupon.sparklint.events
 
 import java.io.{File, FileInputStream}
 import java.util.UUID
 import java.util.zip.ZipInputStream
 
 import com.groupon.sparklint.data.SparklintStateLike
-import com.groupon.sparklint.events.EventProgressTracker
 import org.apache.commons.io.{FilenameUtils, IOUtils}
 import org.apache.spark.SparkConf
 import org.apache.spark.groupon.{SparkListenerLogStartShim, StringToSparkEvent}
@@ -37,7 +36,7 @@ import scala.collection.JavaConverters._
 trait EventSource {
   val uuid: UUID
 
-  val appMeta: SparkAppMeta
+  val appMeta: EventSourceMeta
   val progressTracker: EventProgressTracker
 
   def appState: SparklintStateLike
@@ -107,7 +106,7 @@ object EventSource {
       }
     } while (!StringToSparkEvent(lineBuffer).exists(_.isInstanceOf[SparkListenerApplicationStart]))
     val appStartEvent = StringToSparkEvent(lineBuffer).get.asInstanceOf[SparkListenerApplicationStart]
-    val appMeta = SparkAppMeta(appStartEvent.appId, appStartEvent.appAttemptId, appStartEvent.appName, Some(sparkVersion), appStartEvent.time)
+    val appMeta = EventSourceMeta(appStartEvent.appId, appStartEvent.appAttemptId, appStartEvent.appName, Some(sparkVersion), appStartEvent.time)
     val eventIterator = stringIterator.flatMap(StringToSparkEvent.apply)
     new IteratorEventSource(uuid, appMeta, eventIterator, compressStorage)
   }
