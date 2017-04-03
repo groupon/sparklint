@@ -28,10 +28,10 @@ import org.apache.spark.scheduler.SparkListenerEvent
   */
 class ListenerEventSource(appId: String, appName: String) extends SparkFirehoseListener with EventSource {
   override val progressTracker: EventProgressTracker = new EventProgressTracker()
-  override val appMeta: SparkAppMeta = SparkAppMeta(Some(appId), None, appName, None)
+  override val appMeta: SparkAppMeta = SparkAppMeta(Some(appId), None, appName, None, System.currentTimeMillis())
   private val buffer: BlockingQueue[SparkListenerEvent] = new LinkedBlockingDeque()
   private val stateManager = new CompressedStateManager()
-  private val receivers = Seq(progressTracker, stateManager)
+  private val receivers = Seq(appMeta, progressTracker, stateManager)
 
   override def appState: SparklintStateLike = stateManager.getState
 
@@ -41,7 +41,7 @@ class ListenerEventSource(appId: String, appName: String) extends SparkFirehoseL
 
   override def hasNext: Boolean = true
 
-  override def processNext(): Boolean = {
+  override def forward(): Boolean = {
     val event = buffer.take()
     receivers.foreach(r => {
       r.preprocess(event)

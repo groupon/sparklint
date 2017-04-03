@@ -17,6 +17,7 @@
 package com.groupon.sparklint.event
 
 import java.io.File
+import java.util.UUID
 import java.util.zip.ZipInputStream
 
 import com.groupon.sparklint.data.SparklintStateLike
@@ -35,6 +36,8 @@ import scala.io.Source
   * @since 1.0.5
   */
 trait EventSource {
+  val uuid: UUID = UUID.randomUUID()
+
   val appMeta: SparkAppMeta
 
   def appState: SparklintStateLike
@@ -43,13 +46,35 @@ trait EventSource {
 
   def hasNext: Boolean
 
-  def processNext(): Boolean
+  def forward(): Boolean
 }
 
-trait FreeScrollEventSource {
+trait FreeScrollEventSource extends EventSource {
   def hasPrevious: Boolean
 
-  def processPrevious(): Boolean
+  def rewind(): Boolean
+
+  //noinspection AccessorLikeMethodIsUnit
+  def toStart(): Unit
+
+  //noinspection AccessorLikeMethodIsUnit
+  def toEnd(): Unit
+
+  def forwardEvents(count: Int): Unit
+
+  def forwardJobs(count: Int): Unit
+
+  def forwardStages(count: Int): Unit
+
+  def forwardTasks(count: Int): Unit
+
+  def rewindEvents(count: Int): Unit
+
+  def rewindJobs(count: Int): Unit
+
+  def rewindStages(count: Int): Unit
+
+  def rewindTasks(count: Int): Unit
 }
 
 object EventSource {
@@ -91,7 +116,7 @@ object EventSource {
       }
     } while (!StringToSparkEvent(lineBuffer).exists(_.isInstanceOf[SparkListenerApplicationStart]))
     val appStartEvent = StringToSparkEvent(lineBuffer).get.asInstanceOf[SparkListenerApplicationStart]
-    val appMeta = SparkAppMeta(appStartEvent.appId, appStartEvent.appAttemptId, appStartEvent.appName, Some(sparkVersion))
+    val appMeta = SparkAppMeta(appStartEvent.appId, appStartEvent.appAttemptId, appStartEvent.appName, Some(sparkVersion), appStartEvent.time)
     val eventIterator = stringIterator.flatMap(StringToSparkEvent.apply)
     new IteratorEventSource(appMeta, eventIterator)
   }

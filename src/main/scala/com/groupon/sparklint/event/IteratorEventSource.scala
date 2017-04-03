@@ -26,17 +26,73 @@ import scala.collection.mutable
   * @author rxue
   * @since 1.0.5
   */
-class IteratorEventSource(val appMeta: SparkAppMeta, inputIterator: Iterator[SparkListenerEvent]) extends EventSource
-  with FreeScrollEventSource {
+class IteratorEventSource(val appMeta: SparkAppMeta, inputIterator: Iterator[SparkListenerEvent]) extends FreeScrollEventSource {
   override val progressTracker: EventProgressTracker = new EventProgressTracker()
   private val processedMessage = mutable.Stack[SparkListenerEvent]()
   private val unprocessedMessage = mutable.Stack[SparkListenerEvent]()
   private val stateManager = new LosslessStateManager()
-  private val receivers = Seq(progressTracker, stateManager)
+  private val receivers = Seq(appMeta, progressTracker, stateManager)
 
   override def appState: SparklintStateLike = stateManager.getState
 
-  def processNext(): Boolean = synchronized {
+  override def toStart(): Unit = {
+    while (hasPrevious) {
+      rewind()
+    }
+  }
+
+  def rewind(): Boolean = synchronized {
+    if (hasPrevious) {
+      val event = processedMessage.pop()
+      receivers.foreach(r => {
+        r.unEvent(event)
+      })
+      unprocessedMessage.push(event)
+      true
+    } else {
+      false
+    }
+  }
+
+  def hasPrevious: Boolean = {
+    processedMessage.nonEmpty
+  }
+
+  override def toEnd(): Unit = {
+    while (hasNext) {
+      forward()
+    }
+  }
+
+  override def forwardEvents(count: Int): Unit = {
+    val currentEvents = progressTracker.eventProgress.complete
+    while (progressTracker.eventProgress.complete - currentEvents < count && hasNext) {
+      forward()
+    }
+  }
+
+  override def forwardJobs(count: Int): Unit = {
+    val currentJobs = progressTracker.jobProgress.complete
+    while (progressTracker.jobProgress.complete - currentJobs < count && hasNext) {
+      forward()
+    }
+  }
+
+  override def forwardStages(count: Int): Unit = {
+    val currentStages = progressTracker.stageProgress.complete
+    while (progressTracker.stageProgress.complete - currentStages < count && hasNext) {
+      forward()
+    }
+  }
+
+  override def forwardTasks(count: Int): Unit = {
+    val currentTasks = progressTracker.taskProgress.complete
+    while (progressTracker.taskProgress.complete - currentTasks < count && hasNext) {
+      forward()
+    }
+  }
+
+  def forward(): Boolean = synchronized {
     if (hasNext) {
       val event = if (unprocessedMessage.nonEmpty) {
         unprocessedMessage.pop()
@@ -61,20 +117,31 @@ class IteratorEventSource(val appMeta: SparkAppMeta, inputIterator: Iterator[Spa
     unprocessedMessage.nonEmpty || inputIterator.hasNext
   }
 
-  def processPrevious(): Boolean = synchronized {
-    if (hasPrevious) {
-      val event = processedMessage.pop()
-      receivers.foreach(r => {
-        r.unEvent(event)
-      })
-      unprocessedMessage.push(event)
-      true
-    } else {
-      false
+  override def rewindEvents(count: Int): Unit = {
+    val currentEvents = progressTracker.eventProgress.complete
+    while (currentEvents - progressTracker.eventProgress.complete < count && hasNext) {
+      rewind()
     }
   }
 
-  def hasPrevious: Boolean = {
-    processedMessage.nonEmpty
+  override def rewindJobs(count: Int): Unit = {
+    val currentJobs = progressTracker.jobProgress.complete
+    while (currentJobs - progressTracker.jobProgress.complete < count && hasNext) {
+      rewind()
+    }
+  }
+
+  override def rewindStages(count: Int): Unit = {
+    val currentStages = progressTracker.stageProgress.complete
+    while (currentStages - progressTracker.stageProgress.complete < count && hasNext) {
+      rewind()
+    }
+  }
+
+  override def rewindTasks(count: Int): Unit = {
+    val currentTasks = progressTracker.taskProgress.complete
+    while (currentTasks - progressTracker.taskProgress.complete < count && hasNext) {
+      rewind()
+    }
   }
 }

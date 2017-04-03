@@ -16,11 +16,15 @@
 
 package com.groupon.sparklint.event
 
+import java.util.UUID
+
 /**
   * @author rxue
   * @since 1.0.5
   */
 trait EventSourceGroupManager {
+  val uuid: UUID = UUID.randomUUID()
+
   /**
     * @return The display name of this manager
     */
@@ -32,5 +36,11 @@ trait EventSourceGroupManager {
   def closeable: Boolean
 
   def eventSources: Seq[EventSource]
+
+  def getEventSources(uuid: String): EventSource
+
+  def getFreeScrollEventSource(uuid: String): FreeScrollEventSource
+
+  def containsEventSources(uuid: String): Boolean
 
 }

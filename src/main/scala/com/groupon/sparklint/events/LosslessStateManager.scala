@@ -177,7 +177,7 @@ class LosslessStateManager(metricsBuckets: Int = 1000) extends EventStateManager
   override def unEndApp(event: SparkListenerApplicationEnd): Unit = {
     state = state.copy(
       executorInfo = state.executorInfo.map(pair => {
-        val executorInfo = if (pair._2.endTime.exists(_ == event.time)) pair._2.copy(endTime = None) else pair._2
+        val executorInfo = if (pair._2.endTime.contains(event.time)) pair._2.copy(endTime = None) else pair._2
         pair._1 -> executorInfo
       }),
       applicationEndedAt = None,
