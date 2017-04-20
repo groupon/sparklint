@@ -64,7 +64,12 @@ You can feed Sparklint an event log file to playback activities.
     - Or connect to a history server on startup like `sbt "run --historyServer http://path/to/server -r"`
 - Then open browser and navigate to `http://localhost:23763`
 - Spark version doesn't matter in server mode
+
+##### Server mode (docker)
 - Docker support available at https://hub.docker.com/r/roboxue/sparklint/
+- pull docker image from docker hub or build locally with `sbt docker`
+- Execute the docker image: `docker run -p 23736:23763 roboxue/sparklint && open localhost:23763`
+
 
 ### Config
 * Common config
