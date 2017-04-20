@@ -43,12 +43,12 @@ Finally, find out your spark application's driver node address, open a browser a
   <dependency>
       <groupId>com.groupon.sparklint</groupId>
       <artifactId>sparklint-spark161_2.10</artifactId>
-      <version>1.0.4</version>
+      <version>1.0.5</version>
   </dependency>
   ```
   for build.sbt
   ```
-  libraryDependencies += "com.groupon.sparklint" %% "sparklint-spark161" % "1.0.4"
+  libraryDependencies += "com.groupon.sparklint" %% "sparklint-spark161" % "1.0.5"
   ```
 
 ##### Server mode (run on local machine)
