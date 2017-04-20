@@ -1,6 +1,9 @@
 import sbt.complete.DefaultParsers._
 import sbt.complete.Parser
-import sbt.{Command, Help, State}
+import sbt.{Command, Help, SettingKey, State}
+import sbtrelease.Git
+import sbtrelease.ReleasePlugin.autoImport.{ReleaseStep, releaseVcs}
+import sbtrelease.Utilities._
 
 object BuildUtils {
   private val SPARK_1_6_VERSIONS = Seq("1.6.0", "1.6.1", "1.6.2", "1.6.3")
@@ -55,4 +58,30 @@ object BuildUtils {
     case _                                   =>
       throw new UnsupportedOperationException(s"Spark version $versionString has not been supported yet")
   }
+
+  lazy val deployBranch: SettingKey[String] = SettingKey("deploy-branch", "Defines the name of the master branch to track the released versions")
+
+  def mergeReleaseVersion: (State) => State = { st: State =>
+    // Force using git
+    val git: Git = st.extract.get(releaseVcs).get.asInstanceOf[Git]
+    val mainBranch: String = st.extract.get(deployBranch)
+    val currentBranch = (git.cmd("rev-parse", "--abbrev-ref", "HEAD") !!).trim
+    st.log.info(s"Releasing from: [$currentBranch]. Check out [$mainBranch]")
+    git.cmd("checkout", mainBranch) ! st.log
+    st.log.success(s"Switched to $mainBranch")
+    st.log.info(s"Pulling $mainBranch")
+    git.cmd("pull") ! st.log
+    st.log.success(s"Pulled $mainBranch")
+    st.log.info(s"Merging $currentBranch to $mainBranch")
+    git.cmd("merge", currentBranch, "--no-edit") ! st.log
+    st.log.success(s"Merged $currentBranch to $mainBranch")
+    st.log.info(s"Push to upstream")
+    git.pushChanges ! st.log
+    st.log.success(s"Pushed $mainBranch to upstream")
+    st.log.info(s"Checkout $currentBranch")
+    git.cmd("checkout", currentBranch) ! st.log
+    st.log.success(s"Switched to $currentBranch")
+    st
+  }
+
 }

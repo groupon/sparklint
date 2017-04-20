@@ -1,5 +1,8 @@
+import BuildUtils._
 import de.heikoseeberger.sbtheader.license.Apache2_0
 import sbtdocker.ImageName
+import sbtrelease.Git
+import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
 
 // Meta
 name := "sparklint"
@@ -11,11 +14,11 @@ licenses := Seq("Apache License, Version 2.0" -> url("https://www.apache.org/lic
 
 // Compile
 enablePlugins(AutomateHeaderPlugin)
-name := s"sparklint-spark${BuildUtils.getProjectNameSuffix(sparkVersion.value)}"
+name := s"sparklint-spark${getProjectNameSuffix(sparkVersion.value)}"
 scalaVersion := "2.11.8"
 crossScalaVersions := Seq("2.10.6", "2.11.8")
-unmanagedSourceDirectories in Compile += (sourceDirectory in Compile).value / BuildUtils.getSparkMajorVersion(sparkVersion.value)
-unmanagedSourceDirectories in Test += (sourceDirectory in Test).value / BuildUtils.getSparkMajorVersion(sparkVersion.value)
+unmanagedSourceDirectories in Compile += (sourceDirectory in Compile).value / getSparkMajorVersion(sparkVersion.value)
+unmanagedSourceDirectories in Test += (sourceDirectory in Test).value / getSparkMajorVersion(sparkVersion.value)
 
 // Dependency
 // Spark
@@ -96,10 +99,27 @@ dockerfile in docker := {
   }
 }
 
+// Release customization
+deployBranch := "master"
+releaseProcess := Seq[ReleaseStep](
+  checkSnapshotDependencies,
+  inquireVersions,
+  runClean,
+  runTest,
+  setReleaseVersion,
+  commitReleaseVersion,
+  tagRelease,
+  releaseStepCommand("sparklintRelease"),
+  mergeReleaseVersion,
+  setNextVersion,
+  commitNextVersion,
+  pushChanges
+)
+
 // Package Multiple Spark Version
-commands += BuildUtils.foreachSparkVersion
+commands += foreachSparkVersion
 // One command to release everything
-commands += BuildUtils.sparklintReleaseCommand
+commands += sparklintReleaseCommand
 
 // To sync with Maven central
 pomExtra in Global := {
