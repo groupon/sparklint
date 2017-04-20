@@ -17,9 +17,6 @@
 package com.groupon.sparklint.data
 
 import org.apache.spark.executor.TaskMetrics
-import org.apache.spark.util.StatCounter
-
-import scala.collection.mutable
 
 /**
   * @author rxue

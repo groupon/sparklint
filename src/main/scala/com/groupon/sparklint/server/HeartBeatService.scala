@@ -27,7 +27,7 @@ import org.http4s.dsl._
   */
 trait HeartBeatService {
   this: RoutingMap =>
-  routingMap("/heartbeat") = heartBeatService
+  registerService("/heartbeat", heartBeatService)
 
   def heartBeatService = HttpService {
     case GET -> Root =>

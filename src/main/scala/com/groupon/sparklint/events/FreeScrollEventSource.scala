@@ -17,42 +17,31 @@
 package com.groupon.sparklint.events
 
 /**
-  * An extension of EventSourceLike that provides two way scrolling by various event types.
-  *
-  * @author swhitear
-  * @since 8/18/16.
+  * @author rxue
+  * @since 1.0.5
   */
-trait FreeScrollEventSource extends EventSourceLike {
+trait FreeScrollEventSource extends EventSource {
+  def rewind(): Boolean
 
-  @throws[IllegalArgumentException]
-  def forwardEvents(count: Int = 1): Unit
-
-  @throws[IllegalArgumentException]
-  def rewindEvents(count: Int = 1): Unit
-
-  @throws[IllegalArgumentException]
-  def forwardTasks(count: Int = 1): Unit
-
-  @throws[IllegalArgumentException]
-  def rewindTasks(count: Int = 1): Unit
-
-  @throws[IllegalArgumentException]
-  def forwardStages(count: Int = 1): Unit
-
-  @throws[IllegalArgumentException]
-  def rewindStages(count: Int = 1): Unit
-
-  @throws[IllegalArgumentException]
-  def forwardJobs(count: Int = 1): Unit
-
-  @throws[IllegalArgumentException]
-  def rewindJobs(count: Int = 1): Unit
-
-  def toEnd(): Unit
-
+  //noinspection AccessorLikeMethodIsUnit
   def toStart(): Unit
 
-  def hasNext: Boolean
+  //noinspection AccessorLikeMethodIsUnit
+  def toEnd(): Unit
 
-  def hasPrevious: Boolean
+  def forwardEvents(count: Int): Unit
+
+  def forwardJobs(count: Int): Unit
+
+  def forwardStages(count: Int): Unit
+
+  def forwardTasks(count: Int): Unit
+
+  def rewindEvents(count: Int): Unit
+
+  def rewindJobs(count: Int): Unit
+
+  def rewindStages(count: Int): Unit
+
+  def rewindTasks(count: Int): Unit
 }

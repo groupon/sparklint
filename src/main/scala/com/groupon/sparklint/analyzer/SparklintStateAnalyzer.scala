@@ -17,7 +17,7 @@
 package com.groupon.sparklint.analyzer
 
 import com.groupon.sparklint.data._
-import com.groupon.sparklint.events.{EventSourceMetaLike, EventStateManagerLike}
+import com.groupon.sparklint.events.EventSourceMeta
 import org.apache.spark.scheduler.TaskLocality
 import org.apache.spark.scheduler.TaskLocality._
 
@@ -29,12 +29,11 @@ import scala.util.Try
   *
   * @author rxue
   * @since 9/23/16.
-  * @param source       the source to analyze
-  * @param stateManager the state to analyze
+  * @param meta  the source to analyze
+  * @param state the state to analyze
   */
-class SparklintStateAnalyzer(val source: EventSourceMetaLike, val stateManager: EventStateManagerLike)
+class SparklintStateAnalyzer(val meta: EventSourceMeta, val state: SparklintStateLike)
   extends SparklintAnalyzerLike {
-  val state: SparklintStateLike = stateManager.getState
 
   override lazy val getCurrentCores: Option[Int] = getRunningTasks
 
@@ -55,7 +54,7 @@ class SparklintStateAnalyzer(val source: EventSourceMetaLike, val stateManager: 
   }
 
   override lazy val getTimeUntilFirstTask: Option[Long] = Try {
-    state.firstTaskAt.get - source.startTime
+    state.firstTaskAt.get - meta.startTime
   }.toOption
 
   override lazy val getCoreUtilizationPercentage: Option[Double] = {
@@ -86,14 +85,6 @@ class SparklintStateAnalyzer(val source: EventSourceMetaLike, val stateManager: 
   override lazy val getMaxCoreUsage: Option[Int] = getMaxConcurrentTasks
 
   override lazy val getLastUpdatedAt: Option[Long] = Some(state.lastUpdatedAt)
-
-  override def getLocalityStatsByStageIdentifier(stageIdentifier: SparklintStageIdentifier): Option[SparklintStageMetrics] = {
-    state.stageMetrics.get(stageIdentifier)
-  }
-
-  // TODO: Rdd reference feature is under development
-  override def getRDDReferencedMoreThan(times: Int): Option[Seq[SparklintRDDInfo]] = ???
-
   override lazy val getTimeSeriesCoreUsage: Option[Seq[CoreUsage]] = {
     if (state.firstTaskAt.isDefined) {
       val resolution = coreUsageWithRunningTasks.map(_._2.resolution).max
@@ -124,7 +115,6 @@ class SparklintStateAnalyzer(val source: EventSourceMetaLike, val stateManager: 
       None
     }
   }
-
   override lazy val getCumulativeCoreUsage: Option[Map[Int, Long]] = {
     if (state.coreUsage.exists(_._2.nonEmpty)) {
       Some(aggregatedCoreUsage.convertToUsageDistribution)
@@ -132,25 +122,9 @@ class SparklintStateAnalyzer(val source: EventSourceMetaLike, val stateManager: 
       None
     }
   }
-
-  /**
-    * Compress the time series of vcores allocated into an array with the length provided
-    *
-    * @param numBuckets divide the app's lifetime into roughly this number of buckets
-    * @return the metricsSink that stores the number of CPU millis allocated for each interval
-    */
-  private[analyzer] def getAllocatedCores(numBuckets: Int): MetricsSink = {
-    var sink = CompressedMetricsSink.empty(source.startTime, numBuckets)
-    state.executorInfo.values.foreach(executorInfo => {
-      sink = sink.addUsage(executorInfo.startTime, executorInfo.endTime.getOrElse(state.lastUpdatedAt), executorInfo.cores)
-    })
-    sink
-  }
-
   private lazy val aggregatedCoreUsage: MetricsSink = {
     MetricsSink.mergeSinks(coreUsageWithRunningTasks.values)
   }
-
   private lazy val coreUsageWithRunningTasks: Map[TaskLocality, MetricsSink] = {
     if (state.runningTasks.isEmpty) {
       state.coreUsage
@@ -162,5 +136,26 @@ class SparklintStateAnalyzer(val source: EventSourceMetaLike, val stateManager: 
       })
       toReturn
     }
+  }
+
+  override def getLocalityStatsByStageIdentifier(stageIdentifier: SparklintStageIdentifier): Option[SparklintStageMetrics] = {
+    state.stageMetrics.get(stageIdentifier)
+  }
+
+  // TODO: Rdd reference feature is under development
+  override def getRDDReferencedMoreThan(times: Int): Option[Seq[SparklintRDDInfo]] = ???
+
+  /**
+    * Compress the time series of vcores allocated into an array with the length provided
+    *
+    * @param numBuckets divide the app's lifetime into roughly this number of buckets
+    * @return the metricsSink that stores the number of CPU millis allocated for each interval
+    */
+  private[analyzer] def getAllocatedCores(numBuckets: Int): MetricsSink = {
+    var sink = CompressedMetricsSink.empty(meta.startTime, numBuckets)
+    state.executorInfo.values.foreach(executorInfo => {
+      sink = sink.addUsage(executorInfo.startTime, executorInfo.endTime.getOrElse(state.lastUpdatedAt), executorInfo.cores)
+    })
+    sink
   }
 }

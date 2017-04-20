@@ -14,17 +14,33 @@
  * limitations under the License.
  */
 
-package com.groupon.sparklint.common
+package com.groupon.sparklint.events
 
-import org.apache.spark.scheduler.TaskLocality._
+import java.util.UUID
 
 /**
   * @author rxue
-  * @since 8/31/16.
+  * @since 1.0.5
   */
-object Utils {
-  val LOCALITIES: Seq[TaskLocality] = Seq(PROCESS_LOCAL, NODE_LOCAL, NO_PREF, RACK_LOCAL, ANY)
-  val UNKNOWN_STRING: String = "<unknown>"
-  val UNKNOWN_NUMBER: Long = 0
-  val STANDARD_APP_PREFIX: String = "application_"
+trait EventSourceGroupManager {
+  val uuid: UUID = UUID.randomUUID()
+
+  /**
+    * @return The display name of this manager
+    */
+  def name: String
+
+  /**
+    * @return if this manager can be closed by user
+    */
+  def closeable: Boolean
+
+  def eventSources: Seq[EventSource]
+
+  def getEventSources(uuid: String): EventSource
+
+  def getFreeScrollEventSource(uuid: String): FreeScrollEventSource
+
+  def containsEventSources(uuid: String): Boolean
+
 }

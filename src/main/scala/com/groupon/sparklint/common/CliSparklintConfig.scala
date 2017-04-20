@@ -30,38 +30,31 @@ case class CliSparklintConfig(exitOnError: Boolean = true) extends SparklintConf
   with OptParse with Logging {
   // For testing we want OptParse to throw exceptions instead of calling System.exit
   override val optParseExitOnError: Boolean = exitOnError
-
-
-  override def port: Int = portConfig.getOrElse(defaultPort)
-
   val portConfig = IntOpt(
     long = "port",
     desc = "Set the port for sparklint UI to launch"
   )
-
   val fileSource = FileOpt(
     long = "file", short = 'f',
     desc = "Filename of an Spark event log source to use."
   )
-
   val directorySource = FileOpt(
     long = "directory", short = 'd',
     desc = "Directory of an Spark event log sources to use. Read in filename sort order.",
     validate = (input: File) => input.isDirectory
   )
-
   val runImmediately = BoolOpt(
     long = "runImmediately", short = 'r',
     desc = "Set the flag in order to run each buffer through to their end state on startup."
   )
-
-  val historySource = StrOpt(desc = "Url of the Spark History Server to use.")
-
+  val historySource = StrOpt(long = "historyServer", desc = "Url of the Spark History Server to use.")
   val pollRate = IntOpt(
     long = "pollRate", short = 'p',
     desc = "The interval (in seconds) between polling for changes in directory and history event sources.",
     validate = (value) => value > 0
   )
+
+  override def port: Int = portConfig.getOrElse(defaultPort)
 
   /**
     *

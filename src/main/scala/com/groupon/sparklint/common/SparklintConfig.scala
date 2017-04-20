@@ -21,7 +21,8 @@ package com.groupon.sparklint.common
   * @since 12/7/16.
   */
 trait SparklintConfig {
-  def port: Int
   val defaultPort = 23763
+
+  def port: Int
 
 }

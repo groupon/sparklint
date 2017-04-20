@@ -11,8 +11,8 @@
  limitations under the License.
  */
 
-function loadApp(appId) {
-    var url = "/" + appId + "/state";
+function loadApp(esmId, appId) {
+    var url = "/backend/esm/" + esmId + "/" + appId + "/state";
     handleJSON(url, function (responseJson) {
         console.log(responseJson);
         displayAppState(appId, responseJson);
@@ -29,7 +29,44 @@ function appSelectorClicked(ev) {
     sideMenu.find(".sparklintApp .progress-bar").removeClass("progress-bar-info progress-bar-success progress-bar-striped active");
 
     var appId = $(ev.currentTarget).data("value");
-    loadApp(appId);
+    var esmId = $(ev.currentTarget).parents(".eventSourceManager").data("esmUuid");
+    loadApp(esmId, appId);
+}
+
+function inactiveAppClicked(ev) {
+    ev.preventDefault();
+    var appId = $(ev.currentTarget).data("value");
+    var esmId = $(ev.currentTarget).parents(".eventSourceManager").data("esmUuid");
+    var url = "/backend/esm/" + esmId + "/" + appId + "/" + "activate";
+    $.ajax({
+        url: url,
+        method: 'POST',
+        error: function (exMsg) {
+            console.log(exMsg);
+            displayErrorMessage(exMsg.responseText);
+        }
+    }).done(function () {
+        refreshEventSourceManagerList(function () {
+            loadApp(esmId, appId);
+        });
+    }).fail(function () {
+        refreshEventSourceManagerList();
+    });
+    // Refresh the list when ready
+}
+
+function refreshEventSourceManagerList(onFinish) {
+    console.log("refreshEventSourceManagerList");
+    var url = "/eventSourceManagerList";
+    handleHTML(url, function (responseHtml) {
+        var sideMenu = $("#side-menu");
+        sideMenu.metisMenu('dispose');
+        sideMenu.children(".eventSourceManager").remove();
+        sideMenu.append(responseHtml);
+        sideMenu.metisMenu();
+        sideMenu.find(".inactiveApp").click(inactiveAppClicked);
+        sideMenu.find(".sparklintApp").click(appSelectorClicked);
+    }).always(onFinish);
 }
 
 function displayAppState(appId, appState) {
@@ -252,34 +289,91 @@ function eventsForward() {
 }
 
 function moveEvents(direction) {
-    var appId = $("#side-menu").find("li.selected").data("value");
-    if (!appId) return;
+    var currentTarget = $("#side-menu").find("li.selected");
+    var appId = currentTarget.data("value");
+    var esmId = currentTarget.parents(".eventSourceManager").data("esmUuid");
+    if (!appId || !esmId) return;
 
     var count = $("#countSelector").val();
     var type = $("#typeSelector").val();
-    var url = "/" + appId + "/" + direction + "/" + count + "/" + type;
+    var url = "/backend/esm/" + esmId + "/" + appId + "/" + direction + "/" + count + "/" + type;
     handleJSON(url, function (progJson) {
         console.log("moved " + appId + " " + direction + " by " + count + " " + type + "(s): " + JSON.stringify(progJson));
-        loadApp(appId);
+        loadApp(esmId, appId);
     })
 }
 
 function moveEventsToEnd(end) {
-    var appId = $("#side-menu").find("li.selected").data("value");
-    if (!appId) return;
+    var currentTarget = $("#side-menu").find("li.selected");
+    var appId = currentTarget.data("value");
+    var esmId = currentTarget.parents(".eventSourceManager").data("esmUuid");
+    if (!appId || !esmId) return;
 
-    var url = "/" + appId + "/to_" + end;
+    var url = "/backend/esm/" + esmId + "/" + appId + "/to_" + end;
     handleJSON(url, function (progJson) {
         console.log("moved " + appId + " to " + end + ": " + JSON.stringify(progJson));
-        loadApp(appId);
+        loadApp(esmId, appId);
+    });
+}
+
+function addSingleFile() {
+    var fileName = window.prompt("Provide the uri of the file", "/path/to/file");
+    if (fileName !== null) {
+        addEventSourceManager("/backend/esm/singleFile", fileName.trim());
+    }
+    return false;
+}
+
+function addDirectory() {
+    var folderName = window.prompt("Provide the uri of the folder", "/path/to/folder");
+    if (folderName !== null) {
+        addEventSourceManager("/backend/esm/folder", folderName.trim());
+    }
+    return false;
+}
+
+function addHistoryServer() {
+    var historyServerUri = window.prompt("Provide the uri of the history server", "http://url/to/server");
+    if (historyServerUri !== null) {
+        addEventSourceManager("/backend/esm/historyServer", historyServerUri);
+    }
+    return false;
+}
+
+function addEventSourceManager(url, data) {
+    $.ajax({
+        url: url,
+        dataType: 'json',
+        method: 'POST',
+        data: data
+    }).done(function (data) {
+        hideErrorMessage();
+        console.info(data);
+    }).fail(function (xhr) {
+        console.error(xhr);
+        displayErrorMessage(xhr.responseText);
+    }).always(function () {
+        refreshEventSourceManagerList();
     });
 }
 
 function handleJSON(url, successFn) {
     hideErrorMessage();
-    $.ajax({
+    return $.ajax({
         url: url,
         dataType: 'json',
+        success: successFn,
+        error: function (exMsg) {
+            console.log(exMsg);
+            displayErrorMessage(exMsg.responseText);
+        }
+    });
+}
+
+function handleHTML(url, successFn) {
+    return $.ajax({
+        url: url,
+        dataType: 'html',
         success: successFn,
         error: function (exMsg) {
             console.log(exMsg);
@@ -300,13 +394,18 @@ $(function () {
     });
 
     console.log("------Sparklint control binding------");
-    $("#side-menu").find(".sparklintApp").click(appSelectorClicked);
     $("#eventsToStart").click(eventsToStart);
     $("#eventsToEnd").click(eventsToEnd);
     $("#eventsBackward").click(eventsBackward);
     $("#eventsForward").click(eventsForward);
+    $("#addSingleFile").click(addSingleFile);
+    $("#addDirectory").click(addDirectory);
+    $("#addHistoryServer").click(addHistoryServer);
 
     console.log("------Setting start state--------");
     $(".loading-spinner").hide();
     hideErrorMessage();
+
+    console.log("------Loading EventSourceManagers------");
+    refreshEventSourceManagerList();
 });

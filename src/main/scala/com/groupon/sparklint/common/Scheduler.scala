@@ -34,9 +34,9 @@ class Scheduler extends SchedulerLike with Logging {
     logInfo(s"Scheduled task $task")
   }
 
-  def cancelAll(): Unit = timer.cancel()
-
   private def timerVal(taskVal: Int) = taskVal * 1000
+
+  def cancelAll(): Unit = timer.cancel()
 }
 
 

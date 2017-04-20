@@ -23,18 +23,18 @@
 }
 
 .loading-spinner {
-    display : block;
-    position : fixed;
+    display: block;
+    position: fixed;
     z-index: 999;
-    background-image : url('/static/images/ajax-loader.gif');
-    background-color:#ffffff;
-    background-repeat : no-repeat;
-    background-position : center;
+    background-image: url('/static/images/ajax-loader.gif');
+    background-color: #ffffff;
+    background-repeat: no-repeat;
+    background-position: center;
     opacity: 0.9;
-    left : 250px;
-    bottom : 0;
-    right : 0;
-    top : 0;
+    left: 250px;
+    bottom: 0;
+    right: 0;
+    top: 0;
 }
 
 @media (min-width: 2400px) {

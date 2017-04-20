@@ -27,17 +27,17 @@ import scala.io.Source
   */
 object ResourceHelper {
   @throws[URISyntaxException]
+  def getResourceSource(loader: ClassLoader, localPath: String): Source = {
+    val filePath = convertResourcePathToFilePath(loader, localPath)
+    Source.fromFile(filePath)
+  }
+
+  @throws[URISyntaxException]
   def convertResourcePathToFilePath(loader: ClassLoader, localPath: String): String = {
     val localUri = loader.getResource(localPath)
     if (localUri == null) {
       throw new URISyntaxException(localPath, "Path does not exist")
     }
     new File(localUri.toURI).getPath
-  }
-
-  @throws[URISyntaxException]
-  def getResourceSource(loader: ClassLoader, localPath: String): Source = {
-    val filePath = convertResourcePathToFilePath(loader, localPath)
-    Source.fromFile(filePath)
   }
 }

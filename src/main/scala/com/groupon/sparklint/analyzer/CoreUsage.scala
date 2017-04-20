@@ -21,14 +21,13 @@ package com.groupon.sparklint.analyzer
   *
   * @author rxue
   * @since 9/23/16.
-  *
-  * @param time the starting time of the interval
-  * @param allocated number of CPU millis allocated during this interval
-  * @param any number of CPU millis used towards ANY locality spark tasks during this interval
+  * @param time         the starting time of the interval
+  * @param allocated    number of CPU millis allocated during this interval
+  * @param any          number of CPU millis used towards ANY locality spark tasks during this interval
   * @param processLocal number of CPU millis used towards PROCESS_LOCAL locality spark tasks during this interval
-  * @param nodeLocal number of CPU millis used towards NODE_LOCAL locality spark tasks during this interval
-  * @param rackLocal number of CPU millis used towards RACK_LOCAL locality spark tasks during this interval
-  * @param noPref number of CPU millis used towards NO_PREF locality spark tasks during this interval
+  * @param nodeLocal    number of CPU millis used towards NODE_LOCAL locality spark tasks during this interval
+  * @param rackLocal    number of CPU millis used towards RACK_LOCAL locality spark tasks during this interval
+  * @param noPref       number of CPU millis used towards NO_PREF locality spark tasks during this interval
   */
 case class CoreUsage(time: Long, allocated: Option[Double], any: Option[Double], processLocal: Option[Double],
                      nodeLocal: Option[Double], rackLocal: Option[Double], noPref: Option[Double]) {

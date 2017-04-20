@@ -31,12 +31,14 @@ import scala.util.Try
   */
 object StringToSparkEvent {
 
-  def apply(line: String): Option[SparkListenerEvent] = Try(shimIfNeeded(JsonProtocol.sparkEventFromJson(parse(line)))).toOption
-
-  def as[T <: SparkListenerEvent](line: String): T = JsonProtocol.sparkEventFromJson(parse(line)).asInstanceOf[T]
+  def apply(line: String): Option[SparkListenerEvent] = Try {
+    shimIfNeeded(JsonProtocol.sparkEventFromJson(parse(line)))
+  }.toOption
 
   private def shimIfNeeded(event: SparkListenerEvent) = event match {
     case event: SparkListenerLogStart => new SparkListenerLogStartShim(event)
     case default => default
   }
+
+  def as[T <: SparkListenerEvent](line: String): T = JsonProtocol.sparkEventFromJson(parse(line)).asInstanceOf[T]
 }

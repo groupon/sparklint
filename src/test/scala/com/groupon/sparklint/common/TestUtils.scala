@@ -33,25 +33,21 @@ import scala.collection.Map
   */
 object TestUtils {
 
-  val TEST_TIME_LONG   = 42l
-  val TEST_NAME        = "test-name"
-  val TEST_APP_ID      = "test-app-id"
+  val TEST_TIME_LONG = 42l
+  val TEST_NAME = "test-name"
+  val TEST_APP_ID = "test-app-id"
   val TEST_EXECUTOR_ID = "test-executor"
-  val TEST_HOST        = "test-host"
-  val TEST_TASK_TYPE   = "test-task-type"
-  val TEST_USER        = "test-user"
-  val TEST_DETAILS     = "test-details"
+  val TEST_HOST = "test-host"
+  val TEST_TASK_TYPE = "test-task-type"
+  val TEST_USER = "test-user"
+  val TEST_DETAILS = "test-details"
 
   def resource(name: String): String = {
     ResourceHelper.convertResourcePathToFilePath(getClass.getClassLoader, name)
   }
 
-  def replay(eventSource: FreeScrollEventSource, count: Long = Long.MaxValue) = {
-    var counter = 0
-    while (counter < count && eventSource.hasNext) {
-      eventSource.forwardEvents()
-      counter += 1
-    }
+  def replay(eventSource: FreeScrollEventSource, count: Int = Int.MaxValue): Unit = {
+    eventSource.forwardEvents(count)
   }
 
   def sparkStageSubmittedEvent(id: Int, name: String): SparkListenerEvent = {
@@ -112,15 +108,6 @@ object TestUtils {
     SparkListenerStageCompleted(stageInfo)
   }
 
-  def sparkStageSubmittedFromId(stageId: Int): SparkListenerStageSubmitted = {
-    sparkStageSubmitted(sparkStageInfo(stageId = stageId))
-  }
-
-  def sparkStageSubmitted(stageInfo: StageInfo = sparkStageInfo(),
-                          properties: Properties = new Properties()): SparkListenerStageSubmitted = {
-    SparkListenerStageSubmitted(stageInfo)
-  }
-
   def sparkStageInfo(stageId: Int = 0,
                      attempt: Int = 0,
                      name: String = TEST_NAME,
@@ -129,6 +116,15 @@ object TestUtils {
                      parentIds: Seq[Int] = Seq.empty,
                      details: String = TEST_DETAILS): StageInfo = {
     new StageInfo(stageId, attempt, name, numTasks, rddInfo, parentIds, details)
+  }
+
+  def sparkStageSubmittedFromId(stageId: Int): SparkListenerStageSubmitted = {
+    sparkStageSubmitted(sparkStageInfo(stageId = stageId))
+  }
+
+  def sparkStageSubmitted(stageInfo: StageInfo = sparkStageInfo(),
+                          properties: Properties = new Properties()): SparkListenerStageSubmitted = {
+    SparkListenerStageSubmitted(stageInfo)
   }
 
   def sparkJobStartFromId(jobId: Int): SparkListenerJobStart = {

@@ -30,9 +30,18 @@ class AdhocServerTest extends FlatSpec with BeforeAndAfterAll with Matchers {
 
   var client: Client = _
 
-  override protected def beforeAll(): Unit = {
-    super.beforeAll()
-    client = PooledHttp1Client()
+  def getService = new AdhocServer with HeartBeatService {
+
+    override def DEFAULT_PORT: Int = 40000
+
+    val secret = 4242
+
+    registerService("", HttpService {
+      case GET -> Root =>
+        Ok(secret.toString)
+      case GET -> Root / "secret" / yourSecret =>
+        Ok((secret + yourSecret.toInt).toString)
+    })
   }
 
   it should "run" in {
@@ -94,17 +103,8 @@ class AdhocServerTest extends FlatSpec with BeforeAndAfterAll with Matchers {
     }
   }
 
-  def getService = new AdhocServer with HeartBeatService {
-
-    override def DEFAULT_PORT: Int = 40000
-
-    val secret = 4242
-
-    routingMap("") = HttpService {
-      case GET -> Root                         =>
-        Ok(secret.toString)
-      case GET -> Root / "secret" / yourSecret =>
-        Ok((secret + yourSecret.toInt).toString)
-    }
+  override protected def beforeAll(): Unit = {
+    super.beforeAll()
+    client = PooledHttp1Client()
   }
 }

@@ -20,6 +20,7 @@ import org.apache.spark.scheduler.SparkListenerLogStart
 
 /**
   * A shim to allow handling of private[spark] LogStart event in the rest of Sparklint.
+  *
   * @author swhitear
   * @since 9/30/16.
   */

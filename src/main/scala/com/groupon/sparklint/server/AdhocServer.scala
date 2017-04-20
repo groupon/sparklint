@@ -40,9 +40,10 @@ import scalaz.concurrent.Task
   * @since 4/25/16.
   */
 trait AdhocServer extends RoutingMap with Logging {
-  def DEFAULT_PORT: Int
   // Random number without special meaning
   var server: Option[Server] = None
+
+  def DEFAULT_PORT: Int
 
   /** start the server with the routingMap and port
     *
@@ -54,16 +55,23 @@ trait AdhocServer extends RoutingMap with Logging {
     var portToAttempt = port.getOrElse(DEFAULT_PORT)
     while (server.isEmpty) {
       bindServer(portToAttempt) match {
-        case Success(someServer)        =>
+        case Success(someServer) =>
           server = Some(someServer)
         case Failure(ex: BindException) =>
           val nextPort = portToAttempt + 1
           logDebug(s"Port $portToAttempt has been used, trying $nextPort")
           portToAttempt = nextPort
-        case Failure(ex: Throwable)     =>
+        case Failure(ex: Throwable) =>
           throw ex
       }
     }
+  }
+
+  def bindServer(port: Int): Try[Server] = Try {
+    logDebug(s"Starting server on port $port")
+    val mountedServer = BlazeBuilder.mountService(router).bindHttp(port, "0.0.0.0").run
+    logInfo(s"Server started on $port")
+    mountedServer
   }
 
   def stopServer(): Unit = {
@@ -78,13 +86,6 @@ trait AdhocServer extends RoutingMap with Logging {
   def getServerAddress = server.map(someServer =>
     s"${InetAddress.getLocalHost.getCanonicalHostName}:${someServer.address.getPort}"
   )
-
-  def bindServer(port: Int): Try[Server] = Try {
-    logDebug(s"Starting server on port $port")
-    val mountedServer = BlazeBuilder.mountService(router).bindHttp(port, "0.0.0.0").run
-    logInfo(s"Server started on $port")
-    mountedServer
-  }
 
   def jsonResponse(textResponse: Task[Response]): Task[Response] = {
     textResponse.withContentType(Some(`Content-Type`(`application/json`)))

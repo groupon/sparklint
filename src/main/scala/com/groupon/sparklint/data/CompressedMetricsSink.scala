@@ -39,6 +39,9 @@ class CompressedMetricsSink(override val resolution: Long,
                             override private[sparklint] val storage: Array[Long]) extends MetricsSink {
   require(CompressedMetricsSink.validateResolution(resolution))
 
+  override def addUsage(startTime: Long, endTime: Long, weight: Int = 1): CompressedMetricsSink =
+    batchAddUsage(Seq(startTime -> endTime), weight)
+
   /*
   R => Resolution, suppose R > 10
   origin time = 20R + 5
@@ -80,18 +83,6 @@ class CompressedMetricsSink(override val resolution: Long,
     new CompressedMetricsSink(newResolution, newDataRange, origin, newStorage.toArray)
   }
 
-  override def addUsage(startTime: Long, endTime: Long, weight: Int = 1): CompressedMetricsSink =
-    batchAddUsage(Seq(startTime -> endTime), weight)
-
-  override def removeUsage(startTime: Long, endTime: Long, weight: Int = 1): CompressedMetricsSink =
-    batchAddUsage(Seq(startTime -> endTime), -weight)
-
-  def changeResolution(toResolution: Long): CompressedMetricsSink = {
-    require(toResolution >= resolution)
-    val compactRatio = toResolution / resolution
-    new CompressedMetricsSink(toResolution, dataRange, origin, compactStorage(compactRatio).toArray)
-  }
-
   private[data] def getBucketIndexWithNewResolution(time: Long, resolutionToUse: Long): Int = {
     ((time - bucketStart) / resolutionToUse).toInt
   }
@@ -107,6 +98,15 @@ class CompressedMetricsSink(override val resolution: Long,
     }
     compactRatio
   }
+
+  override def removeUsage(startTime: Long, endTime: Long, weight: Int = 1): CompressedMetricsSink =
+    batchAddUsage(Seq(startTime -> endTime), -weight)
+
+  def changeResolution(toResolution: Long): CompressedMetricsSink = {
+    require(toResolution >= resolution)
+    val compactRatio = toResolution / resolution
+    new CompressedMetricsSink(toResolution, dataRange, origin, compactStorage(compactRatio).toArray)
+  }
 }
 
 object CompressedMetricsSink {
@@ -117,19 +117,19 @@ object CompressedMetricsSink {
   }
 
   def getCompactRatio(resolution: Long): Long = resolution match {
-    case 1      => 5 // 1ms -> 5ms
-    case 5      => 4 // 5ms -> 20ms
-    case 20     => 5 // 20ms -> 100ms
-    case 100    => 5 // 100ms -> 0.5s
-    case 500    => 2 // 0.5s -> 1s
-    case 1000   => 5 // 1s -> 5s
-    case 5000   => 2 // 5s -> 10s
-    case 10000  => 3 // 10s -> 30s
-    case 30000  => 2 // 30s -> 1min
-    case 60000  => 5 // 1min -> 5min
+    case 1 => 5 // 1ms -> 5ms
+    case 5 => 4 // 5ms -> 20ms
+    case 20 => 5 // 20ms -> 100ms
+    case 100 => 5 // 100ms -> 0.5s
+    case 500 => 2 // 0.5s -> 1s
+    case 1000 => 5 // 1s -> 5s
+    case 5000 => 2 // 5s -> 10s
+    case 10000 => 3 // 10s -> 30s
+    case 30000 => 2 // 30s -> 1min
+    case 60000 => 5 // 1min -> 5min
     case 300000 => 2 // 5min -> 10min
     case 600000 => 3 // 10min -> 30min
-    case x      => 2 // always double beyond 30min
+    case x => 2 // always double beyond 30min
   }
 
   def empty(originTime: Long, size: Int): CompressedMetricsSink = {

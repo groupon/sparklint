@@ -28,20 +28,20 @@ import org.slf4j.{Logger, LoggerFactory}
 trait Logging {
   @transient private var _logger: Logger = null
 
-  protected def log: Logger = {
-    if (_logger == null) {
-      val logName = this.getClass.getName.stripSuffix("$")
-      _logger = LoggerFactory.getLogger(logName)
-    }
-    _logger
-  }
-
   def logError(message: String): Unit = {
     log.error(message)
   }
 
   def logError(message: String, ex: Throwable): Unit = {
     log.error(message, ex)
+  }
+
+  protected def log: Logger = {
+    if (_logger == null) {
+      val logName = this.getClass.getName.stripSuffix("$")
+      _logger = LoggerFactory.getLogger(logName)
+    }
+    _logger
   }
 
   def logWarn(message: String): Unit = {

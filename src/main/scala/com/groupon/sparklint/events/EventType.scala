@@ -26,17 +26,17 @@ abstract class EventType(description: String)
 
 object EventType {
   val EVENTS = "Events"
-  val TASKS  = "Tasks"
+  val TASKS = "Tasks"
   val STAGES = "Stages"
-  val JOBS   = "Jobs"
+  val JOBS = "Jobs"
 
   val ALL_TYPES = Seq(EVENTS, TASKS, STAGES, JOBS)
 
   def fromString(eventType: String): EventType = eventType match {
     case EVENTS => Events
-    case TASKS  => Tasks
+    case TASKS => Tasks
     case STAGES => Stages
-    case JOBS   => Jobs
+    case JOBS => Jobs
   }
 }
 

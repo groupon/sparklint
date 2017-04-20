@@ -14,12 +14,25 @@
  * limitations under the License.
  */
 
-package com.groupon.sparklint.events
+package com.groupon.sparklint
+
+import com.groupon.sparklint.common.SparklintConfig
+import com.groupon.sparklint.server.{AdhocServer, HeartBeatService, StaticFileService}
 
 /**
-  * @author swhitear
-  * @since 8/18/16.
+  * The class that contains the backend and ui
+  *
+  * @author rxue
+  * @since 1.0.5
   */
-case class SourceAndDetail(source: EventSourceLike, detail: EventSourceDetail) {
-  val id = source.eventSourceId
+class Sparklint(config: SparklintConfig) extends AdhocServer
+  with StaticFileService
+  with HeartBeatService {
+  val backend = new SparklintBackend()
+  val frontend = new SparklintFrontend(backend)
+  registerService("", frontend.uiService)
+  registerService("/backend", backend.backendService)
+
+  override def DEFAULT_PORT: Int = config.defaultPort
+
 }

@@ -24,6 +24,10 @@ import org.apache.spark.scheduler.TaskLocality.TaskLocality
   */
 trait SparklintStateLike {
 
+  lazy val aggregatedCoreUsage: MetricsSink = {
+    MetricsSink.mergeSinks(coreUsage.values)
+  }
+
   def executorInfo: Map[String, SparklintExecutorInfo]
 
   def stageMetrics: Map[SparklintStageIdentifier, SparklintStageMetrics]
@@ -39,8 +43,4 @@ trait SparklintStateLike {
   def applicationEndedAt: Option[Long]
 
   def coreUsage: Map[TaskLocality, MetricsSink]
-
-  lazy val aggregatedCoreUsage: MetricsSink = {
-    MetricsSink.mergeSinks(coreUsage.values)
-  }
 }

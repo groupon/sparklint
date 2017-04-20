@@ -17,17 +17,11 @@
 package com.groupon.sparklint.events
 
 /**
-  * The EventSourceLike provides a set of Spark events from a specific source.
-  *
-  * @author swhitear
-  * @since 8/18/16.
+  * @author rxue
+  * @since 1.0.5
   */
-trait EventSourceLike {
-
-  val eventSourceId: String
-
-  def forwardIfPossible(): Unit = this match {
-    case scrollable: FreeScrollEventSource => scrollable.toEnd()
-    case _                                 =>
+case class UnrecognizedLogFileException(filename: String, reason: Option[String] = None) extends Throwable {
+  override def getMessage: String = {
+    s"$filename can not be recognized as a spark log file.${reason.map(r => s" Reason: $r.").getOrElse("")}"
   }
 }

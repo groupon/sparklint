@@ -30,13 +30,17 @@ import scala.collection.mutable
   */
 trait RoutingMap {
   this: Logging =>
-  lazy val routingMap = mutable.Map.empty[String, HttpService]
+  private lazy val routingMap = mutable.Map.empty[String, HttpService]
+
+  def registerService(prefix: String, service: HttpService): Unit = {
+    routingMap(prefix) = service
+  }
 
   def router: HttpService = {
     val service = Router(routingMap.toSeq: _*)
     HttpService {
       case req =>
-        logInfo(s"${req.method.name} ${req.uri.toString()}")
+        logDebug(s"${req.method.name} ${req.uri.toString()}")
         service.run(req)
     }
   }
