@@ -85,6 +85,9 @@ class SparklintStateAnalyzer(val meta: EventSourceMeta, val state: SparklintStat
   override lazy val getMaxCoreUsage: Option[Int] = getMaxConcurrentTasks
 
   override lazy val getLastUpdatedAt: Option[Long] = Some(state.lastUpdatedAt)
+
+  override lazy val getFairSchedulerPools: Seq[String] = state.coreUsageByPool.keys.map(_.name).toSeq
+
   override lazy val getTimeSeriesCoreUsage: Option[Seq[CoreUsage]] = {
     if (state.firstTaskAt.isDefined) {
       val resolution = coreUsageByLocalityWithRunningTasks.map(_._2.resolution).max

@@ -150,7 +150,10 @@ class SparklintHomepage extends UITemplate {
         </div>
       </div>{summaryRow}<div class="row">
       <div class="col-lg-12">
-        {coreUsageTimeSeries}{coreUsageDistribution}{taskDistributionList}
+        {coreUsageTimeSeriesByLocality}
+        {coreUsageTimeSeriesByPool}
+        {coreUsageDistribution}
+        {taskDistributionList}
       </div>
     </div>
     </div>
@@ -220,7 +223,7 @@ class SparklintHomepage extends UITemplate {
               </div>
             </div>
           </div>
-          <a href="#chartCoreUsageTimeSeries">
+          <a href="#chartCoreUsageByLocality">
             <div class="panel-footer">
               <span class="pull-left">View Core Usage Time Series</span>
               <span class="pull-right">
@@ -270,15 +273,28 @@ class SparklintHomepage extends UITemplate {
       <!-- /.panel-body -->
     </div>
 
-  def coreUsageTimeSeries: Seq[Node] =
-    <div class="panel panel-default" id="chartCoreUsageTimeSeries">
+  def coreUsageTimeSeriesByLocality: Seq[Node] =
+    <div class="panel panel-default" id="chartCoreUsageByLocality">
       <div class="panel-heading">
         <i class="fa fa-line-chart fa-fw"></i>
-        Core Usage Time Series
+        Core Usage By Locality
       </div>
       <!-- /.panel-heading -->
       <div class="panel-body">
         <div id="core-usage-line"></div>
+      </div>
+      <!-- /.panel-body -->
+    </div>
+
+  def coreUsageTimeSeriesByPool: Seq[Node] =
+    <div class="panel panel-default" id="chartCoreUsageByPool" style="display: none">
+      <div class="panel-heading">
+        <i class="fa fa-line-chart fa-fw"></i>
+        Core Usage By Fair Scheduler Pool
+      </div>
+      <!-- /.panel-heading -->
+      <div class="panel-body">
+        <div id="pool-usage-line"></div>
       </div>
       <!-- /.panel-body -->
     </div>

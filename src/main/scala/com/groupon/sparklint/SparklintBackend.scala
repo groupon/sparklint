@@ -253,6 +253,7 @@ object SparklintBackend {
           tuple.jObjectByLocality ~
           tuple.jObjectByPool
       }))) ~
+      ("pools" -> report.getFairSchedulerPools) ~
       ("cumulativeCoreUsage" -> report.getCumulativeCoreUsage.map(_.toSeq.sortBy(_._1).map { case (core, duration) =>
         ("cores" -> core) ~
           ("duration" -> duration)

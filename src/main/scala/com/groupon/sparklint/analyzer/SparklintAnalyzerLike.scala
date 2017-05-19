@@ -31,6 +31,12 @@ trait SparklintAnalyzerLike {
     */
   def getLastUpdatedAt: Option[Long]
 
+  /**
+    * If the app is using fair scheduler, return all the pools being used. Otherwise, empty
+    * @return
+    */
+  def getFairSchedulerPools: Seq[String]
+
   // Instantaneous stats
   /**
     * @return how many cores are currently being used
