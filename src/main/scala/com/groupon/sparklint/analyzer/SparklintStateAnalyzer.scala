@@ -87,9 +87,10 @@ class SparklintStateAnalyzer(val meta: EventSourceMeta, val state: SparklintStat
   override lazy val getLastUpdatedAt: Option[Long] = Some(state.lastUpdatedAt)
   override lazy val getTimeSeriesCoreUsage: Option[Seq[CoreUsage]] = {
     if (state.firstTaskAt.isDefined) {
-      val resolution = coreUsageWithRunningTasks.map(_._2.resolution).max
-      val adjustedCoreUsage = coreUsageWithRunningTasks.mapValues(_.changeResolution(resolution))
-      val dataRanges = coreUsageWithRunningTasks.flatMap(_._2.dataRange)
+      val resolution = coreUsageByLocalityWithRunningTasks.map(_._2.resolution).max
+      val adjustedCoreUsageByLocality = coreUsageByLocalityWithRunningTasks.mapValues(_.changeResolution(resolution))
+      val adjustedCoreUsageByPool = coreUsageByPoolWithRunningTasks.mapValues(_.changeResolution(resolution))
+      val dataRanges = coreUsageByLocalityWithRunningTasks.flatMap(_._2.dataRange)
       if (dataRanges.isEmpty) {
         Some(Seq.empty)
       } else {
@@ -102,11 +103,8 @@ class SparklintStateAnalyzer(val meta: EventSourceMeta, val state: SparklintStat
           val time = bucketStart + index * resolution
           timeSeries(index) = CoreUsage(time,
             allocatedCoresTimeSeries.getAvgValueForTime(time),
-            adjustedCoreUsage(ANY).getAvgValueForTime(time),
-            adjustedCoreUsage(PROCESS_LOCAL).getAvgValueForTime(time),
-            adjustedCoreUsage(NODE_LOCAL).getAvgValueForTime(time),
-            adjustedCoreUsage(RACK_LOCAL).getAvgValueForTime(time),
-            adjustedCoreUsage(NO_PREF).getAvgValueForTime(time)
+            adjustedCoreUsageByLocality.mapValues(_.getAvgValueForTime(time).getOrElse(0.0)),
+            adjustedCoreUsageByPool.mapValues(_.getAvgValueForTime(time).getOrElse(0.0))
           )
         })
         Some(timeSeries)
@@ -116,20 +114,20 @@ class SparklintStateAnalyzer(val meta: EventSourceMeta, val state: SparklintStat
     }
   }
   override lazy val getCumulativeCoreUsage: Option[Map[Int, Long]] = {
-    if (state.coreUsage.exists(_._2.nonEmpty)) {
+    if (state.coreUsageByLocality.exists(_._2.nonEmpty)) {
       Some(aggregatedCoreUsage.convertToUsageDistribution)
     } else {
       None
     }
   }
   private lazy val aggregatedCoreUsage: MetricsSink = {
-    MetricsSink.mergeSinks(coreUsageWithRunningTasks.values)
+    MetricsSink.mergeSinks(coreUsageByLocalityWithRunningTasks.values)
   }
-  private lazy val coreUsageWithRunningTasks: Map[TaskLocality, MetricsSink] = {
+  private lazy val coreUsageByLocalityWithRunningTasks: Map[TaskLocality, MetricsSink] = {
     if (state.runningTasks.isEmpty) {
-      state.coreUsage
+      state.coreUsageByLocality
     } else {
-      var toReturn = state.coreUsage
+      var toReturn = state.coreUsageByLocality
       state.runningTasks.values.foreach(runningTask => {
         val locality = TaskLocality.withName(runningTask.locality.name)
         toReturn = toReturn.updated(locality, toReturn(locality).addUsage(runningTask.launchTime, state.lastUpdatedAt))
@@ -137,6 +135,11 @@ class SparklintStateAnalyzer(val meta: EventSourceMeta, val state: SparklintStat
       toReturn
     }
   }
+  private lazy val coreUsageByPoolWithRunningTasks: Map[Symbol, MetricsSink] = {
+    state.coreUsageByPool
+    // FIXME: Currently we don't have pool name for running tasks
+  }
+
 
   override def getLocalityStatsByStageIdentifier(stageIdentifier: SparklintStageIdentifier): Option[SparklintStageMetrics] = {
     state.stageMetrics.get(stageIdentifier)

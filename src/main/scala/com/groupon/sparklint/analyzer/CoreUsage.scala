@@ -16,22 +16,29 @@
 
 package com.groupon.sparklint.analyzer
 
+import org.apache.spark.scheduler.TaskLocality.TaskLocality
+import org.json4s.JsonAST.{JDouble, JObject}
+
 /**
   * Case class used to contain the load distribution for one unit interval
   *
   * @author rxue
   * @since 9/23/16.
-  * @param time         the starting time of the interval
-  * @param allocated    number of CPU millis allocated during this interval
-  * @param any          number of CPU millis used towards ANY locality spark tasks during this interval
-  * @param processLocal number of CPU millis used towards PROCESS_LOCAL locality spark tasks during this interval
-  * @param nodeLocal    number of CPU millis used towards NODE_LOCAL locality spark tasks during this interval
-  * @param rackLocal    number of CPU millis used towards RACK_LOCAL locality spark tasks during this interval
-  * @param noPref       number of CPU millis used towards NO_PREF locality spark tasks during this interval
+  * @param time       the starting time of the interval
+  * @param allocated  number of CPU millis allocated during this interval
+  * @param byLocality number of CPU millis used towards certain locality during this interval
+  * @param byPool     number of CPU millis used towards certain pool during this interval
   */
-case class CoreUsage(time: Long, allocated: Option[Double], any: Option[Double], processLocal: Option[Double],
-                     nodeLocal: Option[Double], rackLocal: Option[Double], noPref: Option[Double]) {
+case class CoreUsage(time: Long, allocated: Option[Double], byLocality: Map[TaskLocality, Double], byPool: Map[Symbol, Double]) {
   lazy val idle: Option[Double] = allocated.map(_ - utilized)
 
-  lazy val utilized: Double = any.getOrElse(0.0) + processLocal.getOrElse(0.0) + nodeLocal.getOrElse(0.0) + rackLocal.getOrElse(0.0) + noPref.getOrElse(0.0)
+  lazy val utilized: Double = byLocality.values.sum
+
+  lazy val jObjectByLocality = JObject(byLocality.map({ case (locality, duration) =>
+    locality.toString.toLowerCase -> JDouble(duration)
+  }).toSeq: _*)
+
+  lazy val jObjectByPool = JObject(byPool.map({ case (pool, duration) =>
+    pool.name -> JDouble(duration)
+  }).toSeq: _*)
 }

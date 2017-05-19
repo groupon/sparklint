@@ -250,11 +250,8 @@ object SparklintBackend {
       ("timeSeriesCoreUsage" -> report.getTimeSeriesCoreUsage.map(_.sortBy(_.time).map(tuple => {
         ("time" -> tuple.time) ~
           ("idle" -> tuple.idle) ~
-          ("any" -> tuple.any) ~
-          ("processLocal" -> tuple.processLocal) ~
-          ("nodeLocal" -> tuple.nodeLocal) ~
-          ("rackLocal" -> tuple.rackLocal) ~
-          ("noPref" -> tuple.noPref)
+          tuple.jObjectByLocality ~
+          tuple.jObjectByPool
       }))) ~
       ("cumulativeCoreUsage" -> report.getCumulativeCoreUsage.map(_.toSeq.sortBy(_._1).map { case (core, duration) =>
         ("cores" -> core) ~

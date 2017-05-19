@@ -100,7 +100,7 @@ class SparklintStateAnalyzerTest extends FlatSpec with Matchers with BeforeAndAf
   it should "getLocalityStatsByStageIdentifier correctly if stage identifier hit" in {
     TestUtils.replay(eventSource)
     val actual: SparklintStageMetrics = new SparklintStateAnalyzer(eventSource.appMeta, eventSource.appState)
-      .getLocalityStatsByStageIdentifier(SparklintStageIdentifier('myJobGroup, 'myJobDescription, "count at <console>:22")).get
+      .getLocalityStatsByStageIdentifier(SparklintStageIdentifier('myJobGroup, 'myJobDescription, "count at <console>:22", 'default)).get
     actual.metricsRepo.size shouldBe 4
     actual.metricsRepo should contain key (PROCESS_LOCAL -> 'ResultTask)
     actual.metricsRepo should contain key (RACK_LOCAL -> 'ResultTask)

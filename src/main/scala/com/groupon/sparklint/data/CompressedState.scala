@@ -22,7 +22,8 @@ import org.apache.spark.scheduler.TaskLocality.TaskLocality
   * @author rxue
   * @since 8/22/16.
   */
-case class CompressedState(coreUsage: Map[TaskLocality, CompressedMetricsSink],
+case class CompressedState(coreUsageByLocality: Map[TaskLocality, CompressedMetricsSink],
+                           coreUsageByPool: Map[Symbol, CompressedMetricsSink],
                            executorInfo: Map[String, SparklintExecutorInfo],
                            stageMetrics: Map[SparklintStageIdentifier, CompressedStageMetrics],
                            stageIdLookup: Map[Int, SparklintStageIdentifier],
@@ -32,5 +33,5 @@ case class CompressedState(coreUsage: Map[TaskLocality, CompressedMetricsSink],
                            lastUpdatedAt: Long) extends SparklintStateLike
 
 object CompressedState {
-  def empty: CompressedState = new CompressedState(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, None, 0L)
+  def empty: CompressedState = new CompressedState(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, None, 0L)
 }

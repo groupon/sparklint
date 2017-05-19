@@ -22,7 +22,8 @@ import org.apache.spark.scheduler.TaskLocality.TaskLocality
   * @author rxue
   * @since 9/22/16.
   */
-case class LosslessState(coreUsage: Map[TaskLocality, LosslessMetricsSink],
+case class LosslessState(coreUsageByLocality: Map[TaskLocality, LosslessMetricsSink],
+                         coreUsageByPool: Map[Symbol, LosslessMetricsSink],
                          executorInfo: Map[String, SparklintExecutorInfo],
                          stageMetrics: Map[SparklintStageIdentifier, LosslessStageMetrics],
                          stageIdLookup: Map[Int, SparklintStageIdentifier],
@@ -33,6 +34,6 @@ case class LosslessState(coreUsage: Map[TaskLocality, LosslessMetricsSink],
 
 object LosslessState {
   def empty: LosslessState = {
-    new LosslessState(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, None, 0L)
+    new LosslessState(Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, Map.empty, None, None, 0L)
   }
 }
