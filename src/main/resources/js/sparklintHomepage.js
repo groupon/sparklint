@@ -218,6 +218,7 @@ function updateCoreUsageChart(appState) {
             resize: true
         });
         if (appState.pools.length > 1) {
+            var colorPalatte = ['#66c2a5', '#fc8d62', '#8da0cb', '#e78ac3', '#a6d854', '#ffd92f', '#e5c494', '#b3b3b3'];
             $("#chartCoreUsageByPool").show();
             Morris.Area({
                 element: "pool-usage-line",
@@ -225,6 +226,9 @@ function updateCoreUsageChart(appState) {
                 xkey: 'time',
                 ykeys: appState.pools,
                 labels: appState.pools,
+                lineColors: appState.pools.map(function (d, i) {
+                    return colorPalatte[i % colorPalatte.length];
+                }),
                 pointSize: 0,
                 lineWidth: 2,
                 postUnits: 'cores',
