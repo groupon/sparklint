@@ -100,3 +100,8 @@ You can feed Sparklint an event log file to playback activities.
 * Publish existing docker image `dockerPublish`
 * Build and publish docker image at the same time `dockerBuildAndPublish`
 * The command to release everything: `sparklintRelease`
+
+### Change log
+
+##### 1.0.6
+- Supports breaking down core usage by FAIR scheduler pool
