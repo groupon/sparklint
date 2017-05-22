@@ -1,8 +1,9 @@
 import BuildUtils._
 import de.heikoseeberger.sbtheader.license.Apache2_0
+import sbtdocker.DockerKeys.dockerBuildAndPush
 import sbtdocker.ImageName
-import sbtrelease.Git
 import sbtrelease.ReleasePlugin.autoImport.ReleaseTransformations._
+
 
 // Meta
 name := "sparklint"
@@ -110,6 +111,7 @@ releaseProcess := Seq[ReleaseStep](
   commitReleaseVersion,
   tagRelease,
   releaseStepCommand("sparklintRelease"),
+  releaseStepTask(dockerBuildAndPush),
   mergeReleaseVersion,
   setNextVersion,
   commitNextVersion,
