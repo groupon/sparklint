@@ -43,7 +43,12 @@ object SparkToSparklint {
   }
 
   def sparklintStageIdentifier(stageInfo: StageInfo, properties: Properties): SparklintStageIdentifier = {
-    SparklintStageIdentifier(Symbol(properties.getProperty("spark.jobGroup.id", "")), Symbol(properties.getProperty("spark.job.description", "")), stageInfo.name)
+    SparklintStageIdentifier(
+      Symbol(properties.getProperty("spark.jobGroup.id", "")),
+      Symbol(properties.getProperty("spark.job.description", "")),
+      stageInfo.name,
+      Symbol(properties.getProperty("spark.scheduler.pool", "default"))
+    )
   }
 
   def sparklintTaskInfo(taskInfo: TaskInfo): SparklintTaskInfo = {

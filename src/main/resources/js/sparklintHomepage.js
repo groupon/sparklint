@@ -200,12 +200,13 @@ function updateCoreUsageChart(appState) {
         });
     }
     $("#core-usage-line").text("");
+    $("#pool-usage-line").text("");
     if (appState.timeSeriesCoreUsage) {
         Morris.Area({
             element: "core-usage-line",
             data: appState.timeSeriesCoreUsage,
             xkey: 'time',
-            ykeys: ['processLocal', 'nodeLocal', 'rackLocal', 'any', 'noPref', 'idle'],
+            ykeys: ['process_local', 'node_local', 'rack_local', 'any', 'no_pref', 'idle'],
             labels: ['PROCESS_LOCAL', 'NODE_LOCAL', 'RACK_LOCAL', 'ANY', 'NO_PREF', 'Idle'],
             lineColors: ['#27ae60', '#f1c40f', '#e67e22', '#e74c3c', '#34495e', '#95a5a6'],
             pointSize: 0,
@@ -216,6 +217,29 @@ function updateCoreUsageChart(appState) {
             ymin: 0,
             resize: true
         });
+        if (appState.pools.length > 1) {
+            var colorPalatte = ['#66c2a5', '#fc8d62', '#8da0cb', '#e78ac3', '#a6d854', '#ffd92f', '#e5c494', '#b3b3b3'];
+            $("#chartCoreUsageByPool").show();
+            Morris.Area({
+                element: "pool-usage-line",
+                data: appState.timeSeriesCoreUsage,
+                xkey: 'time',
+                ykeys: appState.pools,
+                labels: appState.pools,
+                lineColors: appState.pools.map(function (d, i) {
+                    return colorPalatte[i % colorPalatte.length];
+                }),
+                pointSize: 0,
+                lineWidth: 2,
+                postUnits: 'cores',
+                hideHover: 'auto',
+                ymax: appState.maxAllocatedCores,
+                ymin: 0,
+                resize: true
+            });
+        } else {
+            $("#chartCoreUsageByPool").hide();
+        }
     }
 }
 

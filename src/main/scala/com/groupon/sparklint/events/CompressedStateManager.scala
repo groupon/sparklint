@@ -102,7 +102,7 @@ class CompressedStateManager(metricsBuckets: Int = 1000) extends EventStateManag
     val startTime = event.taskInfo.launchTime
     if (state.firstTaskAt.isEmpty) {
       state = state.copy(
-        coreUsage = Utils.LOCALITIES.map(locality => locality -> CompressedMetricsSink.empty(startTime, metricsBuckets)).toMap,
+        coreUsageByLocality = Utils.LOCALITIES.map(locality => locality -> CompressedMetricsSink.empty(startTime, metricsBuckets)).toMap,
         firstTaskAt = Some(startTime),
         runningTasks = Map(event.taskInfo.taskId -> SparkToSparklint.sparklintTaskInfo(event.taskInfo)),
         lastUpdatedAt = startTime
@@ -118,7 +118,7 @@ class CompressedStateManager(metricsBuckets: Int = 1000) extends EventStateManag
     val startTime = event.taskInfo.launchTime
     if (state.firstTaskAt.get == startTime) {
       state = state.copy(
-        coreUsage = Map.empty,
+        coreUsageByLocality = Map.empty,
         firstTaskAt = None,
         runningTasks = Map.empty,
         lastUpdatedAt = startTime
@@ -133,8 +133,13 @@ class CompressedStateManager(metricsBuckets: Int = 1000) extends EventStateManag
   override def onTaskEnd(event: SparkListenerTaskEnd): Unit = {
     val stageId = state.stageIdLookup(event.stageId)
     val locality = event.taskInfo.taskLocality
+    val pool = stageId.pool
+    val metricsSinkForPool = state.coreUsageByPool.getOrElse(pool, CompressedMetricsSink.empty(state.firstTaskAt.get, metricsBuckets))
     state = state.copy(
-      coreUsage = state.coreUsage + (locality -> state.coreUsage(locality).addUsage(
+      coreUsageByLocality = state.coreUsageByLocality + (locality -> state.coreUsageByLocality(locality).addUsage(
+        startTime = event.taskInfo.launchTime,
+        endTime = event.taskInfo.finishTime)),
+      coreUsageByPool = state.coreUsageByPool + (pool -> metricsSinkForPool.addUsage(
         startTime = event.taskInfo.launchTime,
         endTime = event.taskInfo.finishTime)),
       runningTasks = state.runningTasks - event.taskInfo.taskId,
@@ -147,9 +152,14 @@ class CompressedStateManager(metricsBuckets: Int = 1000) extends EventStateManag
   }
 
   override def unTaskEnd(event: SparkListenerTaskEnd): Unit = {
+    val stageId = state.stageIdLookup(event.stageId)
     val locality = event.taskInfo.taskLocality
+    val pool = stageId.pool
     state = state.copy(
-      coreUsage = state.coreUsage + (locality -> state.coreUsage(locality).removeUsage(
+      coreUsageByLocality = state.coreUsageByLocality + (locality -> state.coreUsageByLocality(locality).removeUsage(
+        startTime = event.taskInfo.launchTime,
+        endTime = event.taskInfo.finishTime)),
+      coreUsageByPool = state.coreUsageByPool + (pool -> state.coreUsageByPool(pool).removeUsage(
         startTime = event.taskInfo.launchTime,
         endTime = event.taskInfo.finishTime)),
       runningTasks = state.runningTasks + (event.taskInfo.taskId -> SparkToSparklint.sparklintTaskInfo(event.taskInfo)),

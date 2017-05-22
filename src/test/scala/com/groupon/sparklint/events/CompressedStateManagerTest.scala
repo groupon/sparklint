@@ -41,7 +41,7 @@ class CompressedStateManagerTest extends FlatSpec with Matchers with BeforeAndAf
   it should "accumulate core usage correctly" in {
     replay(eventSource)
     val state = eventSource.appState
-    val coreUsage = state.coreUsage
+    val coreUsage = state.coreUsageByLocality
     coreUsage.size shouldBe 5
     // should be when first task was submitted
     val firstTaskTime = 1466087848562L
@@ -70,13 +70,19 @@ class CompressedStateManagerTest extends FlatSpec with Matchers with BeforeAndAf
     val state = eventSource.appState
     val stageMetrics = state.stageMetrics
 
-    stageMetrics.size shouldBe 1
-    val taskMetricsByLocality = stageMetrics(SparklintStageIdentifier('myJobGroup, 'myJobDescription, "count at <console>:22"))
+    stageMetrics.size shouldBe 2
+    val taskMetricsByLocality = stageMetrics(SparklintStageIdentifier('myJobGroup, 'myJobDescription, "count at <console>:22", 'default))
     taskMetricsByLocality.metricsRepo.size shouldBe 4
     taskMetricsByLocality.metricsRepo should contain key PROCESS_LOCAL -> 'ResultTask
     taskMetricsByLocality.metricsRepo should contain key RACK_LOCAL -> 'ResultTask
     taskMetricsByLocality.metricsRepo should contain key ANY -> 'ResultTask
     taskMetricsByLocality.metricsRepo should contain key NODE_LOCAL -> 'ResultTask
+    val taskMetricsForMyPool = stageMetrics(SparklintStageIdentifier('myJobGroup, 'myJobDescription, "count at <console>:22", 'myPool))
+    taskMetricsForMyPool.metricsRepo.size shouldBe 3
+    taskMetricsForMyPool.metricsRepo should contain key RACK_LOCAL -> 'ResultTask
+    taskMetricsForMyPool.metricsRepo should contain key ANY -> 'ResultTask
+    taskMetricsForMyPool.metricsRepo should contain key NODE_LOCAL -> 'ResultTask
+
   }
 
   it should "undo events correctly" in {
@@ -88,10 +94,10 @@ class CompressedStateManagerTest extends FlatSpec with Matchers with BeforeAndAf
     eventSource2.forwardEvents(350)
     eventSource2.rewindEvents(50)
     val actual = eventSource.appState
-    actual.coreUsage.size shouldBe expected.coreUsage.size
-    actual.coreUsage.foreach({
+    actual.coreUsageByLocality.size shouldBe expected.coreUsageByLocality.size
+    actual.coreUsageByLocality.foreach({
       // The resolution can be different but the sum should be the same
-      case (locality, sink) => sink.storage.sum shouldBe expected.coreUsage(locality).storage.sum
+      case (locality, sink) => sink.storage.sum shouldBe expected.coreUsageByLocality(locality).storage.sum
     })
     actual.executorInfo shouldBe expected.executorInfo
     // No further requirement on stageMetrics part because
