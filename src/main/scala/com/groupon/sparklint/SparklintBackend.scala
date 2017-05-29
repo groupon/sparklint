@@ -65,7 +65,7 @@ class SparklintBackend
     case GET -> Root / "esm" / esmId / esId / "state" if appExists(esmId, esId) =>
       tryit(Try(state(esmId, esId)), jsonResponse)
     case GET -> Root / "esm" / esmId / esId / "stateWS" if appExists(esmId, esId) =>
-      val statusStream = awakeEvery(1 seconds)(DefaultStrategy, DefaultScheduler).map { (timeSinceStart) =>
+      val statusStream = awakeEvery(3 seconds)(DefaultStrategy, DefaultScheduler).map { (timeSinceStart) =>
         Text(state(esmId, esId))
       }
       val q = unboundedQueue[WebSocketFrame]

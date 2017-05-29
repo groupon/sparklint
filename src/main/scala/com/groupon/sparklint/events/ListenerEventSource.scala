@@ -41,7 +41,8 @@ class ListenerEventSource(appId: String, appName: String) extends SparkFirehoseL
     buffer.add(event)
   }
 
-  override def hasNext: Boolean = true
+  // Set hasNext to false to indicate this event source doesn't support free scrolling
+  override def hasNext: Boolean = false
 
   override def forward(): Boolean = {
     val event = buffer.take()
@@ -53,7 +54,7 @@ class ListenerEventSource(appId: String, appName: String) extends SparkFirehoseL
   }
 
   def start(): Unit = {
-    while(hasNext) {
+    while(true) {
       forward()
     }
   }
