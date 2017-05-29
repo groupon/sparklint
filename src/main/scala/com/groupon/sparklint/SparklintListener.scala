@@ -21,6 +21,9 @@ import com.groupon.sparklint.events.{GenericEventSourceGroupManager, ListenerEve
 import org.apache.spark.scheduler.SparkListenerEvent
 import org.apache.spark.{SparkConf, SparkFirehoseListener}
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+
 /**
   * The listener that will be created when provided in --conf spark.extraListeners
   *
@@ -40,7 +43,9 @@ class SparklintListener(appId: String, appName: String, config: SparklintConfig)
   override def onEvent(event: SparkListenerEvent): Unit = {
     liveEventSource.onEvent(event)
   }
+
   esgm.registerEventSource(liveEventSource)
   sparklint.backend.append(esgm)
+  Future(liveEventSource.start())
   sparklint.startServer()
 }

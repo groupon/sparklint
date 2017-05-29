@@ -51,4 +51,10 @@ class ListenerEventSource(appId: String, appName: String) extends SparkFirehoseL
     })
     true
   }
+
+  def start(): Unit = {
+    while(hasNext) {
+      forward()
+    }
+  }
 }
