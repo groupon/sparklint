@@ -3,13 +3,16 @@ Sparklint
 
 The missing Spark Performance Debugger that can be drag and dropped into your spark application!
 
+> Featured in Spark Summit 2016 EU: [Introduction](https://spark-summit.org/eu-2016/events/sparklint-a-tool-for-monitoring-identifying-and-tuning-inefficient-spark-jobs-across-your-cluster/) | [Slides](https://www.slideshare.net/SparkSummit/spark-summit-eu-talk-by-simon-whitear) | [Video](https://www.youtube.com/watch?v=reGerTzcvoA)    
+Upcoming related talk at Spark Summit 2017 SF: [Introduction](https://spark-summit.org/2017/events/continuous-application-with-fair-scheduler/) | \[Slides\] | \[Video\]
+
 ### Mission
 - Provide advance metrics and better visualization about your spark application's resource utilization
   - Vital application life time stats like idle time, average vcore usage, distribution of locality
   - View task allocation by executor
-  - VCore usage graphs
+  - VCore usage graphs by FAIR scheduler group
+  - VCore usage graphs by task locality
   - (WIP) Find rdds that can benefit from persisting
-  - (WIP) View task execution stats by locality
 - Help you find out where the bottle neck are
   - (WIP) Automated report on application bottle neck
 - (WIP) Opportunity to give the running application real-time hints on magic numbers like partitions size, job submission parallelism, whether to persist rdd or not
