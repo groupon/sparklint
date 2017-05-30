@@ -17,6 +17,7 @@
 package com.groupon.sparklint
 
 import java.io.File
+import java.nio.charset.StandardCharsets.UTF_8
 
 import com.groupon.sparklint.analyzer.SparklintStateAnalyzer
 import com.groupon.sparklint.common.Logging
@@ -24,6 +25,8 @@ import com.groupon.sparklint.events._
 import org.http4s.MediaType.`application/json`
 import org.http4s.dsl._
 import org.http4s.headers.`Content-Type`
+import org.http4s.server.websocket.WS
+import org.http4s.websocket.WebsocketBits.{Close, Text, WebSocketFrame}
 import org.http4s.{HttpService, Response, Uri}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
@@ -33,8 +36,14 @@ import org.json4s.{DefaultFormats, Extraction}
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.concurrent.duration._
+import scala.language.postfixOps
 import scala.util.{Failure, Success, Try}
+import scalaz.concurrent.Strategy.DefaultStrategy
 import scalaz.concurrent.Task
+import scalaz.stream.async.unboundedQueue
+import scalaz.stream.time.awakeEvery
+import scalaz.stream.{DefaultScheduler, Exchange}
 import scalaz.{-\/, \/-}
 
 /**
@@ -55,6 +64,12 @@ class SparklintBackend
   def backendService: HttpService = HttpService {
     case GET -> Root / "esm" / esmId / esId / "state" if appExists(esmId, esId) =>
       tryit(Try(state(esmId, esId)), jsonResponse)
+    case GET -> Root / "esm" / esmId / esId / "stateWS" if appExists(esmId, esId) =>
+      val statusStream = awakeEvery(3 seconds)(DefaultStrategy, DefaultScheduler).map { (timeSinceStart) =>
+        Text(state(esmId, esId))
+      }
+      val q = unboundedQueue[WebSocketFrame]
+      WS(Exchange(statusStream, q.enqueue))
     case GET -> Root / "esm" / esmId / esId / "eventSource" if appExists(esmId, esId) =>
       tryit(Try(eventSource(esmId, esId)), jsonResponse)
     case GET -> Root / "esm" / esmId / esId / "forward" / count / evString if appExists(esmId, esId) =>

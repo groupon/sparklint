@@ -11,11 +11,20 @@
  limitations under the License.
  */
 
+var eventSocketStream;
+
 function loadApp(esmId, appId) {
-    var url = "/backend/esm/" + esmId + "/" + appId + "/state";
-    handleJSON(url, function (responseJson) {
-        console.log(responseJson);
-        displayAppState(appId, responseJson);
+    if (eventSocketStream !== undefined) {
+        eventSocketStream.close();
+    }
+    eventSocketStream = new WebSocket("ws://" + window.location.host + "/backend/esm/" + esmId + "/" + appId + "/stateWS");
+    eventSocketStream.addEventListener('message', function (statePayload) {
+        var data = JSON.parse(statePayload.data);
+        displayAppState(appId, data);
+        if (data.applicationEndedAt !== undefined && eventSocketStream !== undefined) {
+            eventSocketStream.close();
+            console.log("close socket stream because application has ended")
+        }
     });
     return false; // prevent the url navigate to /# with false as the return value
 }
@@ -323,8 +332,8 @@ function moveEvents(direction) {
     var url = "/backend/esm/" + esmId + "/" + appId + "/" + direction + "/" + count + "/" + type;
     handleJSON(url, function (progJson) {
         console.log("moved " + appId + " " + direction + " by " + count + " " + type + "(s): " + JSON.stringify(progJson));
-        loadApp(esmId, appId);
-    })
+    });
+    $(".loading-spinner").hide();
 }
 
 function moveEventsToEnd(end) {
@@ -336,8 +345,8 @@ function moveEventsToEnd(end) {
     var url = "/backend/esm/" + esmId + "/" + appId + "/to_" + end;
     handleJSON(url, function (progJson) {
         console.log("moved " + appId + " to " + end + ": " + JSON.stringify(progJson));
-        loadApp(esmId, appId);
     });
+    $(".loading-spinner").hide();
 }
 
 function addSingleFile() {
