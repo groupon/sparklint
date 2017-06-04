@@ -33,6 +33,8 @@ lazy val slf4j = "1.7.16"
 lazy val log4j = "1.2.17"
 lazy val json4s = "3.2.11"
 lazy val jackson = "2.6.5"
+lazy val akkaVersion = "2.5.2"
+lazy val akkaHttpVersion = "10.0.6"
 
 resolvers in ThisBuild ++= Seq(
   Resolver.sonatypeRepo("snapshot"),
@@ -45,7 +47,14 @@ libraryDependencies ++= Seq(
     exclude("com.fasterxml.jackson.module", "*"),
   "org.apache.spark" %% "spark-streaming" % sparkVersion.value
     exclude("com.fasterxml.jackson.module", "*"),
+
   "com.frugalmechanic" %% "scala-optparse" % optparse,
+
+  "com.typesafe.akka" %% "akka-actor" % akkaVersion,
+  "com.typesafe.akka" %% "akka-http"  % akkaHttpVersion,
+  "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
+  "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
+
   "org.http4s" %% "http4s-dsl" % http4s,
   "org.http4s" %% "http4s-blaze-server" % http4s,
   "org.http4s" %% "http4s-json4s-jackson" % http4s
@@ -65,8 +74,10 @@ runMain in Compile := Defaults.runMainTask(fullClasspath in Compile, runner in (
 
 // Test
 libraryDependencies ++= Seq(
+  "com.typesafe.akka" %% "akka-testkit" % akkaVersion,
+  "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion,
   "org.scalatest" %% "scalatest" % scalatest
-) map (_ % "test")
+) map (_ % Test)
 fork in Test := true
 
 // Package fat jar
