@@ -28,6 +28,8 @@ import scala.collection.{SortedMap, mutable}
 class LosslessMetricsSink(implicit val taskSummaryOrdering: Ordering[UsageSummary]) {
   private val tasks: mutable.SortedSet[UsageSummary] = mutable.SortedSet.empty[UsageSummary]
 
+  def isEmpty: Boolean = tasks.isEmpty
+
   def nonEmpty: Boolean = tasks.nonEmpty
 
   def earliestTime: Option[Long] = tasks.headOption.map(_.start)

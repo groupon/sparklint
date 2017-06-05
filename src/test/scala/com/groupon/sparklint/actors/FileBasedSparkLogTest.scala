@@ -30,14 +30,14 @@ import scala.io.Source
   * @since 6/4/17.
   */
 trait FileBasedSparkLogTest {
-  this: TestKitBase
-    with DefaultTimeout =>
+  this: TestKitBase =>
   lazy val uuid: String = UUID.randomUUID().toString
+  def fileName: String = "spark_event_log_example"
 
   import SparklintAppLogReader._
 
   protected def initializeSampleLog(): ActorRef = {
-    val file = Source.fromFile(getClass.getClassLoader.getResource("spark_event_log_example").getPath)
+    val file = Source.fromFile(getClass.getClassLoader.getResource(fileName).getPath)
       .getLines().flatMap(StringToSparkEvent.apply)
     val reader: ActorRef = system.actorOf(SparklintAppLogReader.props(uuid, file, testActor))
     reader ! SubscribeTransitionCallBack(testActor)
@@ -47,7 +47,7 @@ trait FileBasedSparkLogTest {
 
 
   protected def readSampleLog(): ActorRef = {
-    val file = Source.fromFile(getClass.getClassLoader.getResource("spark_event_log_example").getPath)
+    val file = Source.fromFile(getClass.getClassLoader.getResource(fileName).getPath)
       .getLines().flatMap(StringToSparkEvent.apply)
     val reader: ActorRef = system.actorOf(SparklintAppLogReader.props(uuid, file, testActor))
     reader ! SubscribeTransitionCallBack(testActor)
