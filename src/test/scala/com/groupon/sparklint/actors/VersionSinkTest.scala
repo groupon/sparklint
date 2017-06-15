@@ -39,7 +39,7 @@ class VersionSinkTest extends FeatureSpec
       val logProcessorPath = reader.path / s"$uuid-${SparklintLogProcessor.name}"
       val versionSink = system.actorSelection(logProcessorPath / s"$uuid-$name")
       versionSink ! GetVersion(testActor)
-      expectMsg("1.5.2")
+      expectMsg(VersionResponse("1.5.2"))
     }
   }
 }

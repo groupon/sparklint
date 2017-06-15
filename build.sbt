@@ -20,15 +20,17 @@ scalaVersion := "2.11.8"
 crossScalaVersions := Seq("2.10.6", "2.11.8")
 unmanagedSourceDirectories in Compile += (sourceDirectory in Compile).value / getSparkMajorVersion(sparkVersion.value)
 unmanagedSourceDirectories in Test += (sourceDirectory in Test).value / getSparkMajorVersion(sparkVersion.value)
-
+assemblyOption in assembly := (assemblyOption in assembly)
+  .value
+  .copy(includeScala = false)
 // Dependency
 // Spark
 lazy val sparkVersion = SettingKey[String]("spark-version", "The version of spark library to compile against")
-sparkVersion := "2.0.1"
+sparkVersion := "2.1.0"
 // Non-spark
 lazy val http4s = "0.15.5"
 lazy val optparse = "1.1.2"
-lazy val scalatest = "3.0.1"
+lazy val scalatest = "3.0.4"
 lazy val slf4j = "1.7.16"
 lazy val log4j = "1.2.17"
 lazy val json4s = "3.2.11"

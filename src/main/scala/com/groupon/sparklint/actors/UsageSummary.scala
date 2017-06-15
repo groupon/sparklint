@@ -20,7 +20,7 @@ package com.groupon.sparklint.actors
   * @author rxue
   * @since 6/4/17.
   */
-case class UsageSummary(identifier: Option[Long], start: Long, var end: Option[Long] = None, weight: Int = 1)
+case class UsageSummary(start: Long, var end: Option[Long] = None, weight: Int = 1)
 
 object UsageSummary extends Ordering[UsageSummary] {
   override def compare(x: UsageSummary, y: UsageSummary): Int = {
@@ -29,13 +29,7 @@ object UsageSummary extends Ordering[UsageSummary] {
     } else if (x.start > y.start) {
       1
     } else {
-      (x.identifier, y.identifier) match {
-        case (None, None) => 0
-        case (None, Some(_)) => -1
-        case (Some(_), None) => 1
-        case (Some(x1), Some(y1)) =>
-          x1 compareTo y1
-      }
+      0
     }
   }
 }

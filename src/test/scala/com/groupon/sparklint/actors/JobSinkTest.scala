@@ -40,7 +40,7 @@ class JobSinkTest extends FeatureSpec
       val reader = readSampleLog()
       val logProcessorPath = reader.path / s"$uuid-${SparklintLogProcessor.name}"
       val jobSink = system.actorSelection(logProcessorPath / s"$uuid-$name")
-      jobSink ! GetCoreUsageByLocality(5, None, None, testActor)
+      jobSink ! GetCoreUsageByLocality(41662, None, None, testActor)
       expectMsg(CoreUsageResponse(
         SortedMap(
           1466087848562L -> UsageByGroup(Map("RACK_LOCAL" -> 1, "ANY" -> 3), 0),
@@ -75,7 +75,7 @@ class JobSinkTest extends FeatureSpec
       val reader = readSampleLog()
       val logProcessorPath = reader.path / s"$uuid-${SparklintLogProcessor.name}"
       val jobSink = system.actorSelection(logProcessorPath / s"$uuid-$name")
-      jobSink ! GetCoreUsageByJobGroup(5, None, None, testActor)
+      jobSink ! GetCoreUsageByJobGroup(41662, None, None, testActor)
       expectMsgPF() {
         case CoreUsageResponse(byJobGroup) =>
           byJobGroup shouldBe SortedMap(

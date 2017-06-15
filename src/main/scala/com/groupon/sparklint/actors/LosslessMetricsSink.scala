@@ -17,63 +17,61 @@
 package com.groupon.sparklint.actors
 
 
-import scala.collection.immutable.TreeMap
+import scala.collection.SortedMap
 import scala.collection.mutable.ListBuffer
-import scala.collection.{SortedMap, mutable}
 
 /**
   * @author rxue
   * @since 6/3/17.
   */
 class LosslessMetricsSink(implicit val taskSummaryOrdering: Ordering[UsageSummary]) {
-  private val tasks: mutable.SortedSet[UsageSummary] = mutable.SortedSet.empty[UsageSummary]
+  private val dataPoints: ListBuffer[UsageSummary] = ListBuffer[UsageSummary]()
 
-  def isEmpty: Boolean = tasks.isEmpty
+  def isEmpty: Boolean = dataPoints.isEmpty
 
-  def nonEmpty: Boolean = tasks.nonEmpty
+  def nonEmpty: Boolean = dataPoints.nonEmpty
 
-  def earliestTime: Option[Long] = tasks.headOption.map(_.start)
+  def earliestTime: Option[Long] = dataPoints.map(_.start).reduceOption(_ min _)
 
-  def latestTime: Option[Long] = tasks.map(r => r.end.getOrElse(r.start)).reduceOption(_ max _)
+  def latestTime: Option[Long] = dataPoints.map(r => r.end.getOrElse(r.start)).reduceOption(_ max _)
 
-  def push(task: UsageSummary): Unit = {
-    tasks += task
+  def push(dataPoint: UsageSummary): Unit = {
+    dataPoints += dataPoint
   }
 
   def sum(since: Long, until: Long): Long = {
-    tasks.toSeq.map(t => {
+    dataPoints.map(t => {
       ((t.end.getOrElse(until) min until) - (t.start max since)) * t.weight
     }).sum
   }
 
-  def collect(start: Long, numOfBuckets: Int, now: Long): SortedMap[Long, Int] = {
-    if (tasks.isEmpty) {
+  def collect(from: Long, bucketSize: Long, until: Long): SortedMap[Long, Int] = {
+    if (dataPoints.isEmpty) {
       SortedMap.empty
     } else {
-      val step = ((now - start).toDouble / numOfBuckets).ceil.toInt
-      var current = start
-      var buckets = TreeMap.empty[Long, Int]
-      var runningTask = ListBuffer(tasks.until(UsageSummary(None, current)).filterNot(_.end.exists(_ < current)).toSeq: _*)
-      while (current < now) {
-        val bucketEnd = (current + step) min now
-        // set taskId to None to make sure all tasks started at the same time is greater than this UsageSummary
-        val tasksLaunchedInThisBucket = tasks.range(UsageSummary(None, current), UsageSummary(None, bucketEnd))
-        runningTask ++= tasksLaunchedInThisBucket
+      //TODO: a sorted list of datapoints can improve the complexity
+      var bucketStart = from
+      var buckets = SortedMap.empty[Long, Int]
+      var running = dataPoints.filter(i => i.start < bucketStart && (i.end.isEmpty || i.end.get >= bucketStart))
+      while (bucketStart < until) {
+        val bucketEnd = bucketStart + bucketSize
+        val launchedInThisBucket = dataPoints.filter(i => i.start >= bucketStart && i.start < bucketEnd)
+        running ++= launchedInThisBucket
         var coreUsageInThisBucket = 0L
-        val (endsInThisBucket, stillRunning) = runningTask.partition(_.end.exists(_ < bucketEnd))
-        for (taskInfo <- stillRunning) {
-          coreUsageInThisBucket += (bucketEnd - (taskInfo.start max current)) * taskInfo.weight
+        val (endsInThisBucket, stillRunning) = running.partition(_.end.exists(_ < bucketEnd))
+        for (dataPoint <- stillRunning) {
+          coreUsageInThisBucket += (bucketEnd - (dataPoint.start max bucketStart)) * dataPoint.weight
         }
-        runningTask = stillRunning
-        for (taskInfo <- endsInThisBucket) {
-          coreUsageInThisBucket += (taskInfo.end.get - (taskInfo.start max current)) * taskInfo.weight
+        running = stillRunning
+        for (dataPoint <- endsInThisBucket) {
+          coreUsageInThisBucket += (dataPoint.end.get - (dataPoint.start max bucketStart)) * dataPoint.weight
         }
-        val bucketEffectiveLength = (bucketEnd min now) - current
+        val bucketEffectiveLength = (bucketEnd min until) - bucketStart
         val avgUsage = if (bucketEffectiveLength == 0) 0 else (coreUsageInThisBucket.toDouble / bucketEffectiveLength).round.toInt
-        buckets += (current -> avgUsage)
-        current = bucketEnd
+        buckets += (bucketStart -> avgUsage)
+        bucketStart = bucketEnd
       }
-      buckets += (current -> 0)
+      buckets += (bucketStart -> 0)
       buckets
     }
   }

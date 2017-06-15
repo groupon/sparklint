@@ -30,6 +30,8 @@ object VersionSink {
 
   case class GetVersion(replyTo: ActorRef)
 
+  case class VersionResponse(version: String)
+
 }
 
 class VersionSink extends Actor {
@@ -42,6 +44,6 @@ class VersionSink extends Actor {
     case logStart: SparkListenerLogStartShim =>
       version = logStart.sparkVersion
     case GetVersion(replyTo) =>
-      replyTo ! version
+      replyTo ! VersionResponse(version)
   }
 }

@@ -30,11 +30,11 @@ object JobSink {
 
   def props: Props = Props(new JobSink)
 
-  case class GetCoreUsageByLocality(numOfBuckets: Int, since: Option[Long], until: Option[Long], replyTo: ActorRef)
+  case class GetCoreUsageByLocality(bucketSize: Long, since: Option[Long], until: Option[Long], replyTo: ActorRef)
 
-  case class GetCoreUsageByJobGroup(numOfBuckets: Int, since: Option[Long], until: Option[Long], replyTo: ActorRef)
+  case class GetCoreUsageByJobGroup(bucketSize: Long, since: Option[Long], until: Option[Long], replyTo: ActorRef)
 
-  case class GetCoreUsageByPool(numOfBuckets: Int, since: Option[Long], until: Option[Long], replyTo: ActorRef)
+  case class GetCoreUsageByPool(bucketSize: Long, since: Option[Long], until: Option[Long], replyTo: ActorRef)
 
   case class CoreUsageResponse(data: SortedMap[Long, UsageByGroup])
 
@@ -89,7 +89,7 @@ class JobSink extends Actor {
       }
 
     case e: SparkListenerExecutorAdded =>
-      val newExecutorSummary = UsageSummary(Some(e.executorId.hashCode), e.time, weight = e.executorInfo.totalCores)
+      val newExecutorSummary = UsageSummary(e.time, weight = e.executorInfo.totalCores)
       liveExecutors(e.executorId) = newExecutorSummary
       availableCoresMetrics.push(newExecutorSummary)
     case e: SparkListenerExecutorRemoved =>
@@ -116,7 +116,7 @@ class JobSink extends Actor {
     // ignore for now
 
     case e: SparkListenerTaskStart =>
-      val newTaskExecution = UsageSummary(Some(e.taskInfo.taskId), e.taskInfo.launchTime)
+      val newTaskExecution = UsageSummary(e.taskInfo.launchTime)
       runningTask(e.taskInfo.taskId) = newTaskExecution
       metricsByLocality(e.taskInfo.taskLocality.toString).push(newTaskExecution)
       val jobGroup = stageToJob.get(e.stageId).flatMap(runningJobs.get).flatMap(_.jobGroup).getOrElse("default")
@@ -130,14 +130,14 @@ class JobSink extends Actor {
   }
 
   def processQuery: PartialFunction[Any, Unit] = {
-    case GetCoreUsageByLocality(numOfBuckets, since, until, replyTo) =>
-      replyTo ! getCoreUsage(numOfBuckets, since, until, metricsByLocality)
+    case GetCoreUsageByLocality(bucketSize, since, until, replyTo) =>
+      replyTo ! getCoreUsage(bucketSize, since, until, metricsByLocality)
 
-    case GetCoreUsageByJobGroup(numOfBuckets, since, until, replyTo) =>
-      replyTo ! getCoreUsage(numOfBuckets, since, until, metricsByJobGroup.toMap)
+    case GetCoreUsageByJobGroup(bucketSize, since, until, replyTo) =>
+      replyTo ! getCoreUsage(bucketSize, since, until, metricsByJobGroup.toMap)
 
-    case GetCoreUsageByPool(numOfBuckets, since, until, replyTo) =>
-      replyTo ! getCoreUsage(numOfBuckets, since, until, metricsByPool.toMap)
+    case GetCoreUsageByPool(bucketSize, since, until, replyTo) =>
+      replyTo ! getCoreUsage(bucketSize, since, until, metricsByPool.toMap)
 
     case GetCoreUtilizationByLocality(since, until, replyTo) =>
       replyTo ! getCoreUtilization(since, until, metricsByLocality)
@@ -149,7 +149,7 @@ class JobSink extends Actor {
       replyTo ! getCoreUtilization(since, until, metricsByPool.toMap)
   }
 
-  protected def getCoreUsage(numOfBuckets: Int, since: Option[Long], until: Option[Long], dataSeries: Map[String, LosslessMetricsSink]): Any = {
+  protected def getCoreUsage(bucketSize: Long, since: Option[Long], until: Option[Long], dataSeries: Map[String, LosslessMetricsSink]): Any = {
     if (dataSeries.forall(_._2.isEmpty)) {
       return NoDataYet
     }
@@ -158,8 +158,8 @@ class JobSink extends Actor {
     if (earliestTime >= latestTime) {
       return NoDataYet
     }
-    val coreUsageByJobGroup = dataSeries.mapValues(_.collect(earliestTime, numOfBuckets, latestTime))
-    val availableCores = availableCoresMetrics.collect(earliestTime, numOfBuckets, latestTime)
+    val coreUsageByJobGroup = dataSeries.mapValues(_.collect(earliestTime, bucketSize, latestTime))
+    val availableCores = availableCoresMetrics.collect(earliestTime, bucketSize, latestTime)
     val compiledData = availableCores.map { case (bucket, cores) =>
       val usageByJobGroup = dataSeries.keys.toSeq.flatMap(jobGroup => {
         coreUsageByJobGroup(jobGroup).get(bucket).filter(_ > 0).map(usage => jobGroup -> usage)
