@@ -71,7 +71,9 @@ You can feed Sparklint an event log file to playback activities.
 ##### Server mode (docker)
 - Docker support available at https://hub.docker.com/r/roboxue/sparklint/
 - pull docker image from docker hub or build locally with `sbt docker`
-- Execute the docker image: `docker run -p 23736:23763 roboxue/sparklint && open localhost:23763`
+- Execute the docker image: 
+  - `docker run -v /path/to/logs/dir:/logs -p 23763:23763 roboxue/sparklint -d /logs && open localhost:23763`
+  - `docker run -v /path/to/logs/file:/logfile -p 23763:23763 roboxue/sparklint -f /logfile && open localhost:23763`
 
 
 ### Config
