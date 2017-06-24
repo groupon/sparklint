@@ -71,7 +71,11 @@ You can feed Sparklint an event log file to playback activities.
 ##### Server mode (docker)
 - Docker support available at https://hub.docker.com/r/roboxue/sparklint/
 - pull docker image from docker hub or build locally with `sbt docker`
-- Execute the docker image: 
+  - `sbt docker` command will build a roboxue/sparklint:latest image on your local machine
+- This docker image basically wrappend `sbt run` for you. 
+  - Attach a dir that contains logs to the image as a volumn, so that you can use -f or -d configs
+  - Or just start the docker image and connect to a history server using UI
+- Basic commands to execute the docker image:
   - `docker run -v /path/to/logs/dir:/logs -p 23763:23763 roboxue/sparklint -d /logs && open localhost:23763`
   - `docker run -v /path/to/logs/file:/logfile -p 23763:23763 roboxue/sparklint -f /logfile && open localhost:23763`
 
@@ -107,6 +111,10 @@ You can feed Sparklint an event log file to playback activities.
 * The command to release everything: `sparklintRelease`
 
 ### Change log
+
+##### 1.0.8
+- Fixes compatibility issue with spark 2.0+ history server api (@alexnikitchuk, @neggert)
+- Fixes docker image's dependencies issue (@jcdauchy)
 
 ##### 1.0.7
 - Supports updating graphs using web socket, less likely a refresh will be needed now.

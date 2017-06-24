@@ -88,7 +88,7 @@ enablePlugins(DockerPlugin)
 // Tag the docker build as latest for snapshot, concrete version number for release
 // FIXME: replace roboxue with groupon after organization account has been created
 imageNames in docker := Seq(new ImageName(namespace = Some("roboxue"), repository = "sparklint",
-  tag = if (!isSnapshot.value) Some(version.value) else None))
+  tag = if (!isSnapshot.value) Some(version.value) else Some("latest")))
 dockerfile in docker := {
   val artifact: File = assembly.value
   val artifactTargetPath = s"/app/${artifact.name}"
