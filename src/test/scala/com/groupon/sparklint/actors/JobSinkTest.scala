@@ -16,9 +16,9 @@
 
 package com.groupon.sparklint.actors
 
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.testkit.{DefaultTimeout, TestKitBase}
-import org.scalatest.{FeatureSpec, Matchers}
+import akka.actor.ActorSystem
+import akka.testkit.{DefaultTimeout, ImplicitSender, TestKit}
+import org.scalatest.{FeatureSpecLike, Matchers}
 
 import scala.collection.SortedMap
 
@@ -26,9 +26,9 @@ import scala.collection.SortedMap
   * @author rxue
   * @since 6/4/17.
   */
-class JobSinkTest extends FeatureSpec
-  with ScalatestRouteTest
-  with TestKitBase
+class JobSinkTest extends TestKit(ActorSystem("MySpec"))
+  with FeatureSpecLike
+  with ImplicitSender
   with DefaultTimeout
   with FileBasedSparkLogTest
   with Matchers {
@@ -40,7 +40,7 @@ class JobSinkTest extends FeatureSpec
       val reader = readSampleLog()
       val logProcessorPath = reader.path / s"$uuid-${SparklintLogProcessor.name}"
       val jobSink = system.actorSelection(logProcessorPath / s"$uuid-$name")
-      jobSink ! GetCoreUsageByLocality(41662, None, None, testActor)
+      jobSink ! GetCoreUsageByLocality(41662, None, None)
       expectMsg(CoreUsageResponse(
         SortedMap(
           1466087848562L -> UsageByGroup(Map("RACK_LOCAL" -> 1, "ANY" -> 3), 0),
@@ -58,7 +58,7 @@ class JobSinkTest extends FeatureSpec
       val reader = readSampleLog()
       val logProcessorPath = reader.path / s"$uuid-${SparklintLogProcessor.name}"
       val jobSink = system.actorSelection(logProcessorPath / s"$uuid-$name")
-      jobSink ! GetCoreUtilizationByLocality(None, None, testActor)
+      jobSink ! GetCoreUtilizationByLocality(None, None)
       expectMsgPF() {
         case CoreUtilizationResponse(usageByLocality) =>
           (usageByLocality("PROCESS_LOCAL") * 100).round.toInt shouldBe 0
@@ -75,7 +75,7 @@ class JobSinkTest extends FeatureSpec
       val reader = readSampleLog()
       val logProcessorPath = reader.path / s"$uuid-${SparklintLogProcessor.name}"
       val jobSink = system.actorSelection(logProcessorPath / s"$uuid-$name")
-      jobSink ! GetCoreUsageByJobGroup(41662, None, None, testActor)
+      jobSink ! GetCoreUsageByJobGroup(41662, None, None)
       expectMsgPF() {
         case CoreUsageResponse(byJobGroup) =>
           byJobGroup shouldBe SortedMap(
@@ -95,7 +95,7 @@ class JobSinkTest extends FeatureSpec
       val reader = readSampleLog()
       val logProcessorPath = reader.path / s"$uuid-${SparklintLogProcessor.name}"
       val jobSink = system.actorSelection(logProcessorPath / s"$uuid-$name")
-      jobSink ! GetCoreUtilizationByJobGroup(None, None, testActor)
+      jobSink ! GetCoreUtilizationByJobGroup(None, None)
       expectMsgPF() {
         case CoreUtilizationResponse(usageByJobGroup) =>
           usageByJobGroup.size shouldBe 1

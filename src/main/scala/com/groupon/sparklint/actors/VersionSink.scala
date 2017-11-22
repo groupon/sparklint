@@ -28,7 +28,7 @@ object VersionSink {
 
   def props: Props = Props(new VersionSink)
 
-  case class GetVersion(replyTo: ActorRef)
+  case object GetVersion
 
   case class VersionResponse(version: String)
 
@@ -43,7 +43,7 @@ class VersionSink extends Actor {
   override def receive: Receive = {
     case logStart: SparkListenerLogStartShim =>
       version = logStart.sparkVersion
-    case GetVersion(replyTo) =>
-      replyTo ! VersionResponse(version)
+    case GetVersion =>
+      sender() ! VersionResponse(version)
   }
 }

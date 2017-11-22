@@ -28,7 +28,7 @@ object LifeCycleSink {
 
   def props: Props = Props(new LifeCycleSink())
 
-  case class GetLifeCycle(replyTo: ActorRef)
+  case object GetLifeCycle
 
   case class LifeCycleResponse(started: Option[Long], ended: Option[Long])
 
@@ -46,7 +46,7 @@ class LifeCycleSink extends Actor {
       started = Some(start.time)
     case end: SparkListenerApplicationEnd =>
       ended = Some(end.time)
-    case GetLifeCycle(replyTo) =>
-      replyTo ! LifeCycleResponse(started, ended)
+    case GetLifeCycle =>
+      sender() ! LifeCycleResponse(started, ended)
   }
 }

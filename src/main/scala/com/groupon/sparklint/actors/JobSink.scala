@@ -30,21 +30,21 @@ object JobSink {
 
   def props: Props = Props(new JobSink)
 
-  case class GetCoreUsageByLocality(bucketSize: Long, since: Option[Long], until: Option[Long], replyTo: ActorRef)
+  case class GetCoreUsageByLocality(bucketSize: Long, since: Option[Long], until: Option[Long])
 
-  case class GetCoreUsageByJobGroup(bucketSize: Long, since: Option[Long], until: Option[Long], replyTo: ActorRef)
+  case class GetCoreUsageByJobGroup(bucketSize: Long, since: Option[Long], until: Option[Long])
 
-  case class GetCoreUsageByPool(bucketSize: Long, since: Option[Long], until: Option[Long], replyTo: ActorRef)
+  case class GetCoreUsageByPool(bucketSize: Long, since: Option[Long], until: Option[Long])
 
   case class CoreUsageResponse(data: SortedMap[Long, UsageByGroup])
 
   case object NoDataYet
 
-  case class GetCoreUtilizationByLocality(since: Option[Long], until: Option[Long], replyTo: ActorRef)
+  case class GetCoreUtilizationByLocality(since: Option[Long], until: Option[Long])
 
-  case class GetCoreUtilizationByJobGroup(since: Option[Long], untilNo: Option[Long], replyTo: ActorRef)
+  case class GetCoreUtilizationByJobGroup(since: Option[Long], untilNo: Option[Long])
 
-  case class GetCoreUtilizationByPool(since: Option[Long], untilNo: Option[Long], replyTo: ActorRef)
+  case class GetCoreUtilizationByPool(since: Option[Long], untilNo: Option[Long])
 
   case class CoreUtilizationResponse(data: Map[String, Double])
 
@@ -130,23 +130,23 @@ class JobSink extends Actor {
   }
 
   def processQuery: PartialFunction[Any, Unit] = {
-    case GetCoreUsageByLocality(bucketSize, since, until, replyTo) =>
-      replyTo ! getCoreUsage(bucketSize, since, until, metricsByLocality)
+    case GetCoreUsageByLocality(bucketSize, since, until) =>
+      sender() ! getCoreUsage(bucketSize, since, until, metricsByLocality)
 
-    case GetCoreUsageByJobGroup(bucketSize, since, until, replyTo) =>
-      replyTo ! getCoreUsage(bucketSize, since, until, metricsByJobGroup.toMap)
+    case GetCoreUsageByJobGroup(bucketSize, since, until) =>
+      sender() ! getCoreUsage(bucketSize, since, until, metricsByJobGroup.toMap)
 
-    case GetCoreUsageByPool(bucketSize, since, until, replyTo) =>
-      replyTo ! getCoreUsage(bucketSize, since, until, metricsByPool.toMap)
+    case GetCoreUsageByPool(bucketSize, since, until) =>
+      sender() ! getCoreUsage(bucketSize, since, until, metricsByPool.toMap)
 
-    case GetCoreUtilizationByLocality(since, until, replyTo) =>
-      replyTo ! getCoreUtilization(since, until, metricsByLocality)
+    case GetCoreUtilizationByLocality(since, until) =>
+      sender() ! getCoreUtilization(since, until, metricsByLocality)
 
-    case GetCoreUtilizationByJobGroup(since, until, replyTo) =>
-      replyTo ! getCoreUtilization(since, until, metricsByJobGroup.toMap)
+    case GetCoreUtilizationByJobGroup(since, until) =>
+      sender() ! getCoreUtilization(since, until, metricsByJobGroup.toMap)
 
-    case GetCoreUtilizationByPool(since, until, replyTo) =>
-      replyTo ! getCoreUtilization(since, until, metricsByPool.toMap)
+    case GetCoreUtilizationByPool(since, until) =>
+      sender() ! getCoreUtilization(since, until, metricsByPool.toMap)
   }
 
   protected def getCoreUsage(bucketSize: Long, since: Option[Long], until: Option[Long], dataSeries: Map[String, LosslessMetricsSink]): Any = {

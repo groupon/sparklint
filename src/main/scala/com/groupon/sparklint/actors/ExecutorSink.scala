@@ -30,11 +30,11 @@ object ExecutorSink {
 
   def props: Props = Props(new ExecutorSink())
 
-  case class GetLiveExecutors(replyTo: ActorRef)
+  case object GetLiveExecutors
 
-  case class GetDeadExecutors(replyTo: ActorRef)
+  case object GetDeadExecutors
 
-  case class GetAllExecutors(replyTo: ActorRef)
+  case object GetAllExecutors
 
   case class ExecutorsResponse(executors: Map[String, ExecutorSummary])
 
@@ -62,11 +62,11 @@ class ExecutorSink extends Actor {
         deadExecutors(executorId) = executorSummary.copy(removed = Some(e.time))
       }
 
-    case GetLiveExecutors(replyTo) =>
-      replyTo ! ExecutorsResponse(liveExecutors.toMap)
-    case GetDeadExecutors(replyTo) =>
-      replyTo ! ExecutorsResponse(deadExecutors.toMap)
-    case GetAllExecutors(replyTo) =>
-      replyTo ! ExecutorsResponse(liveExecutors.toMap ++ deadExecutors.toMap)
+    case GetLiveExecutors =>
+      sender() ! ExecutorsResponse(liveExecutors.toMap)
+    case GetDeadExecutors =>
+      sender() ! ExecutorsResponse(deadExecutors.toMap)
+    case GetAllExecutors =>
+      sender() ! ExecutorsResponse(liveExecutors.toMap ++ deadExecutors.toMap)
   }
 }

@@ -16,17 +16,17 @@
 
 package com.groupon.sparklint.actors
 
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.testkit.{DefaultTimeout, TestKitBase}
-import org.scalatest.{FeatureSpec, Matchers}
+import akka.actor.ActorSystem
+import akka.testkit.{DefaultTimeout, ImplicitSender, TestKit}
+import org.scalatest.{FeatureSpecLike, Matchers}
 
 /**
   * @author rxue
   * @since 6/4/17.
   */
-class VersionSinkTest extends FeatureSpec
-  with ScalatestRouteTest
-  with TestKitBase
+class VersionSinkTest extends TestKit(ActorSystem("MySpec"))
+  with FeatureSpecLike
+  with ImplicitSender
   with DefaultTimeout
   with FileBasedSparkLogTest
   with Matchers {
@@ -38,7 +38,7 @@ class VersionSinkTest extends FeatureSpec
       val reader = readSampleLog()
       val logProcessorPath = reader.path / s"$uuid-${SparklintLogProcessor.name}"
       val versionSink = system.actorSelection(logProcessorPath / s"$uuid-$name")
-      versionSink ! GetVersion(testActor)
+      versionSink ! GetVersion
       expectMsg(VersionResponse("1.5.2"))
     }
   }

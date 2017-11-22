@@ -16,17 +16,17 @@
 
 package com.groupon.sparklint.actors
 
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.testkit.{DefaultTimeout, TestKitBase}
-import org.scalatest.{FeatureSpec, Matchers}
+import akka.actor.ActorSystem
+import akka.testkit.{DefaultTimeout, ImplicitSender, TestKit}
+import org.scalatest.{FeatureSpecLike, Matchers}
 
 /**
   * @author rxue
   * @since 6/4/17.
   */
-class LifeCycleSinkTest extends FeatureSpec
-  with ScalatestRouteTest
-  with TestKitBase
+class LifeCycleSinkTest extends TestKit(ActorSystem("MySpec"))
+  with FeatureSpecLike
+  with ImplicitSender
   with DefaultTimeout
   with FileBasedSparkLogTest
   with Matchers {
@@ -38,7 +38,7 @@ class LifeCycleSinkTest extends FeatureSpec
       val reader = readSampleLog()
       val logProcessorPath = reader.path / s"$uuid-${SparklintLogProcessor.name}"
       val lifeCycleSink = system.actorSelection(logProcessorPath / s"$uuid-$name")
-      lifeCycleSink ! GetLifeCycle(testActor)
+      lifeCycleSink ! GetLifeCycle
       expectMsg(LifeCycleResponse(Some(1466087746466L), Some(1466088058982L)))
     }
   }

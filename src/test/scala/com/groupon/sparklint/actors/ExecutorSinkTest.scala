@@ -16,17 +16,17 @@
 
 package com.groupon.sparklint.actors
 
-import akka.http.scaladsl.testkit.ScalatestRouteTest
-import akka.testkit.{DefaultTimeout, TestKitBase}
-import org.scalatest.{FeatureSpec, Matchers}
+import akka.actor.ActorSystem
+import akka.testkit.{DefaultTimeout, ImplicitSender, TestKit}
+import org.scalatest.{FeatureSpecLike, Matchers}
 
 /**
   * @author rxue
   * @since 6/4/17.
   */
-class ExecutorSinkTest extends FeatureSpec
-  with ScalatestRouteTest
-  with TestKitBase
+class ExecutorSinkTest extends TestKit(ActorSystem("MySpec"))
+  with FeatureSpecLike
+  with ImplicitSender
   with DefaultTimeout
   with FileBasedSparkLogTest
   with Matchers {
@@ -38,7 +38,7 @@ class ExecutorSinkTest extends FeatureSpec
       val reader = readSampleLog()
       val logProcessorPath = reader.path / s"$uuid-${SparklintLogProcessor.name}"
       val executorsSink = system.actorSelection(logProcessorPath / s"$uuid-$name")
-      executorsSink ! GetAllExecutors(testActor)
+      executorsSink ! GetAllExecutors
       expectMsg(ExecutorsResponse(Map(
         "2" -> ExecutorSummary(1466087808972L, 2, Some(1466088058982L)),
         "1" -> ExecutorSummary(1466087811580L, 2, Some(1466088058982L)),
