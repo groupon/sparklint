@@ -31,16 +31,16 @@ object SparklintServer extends Logging with OptParse {
   def main(args: Array[String]): Unit = {
     val config = CliSparklintConfig().parseCliArgs(args)
     val server = new Sparklint(config)
-    if (config.historySource) {
-      val uri = Uri.fromString(config.historySource.get).toOption.get
-      server.backend.appendHistoryServer(uri.host.get.value, uri)
-    }
-    if (config.fileSource) {
-      server.backend.appendSingleFileManager(config.fileSource.get)
-    }
-    if (config.directorySource) {
-      server.backend.appendFolderManager(config.directorySource.get)
-    }
+//    if (config.historySource) {
+//      val uri = Uri.fromString(config.historySource.get).toOption.get
+//      server.backend.appendHistoryServer(uri.host.get.value, uri)
+//    }
+//    if (config.fileSource) {
+//      server.backend.appendSingleFileManager(config.fileSource.get)
+//    }
+//    if (config.directorySource) {
+//      server.backend.appendFolderManager(config.directorySource.get)
+//    }
     // register initial event sources
     server.startServer()
     waitForever

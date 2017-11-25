@@ -16,7 +16,6 @@
 
 package com.groupon.sparklint.actors
 
-import akka.actor.FSM.State
 import akka.actor.{ActorRef, FSM, Props}
 import org.apache.spark.scheduler.{SparkListenerApplicationStart, SparkListenerEvent}
 
@@ -32,13 +31,11 @@ object SparklintAppLogReader {
 
   case object ReadNextLine
 
-  case object ReadTillEnd
+  private case object ReadTillEnd
 
   case object PauseReading
 
   case object ResumeReading
-
-  case object ReportStatus
 
   def props(uuid: String, logs: Iterator[SparkListenerEvent]): Props = Props(new SparklintAppLogReader(uuid, logs))
 
@@ -54,18 +51,21 @@ object SparklintAppLogReader {
 
   private[actors] case object Finished extends State
 
-  sealed trait Data
+  case class ProgressData(numRead: Int)
 
-  case class ProgressData(numRead: Int) extends Data
+  case object GetReaderStatus
 
+  case class GetReaderStatusResponse(state: State, progress: ProgressData, lastRead: Option[SparkListenerEvent])
 }
 
 class SparklintAppLogReader(uuid: String, logs: Iterator[SparkListenerEvent])
-  extends FSM[SparklintAppLogReader.State, SparklintAppLogReader.Data] {
+  extends FSM[SparklintAppLogReader.State, SparklintAppLogReader.ProgressData] {
 
   import SparklintAppLogReader._
 
   lazy val logProcessor: ActorRef = context.actorOf(SparklintLogProcessor.props(uuid), SparklintLogProcessor.name)
+
+  var lastRead: Option[SparkListenerEvent] = None
 
   startWith(Unstarted, ProgressData(0))
 
@@ -81,6 +81,7 @@ class SparklintAppLogReader(uuid: String, logs: Iterator[SparkListenerEvent])
       var successfullyInitialized = false
       while (logs.hasNext && !successfullyInitialized) {
         val logLine = logs.next()
+        lastRead = Some(logLine)
         logProcessor ! logLine
         readCount += 1
         logLine match {
@@ -91,28 +92,38 @@ class SparklintAppLogReader(uuid: String, logs: Iterator[SparkListenerEvent])
       }
       val newProgress = p.copy(readCount)
       if (successfullyInitialized) {
-        goto(Started) using newProgress
+        goto(Paused) using newProgress
       } else {
         goto(Finished) using newProgress
       }
-    case Event(e@(ReadNextLine | ReadTillEnd), _) =>
+    case Event(e@(ResumeReading | ReadTillEnd), _) =>
       self ! e
       stay()
   }
 
-  when(Started) {
-    case Event(ReadTillEnd, p: ProgressData) =>
-      if (logs.hasNext) {
-        logProcessor ! logs.next()
+  when(Paused) {
+    case Event(e@(ResumeReading | ReadNextLine), p) =>
+      if (e == ResumeReading) {
         self ! ReadTillEnd
-        stay() using p.copy(p.numRead + 1)
       } else {
-        goto(Finished) using p
+        self ! ReadNextLine
       }
-    case Event(ReadNextLine, p: ProgressData) =>
+      goto(Started)
+  }
+
+  when(Started) {
+    case Event(e@(ReadTillEnd | ReadNextLine), p) =>
       if (logs.hasNext) {
-        logProcessor ! logs.next()
-        stay() using p.copy(p.numRead + 1)
+        val logLine = logs.next()
+        lastRead = Some(logLine)
+        logProcessor ! logLine
+        val newProgress = p.copy(p.numRead + 1)
+        if (e == ReadTillEnd) {
+          self ! ReadTillEnd
+          stay() using newProgress
+        } else {
+          goto(Paused) using newProgress
+        }
       } else {
         goto(Finished) using p
       }
@@ -120,18 +131,13 @@ class SparklintAppLogReader(uuid: String, logs: Iterator[SparkListenerEvent])
       goto(Paused)
   }
 
-  when(Paused) {
-    case Event(ResumeReading, _) =>
-      goto(Started)
-  }
-
   when(Finished) {
     PartialFunction.empty
   }
 
   whenUnhandled {
-    case Event(ReportStatus, p) =>
-      sender() ! State(stateName, p)
+    case Event(GetReaderStatus, p) =>
+      sender() ! GetReaderStatusResponse(stateName, p, lastRead)
       stay()
     case Event(query: SparklintLogProcessor.LogProcessorQuery, _) =>
       logProcessor.forward(query)

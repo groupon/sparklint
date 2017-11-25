@@ -19,17 +19,16 @@ package com.groupon.sparklint.server
 import java.nio.file.{Files, Paths}
 import java.time.Instant
 import java.time.format.DateTimeFormatter
-import java.time.temporal.{ChronoField, IsoFields, TemporalUnit}
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
-import akka.actor.{ActorRef, FSM}
+import akka.actor.{ActorRef, PoisonPill}
 import akka.pattern._
 import akka.util.Timeout
 import com.groupon.sparklint.actors.{ExecutorSink, LifeCycleSink, SparklintAppLogReader, VersionSink}
-import org.apache.spark.groupon.StringToSparkEvent
+import org.apache.spark.groupon.{SparkEventToJson, StringToSparkEvent}
 import org.http4s.dsl._
-import org.http4s.{HttpService, Response, UrlForm}
+import org.http4s.{HttpService, Request, Response, UrlForm}
 import org.json4s.JsonAST.JObject
 import org.json4s.JsonDSL._
 import org.json4s.jackson.JsonMethods.pretty
@@ -53,24 +52,32 @@ trait SparklintWebApi {
 
   private val logReaders: mutable.Map[String, LogReaderInfo] = mutable.Map.empty
 
-  def sparklintWebApi = HttpService {
-    case GET -> Root =>
+  def sparklintWebApi = HttpService(logManagementApi orElse queryApi)
+
+  def logManagementApi: PartialFunction[Request, Task[Response]] = {
+    case GET -> Root / "readers" =>
       jsonResponse(Ok(pretty("readers" -> logReaders.map {
         case (readerUuid, readerInfo) =>
           ("uuid" -> readerUuid) ~
             ("description" -> readerInfo.description)
       })))
-    case req@POST -> Root / "readLocalFile" =>
+    case req@POST -> Root / "reader" =>
       req.decode[UrlForm] { form =>
+        // lazy: Option[Boolean] -> lazy read
+        // uri: String -> uri to log file
+        // uuid: Option[String] -> specify uuid
         form.getFirst("uri") match {
           case Some(path) if Files.exists(Paths.get(path)) =>
             val file = Source.fromFile(path).getLines().flatMap(StringToSparkEvent.apply)
-            val uuid = UUID.randomUUID().toString
+            val uuid = form.getFirst("uuid").getOrElse(UUID.randomUUID().toString)
             val reader = actorSystem.actorOf(SparklintAppLogReader.props(uuid, file))
             val description = s"file://$path"
             logReaders(uuid) = LogReaderInfo(description, reader)
+            val lazyRead = form.getFirst("lazy").flatMap(s => Try(s.toBoolean).toOption).getOrElse(false)
             reader ! SparklintAppLogReader.StartInitializing
-            reader ! SparklintAppLogReader.ReadTillEnd
+            if (!lazyRead) {
+              reader ! SparklintAppLogReader.ResumeReading
+            }
             jsonResponse(Ok(pretty(("uuid" -> uuid) ~ ("description" -> description))))
           case Some(badPath) =>
             jsonResponse(BadRequest(pretty("message" -> s"file not found: $badPath")))
@@ -78,13 +85,50 @@ trait SparklintWebApi {
             jsonResponse(BadRequest(pretty("message" -> s"need 'uri' field with local file path as content")))
         }
       }
-    case GET -> Root / uuid if logReaders.contains(uuid) =>
+    case GET -> Root / "reader" / uuid if logReaders.contains(uuid) =>
       implicit val timeout: Timeout = Timeout(5, TimeUnit.SECONDS)
       val logReader = logReaders(uuid).ref
-      actorCall(logReader ? SparklintAppLogReader.ReportStatus, {
-        case FSM.State(statename, SparklintAppLogReader.ProgressData(numRead), _, _, _) =>
-          jsonResponse(Ok(pretty(("state" -> statename.toString) ~ ("recordsRead" -> numRead))))
+      actorCall(logReader ? SparklintAppLogReader.GetReaderStatus, {
+        case SparklintAppLogReader.GetReaderStatusResponse(statename, SparklintAppLogReader.ProgressData(numRead), lastRead) =>
+          jsonResponse(Ok(pretty(("state" -> statename.toString) ~
+            ("recordsRead" -> numRead) ~
+            ("lastRecord" -> lastRead.map(SparkEventToJson.apply)))))
       })
+    case PUT -> Root / "reader" / uuid / command if logReaders.contains(uuid) =>
+      implicit val timeout: Timeout = Timeout(5, TimeUnit.SECONDS)
+      val logReader = logReaders(uuid).ref
+      val sendCommand: PartialFunction[String, Unit] = {
+        case "pause" =>
+          logReader ! SparklintAppLogReader.PauseReading
+        case "readLine" =>
+          logReader ! SparklintAppLogReader.ReadNextLine
+        case "readTillEnd" =>
+          logReader ! SparklintAppLogReader.ResumeReading
+      }
+      val unknownCommand: PartialFunction[String, Task[Response]] = {
+        case unrecognized =>
+          jsonResponse(BadRequest(pretty("message" -> s"unrecognized command $unrecognized")))
+      }
+      val pipeline = sendCommand.andThen(_ => {
+        actorCall(logReader ? SparklintAppLogReader.GetReaderStatus, {
+          case SparklintAppLogReader.GetReaderStatusResponse(statename, SparklintAppLogReader.ProgressData(numRead), lastRead) =>
+            jsonResponse(Ok(pretty(("state" -> statename.toString) ~
+              ("recordsRead" -> numRead) ~
+              ("lastRecord" -> lastRead.map(SparkEventToJson.apply)))))
+        })
+      }).orElse(unknownCommand)
+      pipeline(command)
+    case DELETE -> Root / "reader" / uuid =>
+      logReaders.remove(uuid) match {
+        case Some(logReaderInfo) =>
+          logReaderInfo.ref ! PoisonPill
+          jsonResponse(Ok(pretty("message" -> s"Deleted reader $uuid (${logReaderInfo.description})")))
+        case None =>
+          jsonResponse(NotFound(pretty("message" -> s"Reader $uuid not found")))
+      }
+  }
+
+  def queryApi: PartialFunction[Request, Task[Response]] = {
     case GET -> Root / uuid / query if logReaders.contains(uuid) =>
       implicit val timeout: Timeout = Timeout(5, TimeUnit.SECONDS)
       val logReader = logReaders(uuid).ref
