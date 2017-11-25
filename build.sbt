@@ -35,7 +35,7 @@ lazy val slf4j = "1.7.16"
 lazy val log4j = "1.2.17"
 lazy val json4s = "3.2.11"
 lazy val jackson = "2.6.5"
-lazy val akkaVersion = "2.5.2"
+lazy val akkaVersion = "2.5.7"
 lazy val akkaHttpVersion = "10.0.6"
 
 resolvers in ThisBuild ++= Seq(

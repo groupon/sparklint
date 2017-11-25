@@ -18,6 +18,7 @@ package com.groupon.sparklint.server
 
 import java.net.{BindException, InetAddress}
 
+import akka.actor.ActorSystem
 import com.groupon.sparklint.common.Logging
 import org.http4s.MediaType.{`application/json`, `text/html`}
 import org.http4s.Response
@@ -42,6 +43,7 @@ import scalaz.concurrent.Task
 trait AdhocServer extends RoutingMap with Logging {
   // Random number without special meaning
   var server: Option[Server] = None
+  protected val actorSystem: ActorSystem = ActorSystem("sparklint")
 
   def DEFAULT_PORT: Int
 

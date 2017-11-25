@@ -29,13 +29,15 @@ object SparklintLogProcessor {
 
   def props(uuid: String): Props = Props(new SparklintLogProcessor(uuid))
 
+  trait LogProcessorQuery
+
 }
 
 class SparklintLogProcessor(uuid: String) extends Actor {
-  lazy val version: ActorRef = context.actorOf(VersionSink.props, s"$uuid-${VersionSink.name}")
-  lazy val lifeCycle: ActorRef = context.actorOf(LifeCycleSink.props, s"$uuid-${LifeCycleSink.name}")
-  lazy val executors: ActorRef = context.actorOf(ExecutorSink.props, s"$uuid-${ExecutorSink.name}")
-  lazy val taskInfo: ActorRef = context.actorOf(JobSink.props, s"$uuid-${JobSink.name}")
+  lazy val version: ActorRef = context.actorOf(VersionSink.props, VersionSink.name)
+  lazy val lifeCycle: ActorRef = context.actorOf(LifeCycleSink.props, LifeCycleSink.name)
+  lazy val executors: ActorRef = context.actorOf(ExecutorSink.props, ExecutorSink.name)
+  lazy val jobInfo: ActorRef = context.actorOf(JobSink.props, JobSink.name)
 
   private var lastMessageAt: Long = 0L
 
@@ -50,38 +52,47 @@ class SparklintLogProcessor(uuid: String) extends Actor {
       lastMessageAt = e.time
       lifeCycle.forward(e)
       executors.forward(e)
-      taskInfo.forward(e)
+      jobInfo.forward(e)
 
     case e: SparkListenerExecutorAdded =>
       lastMessageAt = e.time
       executors.forward(e)
-      taskInfo.forward(e)
+      jobInfo.forward(e)
     case e: SparkListenerExecutorRemoved =>
       lastMessageAt = e.time
       executors.forward(e)
-      taskInfo.forward(e)
+      jobInfo.forward(e)
 
     case e: SparkListenerJobStart =>
       lastMessageAt = e.time
-      taskInfo.forward(e)
+      jobInfo.forward(e)
     case e: SparkListenerJobEnd =>
       lastMessageAt = e.time
-      taskInfo.forward(e)
+      jobInfo.forward(e)
     case e: SparkListenerStageSubmitted =>
       for (submissionTime <- e.stageInfo.submissionTime) {
         lastMessageAt = submissionTime
       }
-      taskInfo.forward(e)
+      jobInfo.forward(e)
     case e: SparkListenerStageCompleted =>
       for (completionTime <- e.stageInfo.completionTime) {
         lastMessageAt = completionTime
       }
-      taskInfo.forward(e)
+      jobInfo.forward(e)
     case e: SparkListenerTaskStart =>
       lastMessageAt = e.taskInfo.launchTime
-      taskInfo.forward(e)
+      jobInfo.forward(e)
     case e: SparkListenerTaskEnd =>
       lastMessageAt = e.taskInfo.finishTime
-      taskInfo.forward(e)
+      jobInfo.forward(e)
+
+    case query: VersionSink.Query =>
+      version.forward(query)
+    case query: ExecutorSink.Query =>
+      executors.forward(query)
+    case query: LifeCycleSink.Query =>
+      lifeCycle.forward(query)
+    case query: JobSink.Query =>
+      jobInfo.forward(query)
   }
 }

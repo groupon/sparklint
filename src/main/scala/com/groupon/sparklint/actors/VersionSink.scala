@@ -16,7 +16,7 @@
 
 package com.groupon.sparklint.actors
 
-import akka.actor.{Actor, ActorRef, Props}
+import akka.actor.{Actor, Props}
 import org.apache.spark.groupon.SparkListenerLogStartShim
 
 /**
@@ -28,7 +28,9 @@ object VersionSink {
 
   def props: Props = Props(new VersionSink)
 
-  case object GetVersion
+  trait Query extends SparklintLogProcessor.LogProcessorQuery
+
+  case object GetVersion extends Query
 
   case class VersionResponse(version: String)
 

@@ -36,8 +36,8 @@ class ExecutorSinkTest extends TestKit(ActorSystem("MySpec"))
   feature("get version") {
     scenario("normally") {
       val reader = readSampleLog()
-      val logProcessorPath = reader.path / s"$uuid-${SparklintLogProcessor.name}"
-      val executorsSink = system.actorSelection(logProcessorPath / s"$uuid-$name")
+      val logProcessorPath = reader.path / SparklintLogProcessor.name
+      val executorsSink = system.actorSelection(logProcessorPath / name)
       executorsSink ! GetAllExecutors
       expectMsg(ExecutorsResponse(Map(
         "2" -> ExecutorSummary(1466087808972L, 2, Some(1466088058982L)),

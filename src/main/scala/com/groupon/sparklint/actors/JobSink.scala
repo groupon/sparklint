@@ -16,7 +16,8 @@
 
 package com.groupon.sparklint.actors
 
-import akka.actor.{Actor, ActorRef, Props}
+import akka.actor.{Actor, Props}
+import com.groupon.sparklint.actors.StandardMessages.NoDataYet
 import org.apache.spark.scheduler._
 
 import scala.collection.{SortedMap, mutable}
@@ -30,21 +31,21 @@ object JobSink {
 
   def props: Props = Props(new JobSink)
 
-  case class GetCoreUsageByLocality(bucketSize: Long, since: Option[Long], until: Option[Long])
+  trait Query extends SparklintLogProcessor.LogProcessorQuery
 
-  case class GetCoreUsageByJobGroup(bucketSize: Long, since: Option[Long], until: Option[Long])
+  case class GetCoreUsageByLocality(bucketSize: Long, since: Option[Long], until: Option[Long]) extends Query
 
-  case class GetCoreUsageByPool(bucketSize: Long, since: Option[Long], until: Option[Long])
+  case class GetCoreUsageByJobGroup(bucketSize: Long, since: Option[Long], until: Option[Long]) extends Query
+
+  case class GetCoreUsageByPool(bucketSize: Long, since: Option[Long], until: Option[Long]) extends Query
 
   case class CoreUsageResponse(data: SortedMap[Long, UsageByGroup])
 
-  case object NoDataYet
+  case class GetCoreUtilizationByLocality(since: Option[Long], until: Option[Long]) extends Query
 
-  case class GetCoreUtilizationByLocality(since: Option[Long], until: Option[Long])
+  case class GetCoreUtilizationByJobGroup(since: Option[Long], untilNo: Option[Long]) extends Query
 
-  case class GetCoreUtilizationByJobGroup(since: Option[Long], untilNo: Option[Long])
-
-  case class GetCoreUtilizationByPool(since: Option[Long], untilNo: Option[Long])
+  case class GetCoreUtilizationByPool(since: Option[Long], untilNo: Option[Long]) extends Query
 
   case class CoreUtilizationResponse(data: Map[String, Double])
 
@@ -100,7 +101,7 @@ class JobSink extends Actor {
     case e: SparkListenerJobStart =>
       runningJobs(e.jobId) = JobSummary(Option(e.properties.getProperty("spark.jobGroup.id")),
         Option(e.properties.getProperty("spark.job.description")),
-        Option(e.properties.getProperty("spark.scheduler.pool")),e.time)
+        Option(e.properties.getProperty("spark.scheduler.pool")), e.time)
       for (stageId <- e.stageIds) {
         stageToJob(stageId) = e.jobId
       }

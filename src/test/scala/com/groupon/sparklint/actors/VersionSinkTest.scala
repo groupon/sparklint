@@ -36,8 +36,8 @@ class VersionSinkTest extends TestKit(ActorSystem("MySpec"))
   feature("get version") {
     scenario("normally") {
       val reader = readSampleLog()
-      val logProcessorPath = reader.path / s"$uuid-${SparklintLogProcessor.name}"
-      val versionSink = system.actorSelection(logProcessorPath / s"$uuid-$name")
+      val logProcessorPath = reader.path / SparklintLogProcessor.name
+      val versionSink = system.actorSelection(logProcessorPath / name)
       versionSink ! GetVersion
       expectMsg(VersionResponse("1.5.2"))
     }

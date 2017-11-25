@@ -38,8 +38,8 @@ class JobSinkTest extends TestKit(ActorSystem("MySpec"))
   feature("GetCoreUsageByLocality") {
     scenario("normally") {
       val reader = readSampleLog()
-      val logProcessorPath = reader.path / s"$uuid-${SparklintLogProcessor.name}"
-      val jobSink = system.actorSelection(logProcessorPath / s"$uuid-$name")
+      val logProcessorPath = reader.path / SparklintLogProcessor.name
+      val jobSink = system.actorSelection(logProcessorPath / name)
       jobSink ! GetCoreUsageByLocality(41662, None, None)
       expectMsg(CoreUsageResponse(
         SortedMap(
@@ -56,8 +56,8 @@ class JobSinkTest extends TestKit(ActorSystem("MySpec"))
   feature("GetCoreUtilizationByLocality") {
     scenario("normally") {
       val reader = readSampleLog()
-      val logProcessorPath = reader.path / s"$uuid-${SparklintLogProcessor.name}"
-      val jobSink = system.actorSelection(logProcessorPath / s"$uuid-$name")
+      val logProcessorPath = reader.path / SparklintLogProcessor.name
+      val jobSink = system.actorSelection(logProcessorPath / name)
       jobSink ! GetCoreUtilizationByLocality(None, None)
       expectMsgPF() {
         case CoreUtilizationResponse(usageByLocality) =>
@@ -73,8 +73,8 @@ class JobSinkTest extends TestKit(ActorSystem("MySpec"))
   feature("GetCoreUsageByJobGroup") {
     scenario("normally") {
       val reader = readSampleLog()
-      val logProcessorPath = reader.path / s"$uuid-${SparklintLogProcessor.name}"
-      val jobSink = system.actorSelection(logProcessorPath / s"$uuid-$name")
+      val logProcessorPath = reader.path / SparklintLogProcessor.name
+      val jobSink = system.actorSelection(logProcessorPath / name)
       jobSink ! GetCoreUsageByJobGroup(41662, None, None)
       expectMsgPF() {
         case CoreUsageResponse(byJobGroup) =>
@@ -93,8 +93,8 @@ class JobSinkTest extends TestKit(ActorSystem("MySpec"))
   feature("GetCoreUtilizationByJobGroup") {
     scenario("normally") {
       val reader = readSampleLog()
-      val logProcessorPath = reader.path / s"$uuid-${SparklintLogProcessor.name}"
-      val jobSink = system.actorSelection(logProcessorPath / s"$uuid-$name")
+      val logProcessorPath = reader.path / SparklintLogProcessor.name
+      val jobSink = system.actorSelection(logProcessorPath / name)
       jobSink ! GetCoreUtilizationByJobGroup(None, None)
       expectMsgPF() {
         case CoreUtilizationResponse(usageByJobGroup) =>

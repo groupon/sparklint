@@ -30,15 +30,25 @@ object ExecutorSink {
 
   def props: Props = Props(new ExecutorSink())
 
-  case object GetLiveExecutors
+  trait Query extends SparklintLogProcessor.LogProcessorQuery
 
-  case object GetDeadExecutors
+  case object GetLiveExecutors extends Query
 
-  case object GetAllExecutors
+  case object GetDeadExecutors extends Query
 
-  case class ExecutorsResponse(executors: Map[String, ExecutorSummary])
+  case object GetAllExecutors extends Query
 
-  case class ExecutorSummary(added: Long, cores: Int, removed: Option[Long] = None)
+  case class ExecutorsResponse(executors: Map[String, ExecutorSummary]) {
+    def cores: Int = {
+      executors.values.filter(_.alive).map(_.cores).sum
+    }
+  }
+
+  case class ExecutorSummary(added: Long, cores: Int, removed: Option[Long] = None) {
+    def alive: Boolean = {
+      removed.isEmpty
+    }
+  }
 
 }
 
@@ -58,9 +68,9 @@ class ExecutorSink extends Actor {
       }
     case e: SparkListenerApplicationEnd =>
       for ((executorId, executorSummary) <- liveExecutors) {
-        liveExecutors.remove(executorId)
         deadExecutors(executorId) = executorSummary.copy(removed = Some(e.time))
       }
+      liveExecutors.clear()
 
     case GetLiveExecutors =>
       sender() ! ExecutorsResponse(liveExecutors.toMap)

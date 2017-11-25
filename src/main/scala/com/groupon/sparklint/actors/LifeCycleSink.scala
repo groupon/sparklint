@@ -28,9 +28,23 @@ object LifeCycleSink {
 
   def props: Props = Props(new LifeCycleSink())
 
-  case object GetLifeCycle
+  trait Query extends SparklintLogProcessor.LogProcessorQuery
 
-  case class LifeCycleResponse(started: Option[Long], ended: Option[Long])
+  case object GetLifeCycle extends Query
+
+  case class LifeCycleResponse(started: Option[Long], finished: Option[Long]) {
+    lazy val state: String = if (started.isEmpty) {
+      "Unstarted"
+    } else if (finished.isEmpty) {
+      "Running"
+    } else {
+      "Finished"
+    }
+
+    lazy val duration: Option[Long] = {
+      finished.map(f => f - started.get)
+    }
+  }
 
 }
 

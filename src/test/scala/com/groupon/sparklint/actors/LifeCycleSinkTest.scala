@@ -36,8 +36,8 @@ class LifeCycleSinkTest extends TestKit(ActorSystem("MySpec"))
   feature("get version") {
     scenario("normally") {
       val reader = readSampleLog()
-      val logProcessorPath = reader.path / s"$uuid-${SparklintLogProcessor.name}"
-      val lifeCycleSink = system.actorSelection(logProcessorPath / s"$uuid-$name")
+      val logProcessorPath = reader.path / SparklintLogProcessor.name
+      val lifeCycleSink = system.actorSelection(logProcessorPath / name)
       lifeCycleSink ! GetLifeCycle
       expectMsg(LifeCycleResponse(Some(1466087746466L), Some(1466088058982L)))
     }
