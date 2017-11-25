@@ -50,6 +50,11 @@ object BuildUtils {
 
   def getProjectNameSuffix(versionString: String): String = versionString.replaceAll("[-\\.]", "")
 
+  def getAkkaVersion(scalaVersion: String): String = scalaVersion match {
+    case "2.10.6" => "2.3.16"
+    case "2.11.8" => "2.5.7"
+  }
+
   def getSparkMajorVersion(versionString: String): String = versionString match {
     case v if SPARK_1_6_VERSIONS.contains(v) =>
       "spark-1.6"

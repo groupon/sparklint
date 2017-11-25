@@ -28,15 +28,15 @@ assemblyOption in assembly := (assemblyOption in assembly)
 lazy val sparkVersion = SettingKey[String]("spark-version", "The version of spark library to compile against")
 sparkVersion := "2.1.0"
 // Non-spark
-lazy val http4s = "0.15.5"
+lazy val http4s = "0.15.16"
 lazy val optparse = "1.1.2"
 lazy val scalatest = "3.0.4"
 lazy val slf4j = "1.7.16"
 lazy val log4j = "1.2.17"
 lazy val json4s = "3.2.11"
 lazy val jackson = "2.6.5"
-lazy val akkaVersion = "2.5.7"
-lazy val akkaHttpVersion = "10.0.6"
+lazy val akkaVersion = SettingKey[String]("akka-version")
+akkaVersion := getAkkaVersion(scalaVersion.value)
 
 resolvers in ThisBuild ++= Seq(
   Resolver.sonatypeRepo("snapshot"),
@@ -52,10 +52,8 @@ libraryDependencies ++= Seq(
 
   "com.frugalmechanic" %% "scala-optparse" % optparse,
 
-  "com.typesafe.akka" %% "akka-actor" % akkaVersion,
-  "com.typesafe.akka" %% "akka-http"  % akkaHttpVersion,
-  "com.typesafe.akka" %% "akka-http-spray-json" % akkaHttpVersion,
-  "com.typesafe.akka" %% "akka-slf4j" % akkaVersion,
+  "com.typesafe.akka" %% "akka-actor" % akkaVersion.value,
+  "com.typesafe.akka" %% "akka-slf4j" % akkaVersion.value,
 
   "org.http4s" %% "http4s-dsl" % http4s,
   "org.http4s" %% "http4s-blaze-server" % http4s,
@@ -76,8 +74,7 @@ runMain in Compile := Defaults.runMainTask(fullClasspath in Compile, runner in (
 
 // Test
 libraryDependencies ++= Seq(
-  "com.typesafe.akka" %% "akka-testkit" % akkaVersion,
-  "com.typesafe.akka" %% "akka-http-testkit" % akkaHttpVersion,
+  "com.typesafe.akka" %% "akka-testkit" % akkaVersion.value,
   "org.scalatest" %% "scalatest" % scalatest
 ) map (_ % Test)
 fork in Test := true
