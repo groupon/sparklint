@@ -16,13 +16,10 @@
 
 package com.groupon.sparklint
 
+import akka.actor.ActorRef
 import com.groupon.sparklint.common.{SparkConfSparklintConfig, SparklintConfig}
-import com.groupon.sparklint.events.{GenericEventSourceGroupManager, ListenerEventSource}
 import org.apache.spark.scheduler.SparkListenerEvent
 import org.apache.spark.{SparkConf, SparkFirehoseListener}
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 
 /**
   * The listener that will be created when provided in --conf spark.extraListeners
@@ -33,19 +30,15 @@ import scala.concurrent.Future
 class SparklintListener(appId: String, appName: String, config: SparklintConfig) extends SparkFirehoseListener {
 
   val sparklint = new Sparklint(config)
-  val esgm = new GenericEventSourceGroupManager("SparklintListener", closeable = false)
-  val liveEventSource = new ListenerEventSource(appId, appName)
+  private val logReceiver: ActorRef = sparklint.registerLogReceiver(appId, appName)
 
   def this(conf: SparkConf) = {
     this(conf.get("spark.app.id", "AppId"), conf.get("spark.app.name", "AppName"), new SparkConfSparklintConfig(conf))
   }
 
   override def onEvent(event: SparkListenerEvent): Unit = {
-    liveEventSource.onEvent(event)
+    logReceiver ! event
   }
 
-  esgm.registerEventSource(liveEventSource)
-//  sparklint.backend.append(esgm)
-  Future(liveEventSource.start())
   sparklint.startServer()
 }

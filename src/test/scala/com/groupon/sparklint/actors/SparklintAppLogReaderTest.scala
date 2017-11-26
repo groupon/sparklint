@@ -38,7 +38,7 @@ class SparklintAppLogReaderTest extends TestKit(ActorSystem("test"))
       val reader = initializeSampleLog()
       expectMsg(CurrentState(reader, Unstarted))
       expectMsg(Transition(reader, Unstarted, Initializing))
-      expectMsg(Transition(reader, Initializing, Started))
+      expectMsg(Transition(reader, Initializing, Paused))
       reader ! UnsubscribeTransitionCallBack(testActor)
     }
   }
@@ -48,8 +48,9 @@ class SparklintAppLogReaderTest extends TestKit(ActorSystem("test"))
       val reader = initializeSampleLog()
       expectMsg(CurrentState(reader, Unstarted))
       expectMsg(Transition(reader, Unstarted, Initializing))
-      expectMsg(Transition(reader, Initializing, Started))
-      reader ! ReadTillEnd
+      expectMsg(Transition(reader, Initializing, Paused))
+      reader ! ResumeReading
+      expectMsg(Transition(reader, Paused, Started))
       expectMsg(Transition(reader, Started, Finished))
       reader ! UnsubscribeTransitionCallBack(testActor)
     }

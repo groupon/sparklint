@@ -25,8 +25,6 @@ import org.apache.spark.scheduler.{SparkListenerApplicationStart, SparkListenerE
   */
 object SparklintAppLogReader {
 
-  case object StartReading
-
   case object StartInitializing
 
   case object ReadNextLine
@@ -51,19 +49,21 @@ object SparklintAppLogReader {
 
   private[actors] case object Finished extends State
 
-  case class ProgressData(numRead: Int)
+  case class ProgressData(numRead: Int) {
+    def inc(count: Int = 1): ProgressData = copy(numRead + count)
+  }
 
   case object GetReaderStatus
 
-  case class GetReaderStatusResponse(state: State, progress: ProgressData, lastRead: Option[SparkListenerEvent])
+  case class GetReaderStatusResponse(state: String, progress: ProgressData, lastRead: Option[SparkListenerEvent])
 }
 
-class SparklintAppLogReader(uuid: String, logs: Iterator[SparkListenerEvent])
+class SparklintAppLogReader(id: String, logs: Iterator[SparkListenerEvent])
   extends FSM[SparklintAppLogReader.State, SparklintAppLogReader.ProgressData] {
 
   import SparklintAppLogReader._
 
-  lazy val logProcessor: ActorRef = context.actorOf(SparklintLogProcessor.props(uuid), SparklintLogProcessor.name)
+  lazy val logProcessor: ActorRef = context.actorOf(SparklintLogProcessor.props(id), SparklintLogProcessor.name)
 
   var lastRead: Option[SparkListenerEvent] = None
 
@@ -117,7 +117,7 @@ class SparklintAppLogReader(uuid: String, logs: Iterator[SparkListenerEvent])
         val logLine = logs.next()
         lastRead = Some(logLine)
         logProcessor ! logLine
-        val newProgress = p.copy(p.numRead + 1)
+        val newProgress = p.inc()
         if (e == ReadTillEnd) {
           self ! ReadTillEnd
           stay() using newProgress
@@ -137,7 +137,7 @@ class SparklintAppLogReader(uuid: String, logs: Iterator[SparkListenerEvent])
 
   whenUnhandled {
     case Event(GetReaderStatus, p) =>
-      sender() ! GetReaderStatusResponse(stateName, p, lastRead)
+      sender() ! GetReaderStatusResponse(stateName.toString, p, lastRead)
       stay()
     case Event(query: SparklintLogProcessor.LogProcessorQuery, _) =>
       logProcessor.forward(query)

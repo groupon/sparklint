@@ -33,7 +33,7 @@ object SparklintLogProcessor {
 
 }
 
-class SparklintLogProcessor(uuid: String) extends Actor {
+class SparklintLogProcessor(id: String) extends Actor {
   lazy val version: ActorRef = context.actorOf(VersionSink.props, VersionSink.name)
   lazy val lifeCycle: ActorRef = context.actorOf(LifeCycleSink.props, LifeCycleSink.name)
   lazy val executors: ActorRef = context.actorOf(ExecutorSink.props, ExecutorSink.name)
