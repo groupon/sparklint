@@ -29,7 +29,7 @@ import com.groupon.sparklint.actors._
 import org.apache.spark.groupon.{SparkEventToJson, StringToSparkEvent}
 import org.http4s.dsl._
 import org.http4s.{HttpService, Request, Response, UrlForm}
-import org.json4s.JsonAST.JObject
+import org.json4s.JsonAST.{JField, JObject, JString, JValue}
 import org.json4s.JsonDSL._
 import org.json4s.jackson.JsonMethods.pretty
 
@@ -54,8 +54,8 @@ trait SparklintWebApi {
 
   def sparklintWebApi = HttpService(logManagementApi orElse queryApi)
 
-  def registerLogReceiver(id: String, receiverDescription: String): ActorRef = {
-    val ref = actorSystem.actorOf(SparklintEventLogReceiver.props(id))
+  def registerLogReceiver(id: String, receiverDescription: String, storageOption: StorageOption): ActorRef = {
+    val ref = actorSystem.actorOf(SparklintEventLogReceiver.props(id, storageOption))
     logReaders(id) = LogReaderInfo(receiverDescription, ref)
     ref
   }
@@ -72,11 +72,18 @@ trait SparklintWebApi {
         // lazy: Option[Boolean] -> lazy read
         // uri: String -> uri to log file
         // id: Option[String] -> specify id
+        // metricsCapacity: Option[Long] -> how many data to keep, None for unlimited
+        // metricsPruneFrequency: Option[Long] -> how often to retire old data, only works with metricsCapacity
         form.getFirst("uri") match {
           case Some(path) if Files.exists(Paths.get(path)) =>
             val file = Source.fromFile(path).getLines().flatMap(StringToSparkEvent.apply)
             val id = form.getFirst("id").getOrElse(UUID.randomUUID().toString)
-            val reader = actorSystem.actorOf(SparklintAppLogReader.props(id, file))
+            val storageOption = Try({
+              val capacity = form.getFirst("metricsCapacity").get.toLong
+              val pruneFrequency = Try(form.getFirst("metricsPruneFrequency").get.toLong).getOrElse(capacity)
+              StorageOption.FixedCapacity(capacity, pruneFrequency)
+            }).getOrElse(StorageOption.Lossless)
+            val reader = actorSystem.actorOf(SparklintAppLogReader.props(id, file, storageOption))
             val description = s"file://$path"
             logReaders(id) = LogReaderInfo(description, reader)
             val lazyRead = form.getFirst("lazy").flatMap(s => Try(s.toBoolean).toOption).getOrElse(false)
@@ -86,19 +93,17 @@ trait SparklintWebApi {
             }
             jsonResponse(Ok(pretty(("id" -> id) ~ ("description" -> description))))
           case Some(badPath) =>
-            jsonResponse(BadRequest(pretty("message" -> s"file not found: $badPath")))
+            badRequestResponse(s"file not found: $badPath")
           case None =>
-            jsonResponse(BadRequest(pretty("message" -> s"need 'uri' field with local file path as content")))
+            badRequestResponse(s"need 'uri' field with local file path as content")
         }
       }
     case GET -> Root / "reader" / id if logReaders.contains(id) =>
       implicit val timeout: Timeout = Timeout(5, TimeUnit.SECONDS)
       val logReader = logReaders(id).ref
       actorCall(logReader ? SparklintAppLogReader.GetReaderStatus, {
-        case SparklintAppLogReader.GetReaderStatusResponse(statename, SparklintAppLogReader.ProgressData(numRead), lastRead) =>
-          jsonResponse(Ok(pretty(("state" -> statename.toString) ~
-            ("recordsRead" -> numRead) ~
-            ("lastRecord" -> lastRead.map(SparkEventToJson.apply)))))
+        case response: SparklintAppLogReader.GetReaderStatusResponse =>
+          jsonResponse(Ok(pretty(renderGetReaderStatusResponse(response))))
       })
     case PUT -> Root / "reader" / id / command if logReaders.contains(id) =>
       implicit val timeout: Timeout = Timeout(5, TimeUnit.SECONDS)
@@ -113,14 +118,12 @@ trait SparklintWebApi {
       }
       val unknownCommand: PartialFunction[String, Task[Response]] = {
         case unrecognized =>
-          jsonResponse(BadRequest(pretty("message" -> s"unrecognized command [$unrecognized]")))
+          badRequestResponse(s"unrecognized command [$unrecognized]")
       }
       val pipeline = sendCommand.andThen(_ => {
         actorCall(logReader ? SparklintAppLogReader.GetReaderStatus, {
-          case SparklintAppLogReader.GetReaderStatusResponse(statename, SparklintAppLogReader.ProgressData(numRead), lastRead) =>
-            jsonResponse(Ok(pretty(("state" -> statename.toString) ~
-              ("recordsRead" -> numRead) ~
-              ("lastRecord" -> lastRead.map(SparkEventToJson.apply)))))
+          case response: SparklintAppLogReader.GetReaderStatusResponse =>
+            jsonResponse(Ok(pretty(renderGetReaderStatusResponse(response))))
         })
       }).orElse(unknownCommand)
       pipeline(command)
@@ -135,7 +138,7 @@ trait SparklintWebApi {
   }
 
   private def queryApi: PartialFunction[Request, Task[Response]] = {
-    case GET -> Root / id / query if logReaders.contains(id) =>
+    case req@GET -> Root / id / query if logReaders.contains(id) =>
       implicit val timeout: Timeout = Timeout(5, TimeUnit.SECONDS)
       val logReader = logReaders(id).ref
       query match {
@@ -170,6 +173,44 @@ trait SparklintWebApi {
                 ("durationMs" -> r.duration) ~
                 ("duration" -> r.duration.map(prettyPrintDuration)))))
           })
+        case "coreUsageByLocality" | "coreUsageByJobGroup" | "coreUsageByPool" =>
+          val params = req.params
+          Try(params("bucketSize").toLong).toOption match {
+            case None =>
+              badRequestResponse(s"bucketSize required")
+            case Some(bucketSize) =>
+              val from = Try(params("from").toLong).toOption
+              val until = Try(params("until").toLong).toOption
+              val message = query match {
+                case "coreUsageByLocality" =>
+                  JobSink.GetCoreUsageByLocality(bucketSize, from, until)
+                case "coreUsageByJobGroup" =>
+                  JobSink.GetCoreUsageByJobGroup(bucketSize, from, until)
+                case "coreUsageByPool" =>
+                  JobSink.GetCoreUsageByPool(bucketSize, from, until)
+              }
+              actorCall(logReader ? message, {
+                case StandardMessages.NoDataYet =>
+                  jsonResponse(Ok(pretty(("bucketSize" -> bucketSize) ~
+                    ("numberOfBuckets" -> 0)
+                  )))
+                case JobSink.CoreUsageResponse(data) =>
+                  jsonResponse(Ok(pretty(("bucketSize" -> bucketSize) ~
+                    ("startedAt" -> data.firstKey) ~
+                    ("startedTime" -> prettyPrintTime(data.firstKey)) ~
+                    ("finishedAt" -> data.lastKey) ~
+                    ("finishedTime" -> prettyPrintTime(data.lastKey)) ~
+                    ("numberOfBuckets" -> (data.size - 1)) ~
+                    ("buckets" -> data.map({ case (bucketStart, JobSink.UsageByGroup(byGroup, idle)) =>
+                      ("bucketStartAt" -> bucketStart) ~
+                        ("usageByGroup" -> byGroup.map({ case (groupName, usage) =>
+                          ("name" -> groupName) ~ ("usage" -> usage)
+                        })) ~
+                        ("idle" -> idle)
+                    }))
+                  )))
+              })
+          }
         case unrecognized =>
           jsonResponse(BadRequest(pretty("message" -> s"unrecognized query [$unrecognized]")))
       }
@@ -186,6 +227,23 @@ trait SparklintWebApi {
           ("removedAt" -> executorSummary.removed) ~
           ("removedTime" -> executorSummary.removed.map(prettyPrintTime))
     })
+  }
+
+  private def renderGetReaderStatusResponse(response: SparklintAppLogReader.GetReaderStatusResponse): JObject = {
+    val storageOptionRepl = response.storageOption match {
+      case StorageOption.Lossless =>
+        JObject("storageType" -> JString("lossless"))
+      case StorageOption.FixedCapacity(capacity, pruneFrequency) =>
+        ("storageType" -> "fixed") ~
+          ("capacity" -> capacity) ~
+          ("pruneFrequency" -> pruneFrequency)
+    }
+
+    ("state" -> response.state) ~
+      ("recordsRead" -> response.progress.numRead) ~
+      ("lastRecord" -> response.lastRead.map(SparkEventToJson.apply)) ~
+      ("storageOption" -> storageOptionRepl)
+
   }
 
   private def actorCall(actorAsk: Future[Any], onSuccess: PartialFunction[Any, Task[Response]]): Task[Response] = {

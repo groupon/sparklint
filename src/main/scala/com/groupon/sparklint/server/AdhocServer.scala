@@ -93,6 +93,12 @@ trait AdhocServer extends RoutingMap with Logging {
     textResponse.withContentType(Some(`Content-Type`(`application/json`)))
   }
 
+  def badRequestResponse(message: String): Task[Response] = {
+    import org.json4s.JsonDSL._
+    import org.json4s.jackson.JsonMethods.pretty
+    jsonResponse(BadRequest(pretty("message" -> message)))
+  }
+
   def htmlResponse(textResponse: Task[Response]): Task[Response] = {
     textResponse.withContentType(Some(`Content-Type`(`text/html`)))
   }

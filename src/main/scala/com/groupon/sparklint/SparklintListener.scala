@@ -17,7 +17,8 @@
 package com.groupon.sparklint
 
 import akka.actor.ActorRef
-import com.groupon.sparklint.common.{SparkConfSparklintConfig, SparklintConfig}
+import com.groupon.sparklint.actors.StorageOption
+import com.groupon.sparklint.common.SparkConfSparklintConfig
 import org.apache.spark.scheduler.SparkListenerEvent
 import org.apache.spark.{SparkConf, SparkFirehoseListener}
 
@@ -27,10 +28,10 @@ import org.apache.spark.{SparkConf, SparkFirehoseListener}
   * @author rxue
   * @since 8/18/16.
   */
-class SparklintListener(appId: String, appName: String, config: SparklintConfig) extends SparkFirehoseListener {
+class SparklintListener(appId: String, appName: String, config: SparkConfSparklintConfig) extends SparkFirehoseListener {
 
   val sparklint = new Sparklint(config)
-  private val logReceiver: ActorRef = sparklint.registerLogReceiver(appId, appName)
+  private val logReceiver: ActorRef = sparklint.registerLogReceiver(appId, appName, StorageOption.FixedCapacity(config.metricsCapacity, config.metricsPruneFrequency))
 
   def this(conf: SparkConf) = {
     this(conf.get("spark.app.id", "AppId"), conf.get("spark.app.name", "AppName"), new SparkConfSparklintConfig(conf))

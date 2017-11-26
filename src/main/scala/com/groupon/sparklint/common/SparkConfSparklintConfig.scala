@@ -24,4 +24,8 @@ import org.apache.spark.SparkConf
   */
 class SparkConfSparklintConfig(conf: SparkConf) extends SparklintConfig {
   override def port: Int = conf.get("sparklint.port", defaultPort.toString).toInt
+
+  def metricsCapacity: Long = conf.get("sparklint.metrics.capacity", "86400000").toLong // default store 1 day of metrics
+
+  def metricsPruneFrequency: Long = conf.get("sparklint.metrics.pruneFrequency", "600000").toLong // default prune every 10 min
 }

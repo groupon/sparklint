@@ -39,7 +39,7 @@ trait FileBasedSparkLogTest {
   protected def initializeSampleLog(): ActorRef = {
     val file = Source.fromFile(getClass.getClassLoader.getResource(fileName).getPath)
       .getLines().flatMap(StringToSparkEvent.apply)
-    val reader: ActorRef = system.actorOf(SparklintAppLogReader.props(uuid, file))
+    val reader: ActorRef = system.actorOf(SparklintAppLogReader.props(uuid, file, StorageOption.Lossless))
     reader ! SubscribeTransitionCallBack(testActor)
     reader ! SparklintAppLogReader.StartInitializing
     reader
@@ -49,7 +49,7 @@ trait FileBasedSparkLogTest {
   protected def readSampleLog(): ActorRef = {
     val file = Source.fromFile(getClass.getClassLoader.getResource(fileName).getPath)
       .getLines().flatMap(StringToSparkEvent.apply)
-    val reader: ActorRef = system.actorOf(SparklintAppLogReader.props(uuid, file))
+    val reader: ActorRef = system.actorOf(SparklintAppLogReader.props(uuid, file, StorageOption.Lossless))
     reader ! SubscribeTransitionCallBack(testActor)
     reader ! StartInitializing
     expectMsg(CurrentState(reader, Unstarted))

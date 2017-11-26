@@ -35,7 +35,8 @@ object SparklintAppLogReader {
 
   case object ResumeReading
 
-  def props(uuid: String, logs: Iterator[SparkListenerEvent]): Props = Props(new SparklintAppLogReader(uuid, logs))
+  def props(id: String, logs: Iterator[SparkListenerEvent], storageOption: StorageOption): Props =
+    Props(new SparklintAppLogReader(id, logs, storageOption))
 
   sealed trait State
 
@@ -55,15 +56,16 @@ object SparklintAppLogReader {
 
   case object GetReaderStatus
 
-  case class GetReaderStatusResponse(state: String, progress: ProgressData, lastRead: Option[SparkListenerEvent])
+  case class GetReaderStatusResponse(state: String, progress: ProgressData, lastRead: Option[SparkListenerEvent],
+                                     storageOption: StorageOption)
 }
 
-class SparklintAppLogReader(id: String, logs: Iterator[SparkListenerEvent])
+class SparklintAppLogReader(id: String, logs: Iterator[SparkListenerEvent], storageOption: StorageOption)
   extends FSM[SparklintAppLogReader.State, SparklintAppLogReader.ProgressData] {
 
   import SparklintAppLogReader._
 
-  lazy val logProcessor: ActorRef = context.actorOf(SparklintLogProcessor.props(id), SparklintLogProcessor.name)
+  lazy val logProcessor: ActorRef = context.actorOf(SparklintLogProcessor.props(id, storageOption), SparklintLogProcessor.name)
 
   var lastRead: Option[SparkListenerEvent] = None
 
@@ -137,7 +139,7 @@ class SparklintAppLogReader(id: String, logs: Iterator[SparkListenerEvent])
 
   whenUnhandled {
     case Event(GetReaderStatus, p) =>
-      sender() ! GetReaderStatusResponse(stateName.toString, p, lastRead)
+      sender() ! GetReaderStatusResponse(stateName.toString, p, lastRead, storageOption)
       stay()
     case Event(query: SparklintLogProcessor.LogProcessorQuery, _) =>
       logProcessor.forward(query)

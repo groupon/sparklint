@@ -20,16 +20,4 @@ package com.groupon.sparklint.actors
   * @author rxue
   * @since 6/4/17.
   */
-case class UsageSummary(start: Long, var end: Option[Long] = None, weight: Int = 1)
-
-object UsageSummary extends Ordering[UsageSummary] {
-  override def compare(x: UsageSummary, y: UsageSummary): Int = {
-    if (x.start < y.start) {
-      -1
-    } else if (x.start > y.start) {
-      1
-    } else {
-      0
-    }
-  }
-}
+case class WeightedInterval(start: Long, var end: Option[Long] = None, weight: Int = 1)

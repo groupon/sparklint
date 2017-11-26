@@ -29,48 +29,46 @@ import scala.collection.{SortedMap, mutable}
 object JobSink {
   val name: String = "job"
 
-  def props: Props = Props(new JobSink)
+  def props(storageOption: StorageOption): Props = Props(new JobSink(storageOption))
 
   trait Query extends SparklintLogProcessor.LogProcessorQuery
 
-  case class GetCoreUsageByLocality(bucketSize: Long, since: Option[Long], until: Option[Long]) extends Query
+  case class GetCoreUsageByLocality(bucketSize: Long, from: Option[Long], until: Option[Long]) extends Query
 
-  case class GetCoreUsageByJobGroup(bucketSize: Long, since: Option[Long], until: Option[Long]) extends Query
+  case class GetCoreUsageByJobGroup(bucketSize: Long, from: Option[Long], until: Option[Long]) extends Query
 
-  case class GetCoreUsageByPool(bucketSize: Long, since: Option[Long], until: Option[Long]) extends Query
+  case class GetCoreUsageByPool(bucketSize: Long, from: Option[Long], until: Option[Long]) extends Query
 
   case class CoreUsageResponse(data: SortedMap[Long, UsageByGroup])
 
-  case class GetCoreUtilizationByLocality(since: Option[Long], until: Option[Long]) extends Query
+  case class GetCoreUtilizationByLocality(from: Option[Long], until: Option[Long]) extends Query
 
-  case class GetCoreUtilizationByJobGroup(since: Option[Long], untilNo: Option[Long]) extends Query
+  case class GetCoreUtilizationByJobGroup(from: Option[Long], until: Option[Long]) extends Query
 
-  case class GetCoreUtilizationByPool(since: Option[Long], untilNo: Option[Long]) extends Query
+  case class GetCoreUtilizationByPool(from: Option[Long], until: Option[Long]) extends Query
 
   case class CoreUtilizationResponse(data: Map[String, Double])
 
   //Data
   case class JobSummary(jobGroup: Option[String], jobDescription: Option[String], pool: Option[String], started: Long, ended: Option[Long] = None)
 
-  case class UsageByGroup(byGroup: Map[String, Int], idle: Int)
-
+  case class UsageByGroup(byGroup: Map[String, Double], idle: Double)
 }
 
-class JobSink extends Actor {
+class JobSink(storageOption: StorageOption) extends Actor {
 
   import JobSink._
 
-  implicit val usageSummaryOrdering: Ordering[UsageSummary] = UsageSummary
   private val stageToJob: mutable.Map[Int, Int] = mutable.Map()
   private val runningJobs: mutable.Map[Int, JobSummary] = mutable.Map()
   private val finishedJobs: mutable.Map[Int, JobSummary] = mutable.Map()
-  private val metricsByLocality: Map[String, LosslessMetricsSink] = TaskLocality.values.toSeq.map(locality =>
-    locality.toString -> new LosslessMetricsSink).toMap
-  private val metricsByJobGroup: mutable.Map[String, LosslessMetricsSink] = mutable.Map.empty
-  private val metricsByPool: mutable.Map[String, LosslessMetricsSink] = mutable.Map.empty
-  private val availableCoresMetrics = new LosslessMetricsSink()
-  private val liveExecutors: mutable.Map[String, UsageSummary] = mutable.Map.empty
-  private val runningTask: mutable.Map[Long, UsageSummary] = mutable.Map.empty
+  private val metricsByLocality: Map[String, MetricsSink] = TaskLocality.values.toSeq.map(locality =>
+    locality.toString -> storageOption.emptySink).toMap
+  private val metricsByJobGroup: mutable.Map[String, MetricsSink] = mutable.Map.empty
+  private val metricsByPool: mutable.Map[String, MetricsSink] = mutable.Map.empty
+  private val availableCoresMetrics = storageOption.emptySink
+  private val liveExecutors: mutable.Map[String, WeightedInterval] = mutable.Map.empty
+  private val runningTask: mutable.Map[Long, WeightedInterval] = mutable.Map.empty
 
   override def receive: Receive = accumulateData orElse processQuery
 
@@ -90,7 +88,7 @@ class JobSink extends Actor {
       }
 
     case e: SparkListenerExecutorAdded =>
-      val newExecutorSummary = UsageSummary(e.time, weight = e.executorInfo.totalCores)
+      val newExecutorSummary = WeightedInterval(e.time, weight = e.executorInfo.totalCores)
       liveExecutors(e.executorId) = newExecutorSummary
       availableCoresMetrics.push(newExecutorSummary)
     case e: SparkListenerExecutorRemoved =>
@@ -117,13 +115,13 @@ class JobSink extends Actor {
     // ignore for now
 
     case e: SparkListenerTaskStart =>
-      val newTaskExecution = UsageSummary(e.taskInfo.launchTime)
+      val newTaskExecution = WeightedInterval(e.taskInfo.launchTime)
       runningTask(e.taskInfo.taskId) = newTaskExecution
       metricsByLocality(e.taskInfo.taskLocality.toString).push(newTaskExecution)
       val jobGroup = stageToJob.get(e.stageId).flatMap(runningJobs.get).flatMap(_.jobGroup).getOrElse("default")
-      metricsByJobGroup.getOrElseUpdate(jobGroup, new LosslessMetricsSink()).push(newTaskExecution)
+      metricsByJobGroup.getOrElseUpdate(jobGroup, storageOption.emptySink).push(newTaskExecution)
       val pool = stageToJob.get(e.stageId).flatMap(runningJobs.get).flatMap(_.pool).getOrElse("default")
-      metricsByPool.getOrElseUpdate(pool, new LosslessMetricsSink()).push(newTaskExecution)
+      metricsByPool.getOrElseUpdate(pool, storageOption.emptySink).push(newTaskExecution)
     case e: SparkListenerTaskEnd =>
       for (taskExecution <- runningTask.remove(e.taskInfo.taskId)) {
         taskExecution.end = Some(e.taskInfo.finishTime)
@@ -150,7 +148,7 @@ class JobSink extends Actor {
       sender() ! getCoreUtilization(since, until, metricsByPool.toMap)
   }
 
-  protected def getCoreUsage(bucketSize: Long, since: Option[Long], until: Option[Long], dataSeries: Map[String, LosslessMetricsSink]): Any = {
+  protected def getCoreUsage(bucketSize: Long, since: Option[Long], until: Option[Long], dataSeries: Map[String, MetricsSink]): Any = {
     if (dataSeries.forall(_._2.isEmpty)) {
       return NoDataYet
     }
@@ -159,19 +157,19 @@ class JobSink extends Actor {
     if (earliestTime >= latestTime) {
       return NoDataYet
     }
-    val coreUsageByJobGroup = dataSeries.mapValues(_.collect(earliestTime, bucketSize, latestTime))
-    val availableCores = availableCoresMetrics.collect(earliestTime, bucketSize, latestTime)
+    val coreUsageByJobGroup = dataSeries.mapValues(_.collect(earliestTime, latestTime, bucketSize))
+    val availableCores = availableCoresMetrics.collect(earliestTime, latestTime, bucketSize)
     val compiledData = availableCores.map { case (bucket, cores) =>
       val usageByJobGroup = dataSeries.keys.toSeq.flatMap(jobGroup => {
         coreUsageByJobGroup(jobGroup).get(bucket).filter(_ > 0).map(usage => jobGroup -> usage)
       }).toMap
-      val idle = (cores - usageByJobGroup.values.sum) max 0
+      val idle = (cores - usageByJobGroup.values.sum) max 0.0
       bucket -> UsageByGroup(usageByJobGroup, idle)
     }
     CoreUsageResponse(compiledData)
   }
 
-  protected def getCoreUtilization(since: Option[Long], until: Option[Long], dataSeries: Map[String, LosslessMetricsSink]): Any = {
+  protected def getCoreUtilization(since: Option[Long], until: Option[Long], dataSeries: Map[String, MetricsSink]): Any = {
     if (availableCoresMetrics.nonEmpty && dataSeries.exists(_._2.nonEmpty)) {
       val earliestTime = since.getOrElse(dataSeries.flatMap(_._2.earliestTime).min)
       val latestTime = until.getOrElse(dataSeries.flatMap(_._2.latestTime).max)

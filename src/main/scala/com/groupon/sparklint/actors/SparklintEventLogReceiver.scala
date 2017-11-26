@@ -25,12 +25,12 @@ import org.apache.spark.scheduler.SparkListenerEvent
   * @since 11/25/17.
   */
 object SparklintEventLogReceiver {
-  def props(id: String): Props = Props(new SparklintEventLogReceiver(id))
+  def props(id: String, storageOption: StorageOption): Props = Props(new SparklintEventLogReceiver(id, storageOption))
 }
 
-class SparklintEventLogReceiver(uuid: String) extends Actor {
+class SparklintEventLogReceiver(id: String, storageOption: StorageOption) extends Actor {
 
-  lazy val logProcessor: ActorRef = context.actorOf(SparklintLogProcessor.props(uuid), SparklintLogProcessor.name)
+  lazy val logProcessor: ActorRef = context.actorOf(SparklintLogProcessor.props(id, storageOption), SparklintLogProcessor.name)
   var progressData: ProgressData = ProgressData(0)
   var lastRead: Option[SparkListenerEvent] = None
 
@@ -40,7 +40,7 @@ class SparklintEventLogReceiver(uuid: String) extends Actor {
       logProcessor ! logLine
       progressData = progressData.inc()
     case GetReaderStatus =>
-      sender() ! GetReaderStatusResponse("Running", progressData, lastRead)
+      sender() ! GetReaderStatusResponse("Running", progressData, lastRead, storageOption)
     case query: SparklintLogProcessor.LogProcessorQuery =>
       logProcessor.forward(query)
   }

@@ -27,17 +27,17 @@ import org.apache.spark.scheduler._
 object SparklintLogProcessor {
   val name: String = "logProcessor"
 
-  def props(uuid: String): Props = Props(new SparklintLogProcessor(uuid))
+  def props(id: String, storageOption: StorageOption): Props = Props(new SparklintLogProcessor(id, storageOption))
 
   trait LogProcessorQuery
 
 }
 
-class SparklintLogProcessor(id: String) extends Actor {
+class SparklintLogProcessor(id: String, storageOption: StorageOption) extends Actor {
   lazy val version: ActorRef = context.actorOf(VersionSink.props, VersionSink.name)
   lazy val lifeCycle: ActorRef = context.actorOf(LifeCycleSink.props, LifeCycleSink.name)
   lazy val executors: ActorRef = context.actorOf(ExecutorSink.props, ExecutorSink.name)
-  lazy val jobInfo: ActorRef = context.actorOf(JobSink.props, JobSink.name)
+  lazy val jobInfo: ActorRef = context.actorOf(JobSink.props(storageOption), JobSink.name)
 
   private var lastMessageAt: Long = 0L
 
