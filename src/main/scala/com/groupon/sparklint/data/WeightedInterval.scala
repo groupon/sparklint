@@ -18,11 +18,6 @@ package com.groupon.sparklint.data
 
 /**
   * @author rxue
-  * @since 9/23/16.
+  * @since 6/4/17.
   */
-case class SparklintShuffleReadMetrics(fetchWaitTime: Long = 0L,
-                                       localBlocksFetched: Long = 0L,
-                                       localBytesRead: Long = 0L,
-                                       recordsRead: Long = 0L,
-                                       remoteBlocksFetched: Long = 0L,
-                                       remoteBytesRead: Long = 0L)
+case class WeightedInterval(start: Long, var end: Option[Long] = None, weight: Int = 1)

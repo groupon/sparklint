@@ -17,6 +17,7 @@
 package com.groupon.sparklint.actors
 
 import akka.actor.{ActorRef, FSM, Props}
+import com.groupon.sparklint.data.StorageOption
 import org.apache.spark.scheduler.{SparkListenerApplicationStart, SparkListenerEvent}
 
 /**

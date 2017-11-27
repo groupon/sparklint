@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-package com.groupon.sparklint.actors
-
+package com.groupon.sparklint.data
 
 import scala.collection.SortedMap
 import scala.collection.mutable.ListBuffer
@@ -24,7 +23,7 @@ import scala.collection.mutable.ListBuffer
   * @author rxue
   * @since 6/3/17.
   */
-trait MetricsSink {
+trait MetricsCounter {
   protected var _dataPoints: ListBuffer[WeightedInterval] = ListBuffer[WeightedInterval]()
 
   protected var _earliest: Option[Long] = None
@@ -93,5 +92,3 @@ trait MetricsSink {
   }
 
 }
-
-

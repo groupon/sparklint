@@ -14,34 +14,10 @@
  * limitations under the License.
  */
 
-package com.groupon.sparklint.events
+package com.groupon.sparklint.data
 
 /**
   * @author rxue
-  * @since 1.0.5
+  * @since 11/26/17.
   */
-trait FreeScrollEventSource extends EventSource {
-  def rewind(): Boolean
-
-  //noinspection AccessorLikeMethodIsUnit
-  def toStart(): Unit
-
-  //noinspection AccessorLikeMethodIsUnit
-  def toEnd(): Unit
-
-  def forwardEvents(count: Int): Unit
-
-  def forwardJobs(count: Int): Unit
-
-  def forwardStages(count: Int): Unit
-
-  def forwardTasks(count: Int): Unit
-
-  def rewindEvents(count: Int): Unit
-
-  def rewindJobs(count: Int): Unit
-
-  def rewindStages(count: Int): Unit
-
-  def rewindTasks(count: Int): Unit
-}
+class LosslessMetricsCounter extends MetricsCounter

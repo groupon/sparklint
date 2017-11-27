@@ -18,6 +18,7 @@ package com.groupon.sparklint.actors
 
 import akka.actor.{Actor, ActorRef, Props}
 import com.groupon.sparklint.actors.SparklintAppLogReader.{GetReaderStatus, GetReaderStatusResponse, ProgressData}
+import com.groupon.sparklint.data.StorageOption
 import org.apache.spark.scheduler.SparkListenerEvent
 
 /**

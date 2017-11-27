@@ -40,15 +40,16 @@ class JobSinkTest extends TestKit(ActorSystem("MySpec"))
       val reader = readSampleLog()
       val logProcessorPath = reader.path / SparklintLogProcessor.name
       val jobSink = system.actorSelection(logProcessorPath / name)
-      jobSink ! GetCoreUsageByLocality(41662, None, None)
+      jobSink ! GetCoreUsageByLocality(40000, None, None)
       expectMsg(CoreUsageResponse(
         SortedMap(
-          1466087848562L -> UsageByGroup(Map("RACK_LOCAL" -> 1, "ANY" -> 3), 0),
-          1466087890224L -> UsageByGroup(Map("ANY" -> 4), 0),
-          1466087931886L -> UsageByGroup(Map("ANY" -> 2), 2),
-          1466087973548L -> UsageByGroup(Map("ANY" -> 1), 3),
-          1466088015210L -> UsageByGroup(Map(), 4),
-          1466088056872L -> UsageByGroup(Map(), 0)
+          1466087848562L -> UsageByGroup(Map("RACK_LOCAL" -> 0.8979896940008907, "ANY" -> 2.3934728672307397, "NODE_LOCAL" -> 0.23038997391691585), 0.4781474648514541),
+          1466087880000L -> UsageByGroup(Map("ANY" -> 4.000375), 0.0),
+          1466087920000L -> UsageByGroup(Map("ANY" -> 2.01115, "RACK_LOCAL" -> 0.372125, "NODE_LOCAL" -> 0.102375), 1.5143499999999999),
+          1466087960000L -> UsageByGroup(Map("ANY" -> 2.670275), 1.3297249999999998),
+          1466088000000L -> UsageByGroup(Map(), 4.0),
+          1466088040000L -> UsageByGroup(Map("ANY" -> 0.9919306634787807, "RACK_LOCAL" -> 0.4754931261207412, "PROCESS_LOCAL" -> 0.03182904961147639), 2.5007471607890017),
+          1466088053384L -> UsageByGroup(Map(), 0.0)
         )))
     }
   }
@@ -65,7 +66,7 @@ class JobSinkTest extends TestKit(ActorSystem("MySpec"))
           (usageByLocality("NODE_LOCAL") * 100).round.toInt shouldBe 1
           (usageByLocality("RACK_LOCAL") * 100).round.toInt shouldBe 6
           (usageByLocality("NO_PREF") * 100).round.toInt shouldBe 0
-          (usageByLocality("ANY") * 100).round.toInt shouldBe 53
+          (usageByLocality("ANY") * 100).round.toInt shouldBe 54
       }
     }
   }
@@ -75,16 +76,17 @@ class JobSinkTest extends TestKit(ActorSystem("MySpec"))
       val reader = readSampleLog()
       val logProcessorPath = reader.path / SparklintLogProcessor.name
       val jobSink = system.actorSelection(logProcessorPath / name)
-      jobSink ! GetCoreUsageByJobGroup(41662, None, None)
+      jobSink ! GetCoreUsageByJobGroup(40000, None, None)
       expectMsgPF() {
         case CoreUsageResponse(byJobGroup) =>
           byJobGroup shouldBe SortedMap(
-            1466087848562L -> UsageByGroup(Map("myJobGroup" -> 4), 0),
-            1466087890224L -> UsageByGroup(Map("myJobGroup" -> 4), 0),
-            1466087931886L -> UsageByGroup(Map("myJobGroup" -> 3), 1),
-            1466087973548L -> UsageByGroup(Map("myJobGroup" -> 1), 3),
-            1466088015210L -> UsageByGroup(Map("myJobGroup" -> 1), 3),
-            1466088056872L -> UsageByGroup(Map(), 0)
+            1466087848562L -> UsageByGroup(Map("myJobGroup" -> 3.5218525351485463), 0.47814746485145365),
+            1466087880000L -> UsageByGroup(Map("myJobGroup" -> 4.000375), 0),
+            1466087920000L -> UsageByGroup(Map("myJobGroup" -> 2.48565), 1.5143499999999999),
+            1466087960000L -> UsageByGroup(Map("myJobGroup" -> 2.670275), 1.3297249999999998),
+            1466088000000L -> UsageByGroup(Map(), 4.0),
+            1466088040000L -> UsageByGroup(Map("myJobGroup" -> 1.4992528392109983), 2.5007471607890017),
+            1466088053384L -> UsageByGroup(Map(), 0.0)
           )
       }
     }
@@ -99,7 +101,7 @@ class JobSinkTest extends TestKit(ActorSystem("MySpec"))
       expectMsgPF() {
         case CoreUtilizationResponse(usageByJobGroup) =>
           usageByJobGroup.size shouldBe 1
-          (usageByJobGroup("myJobGroup") * 100).round.toInt shouldBe 60
+          (usageByJobGroup("myJobGroup") * 100).round.toInt shouldBe 61
       }
     }
   }

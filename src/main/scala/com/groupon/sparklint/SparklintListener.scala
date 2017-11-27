@@ -17,8 +17,8 @@
 package com.groupon.sparklint
 
 import akka.actor.ActorRef
-import com.groupon.sparklint.actors.StorageOption
 import com.groupon.sparklint.common.SparkConfSparklintConfig
+import com.groupon.sparklint.data.StorageOption
 import org.apache.spark.scheduler.SparkListenerEvent
 import org.apache.spark.{SparkConf, SparkFirehoseListener}
 

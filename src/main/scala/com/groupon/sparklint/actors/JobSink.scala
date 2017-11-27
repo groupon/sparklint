@@ -18,6 +18,7 @@ package com.groupon.sparklint.actors
 
 import akka.actor.{Actor, Props}
 import com.groupon.sparklint.actors.StandardMessages.NoDataYet
+import com.groupon.sparklint.data.{MetricsCounter, StorageOption, WeightedInterval}
 import org.apache.spark.scheduler._
 
 import scala.collection.{SortedMap, mutable}
@@ -62,11 +63,11 @@ class JobSink(storageOption: StorageOption) extends Actor {
   private val stageToJob: mutable.Map[Int, Int] = mutable.Map()
   private val runningJobs: mutable.Map[Int, JobSummary] = mutable.Map()
   private val finishedJobs: mutable.Map[Int, JobSummary] = mutable.Map()
-  private val metricsByLocality: Map[String, MetricsSink] = TaskLocality.values.toSeq.map(locality =>
-    locality.toString -> storageOption.emptySink).toMap
-  private val metricsByJobGroup: mutable.Map[String, MetricsSink] = mutable.Map.empty
-  private val metricsByPool: mutable.Map[String, MetricsSink] = mutable.Map.empty
-  private val availableCoresMetrics = storageOption.emptySink
+  private val metricsByLocality: Map[String, MetricsCounter] = TaskLocality.values.toSeq.map(locality =>
+    locality.toString -> storageOption.emptyCounter).toMap
+  private val metricsByJobGroup: mutable.Map[String, MetricsCounter] = mutable.Map.empty
+  private val metricsByPool: mutable.Map[String, MetricsCounter] = mutable.Map.empty
+  private val availableCoresMetrics = storageOption.emptyCounter
   private val liveExecutors: mutable.Map[String, WeightedInterval] = mutable.Map.empty
   private val runningTask: mutable.Map[Long, WeightedInterval] = mutable.Map.empty
 
@@ -119,9 +120,9 @@ class JobSink(storageOption: StorageOption) extends Actor {
       runningTask(e.taskInfo.taskId) = newTaskExecution
       metricsByLocality(e.taskInfo.taskLocality.toString).push(newTaskExecution)
       val jobGroup = stageToJob.get(e.stageId).flatMap(runningJobs.get).flatMap(_.jobGroup).getOrElse("default")
-      metricsByJobGroup.getOrElseUpdate(jobGroup, storageOption.emptySink).push(newTaskExecution)
+      metricsByJobGroup.getOrElseUpdate(jobGroup, storageOption.emptyCounter).push(newTaskExecution)
       val pool = stageToJob.get(e.stageId).flatMap(runningJobs.get).flatMap(_.pool).getOrElse("default")
-      metricsByPool.getOrElseUpdate(pool, storageOption.emptySink).push(newTaskExecution)
+      metricsByPool.getOrElseUpdate(pool, storageOption.emptyCounter).push(newTaskExecution)
     case e: SparkListenerTaskEnd =>
       for (taskExecution <- runningTask.remove(e.taskInfo.taskId)) {
         taskExecution.end = Some(e.taskInfo.finishTime)
@@ -148,7 +149,7 @@ class JobSink(storageOption: StorageOption) extends Actor {
       sender() ! getCoreUtilization(since, until, metricsByPool.toMap)
   }
 
-  protected def getCoreUsage(bucketSize: Long, since: Option[Long], until: Option[Long], dataSeries: Map[String, MetricsSink]): Any = {
+  protected def getCoreUsage(bucketSize: Long, since: Option[Long], until: Option[Long], dataSeries: Map[String, MetricsCounter]): Any = {
     if (dataSeries.forall(_._2.isEmpty)) {
       return NoDataYet
     }
@@ -169,7 +170,7 @@ class JobSink(storageOption: StorageOption) extends Actor {
     CoreUsageResponse(compiledData)
   }
 
-  protected def getCoreUtilization(since: Option[Long], until: Option[Long], dataSeries: Map[String, MetricsSink]): Any = {
+  protected def getCoreUtilization(since: Option[Long], until: Option[Long], dataSeries: Map[String, MetricsCounter]): Any = {
     if (availableCoresMetrics.nonEmpty && dataSeries.exists(_._2.nonEmpty)) {
       val earliestTime = since.getOrElse(dataSeries.flatMap(_._2.earliestTime).min)
       val latestTime = until.getOrElse(dataSeries.flatMap(_._2.latestTime).max)

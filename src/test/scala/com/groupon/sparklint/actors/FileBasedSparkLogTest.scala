@@ -21,6 +21,7 @@ import java.util.UUID
 import akka.actor.ActorRef
 import akka.actor.FSM.{CurrentState, SubscribeTransitionCallBack, Transition, UnsubscribeTransitionCallBack}
 import akka.testkit.{DefaultTimeout, TestKitBase}
+import com.groupon.sparklint.data.StorageOption
 import org.apache.spark.groupon.StringToSparkEvent
 
 import scala.io.Source

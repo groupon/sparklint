@@ -26,6 +26,7 @@ import akka.actor.{ActorRef, PoisonPill}
 import akka.pattern._
 import akka.util.Timeout
 import com.groupon.sparklint.actors._
+import com.groupon.sparklint.data.StorageOption
 import org.apache.spark.groupon.{SparkEventToJson, StringToSparkEvent}
 import org.http4s.dsl._
 import org.http4s.{HttpService, Request, Response, UrlForm}
