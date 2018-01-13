@@ -4,7 +4,7 @@ Sparklint
 The missing Spark Performance Debugger that can be drag and dropped into your spark application!
 
 > Featured in Spark Summit 2016 EU: [Introduction](https://spark-summit.org/eu-2016/events/sparklint-a-tool-for-monitoring-identifying-and-tuning-inefficient-spark-jobs-across-your-cluster/) | [Slides](https://www.slideshare.net/SparkSummit/spark-summit-eu-talk-by-simon-whitear) | [Video](https://www.youtube.com/watch?v=reGerTzcvoA)    
-Upcoming related talk at Spark Summit 2017 SF: [Introduction](https://spark-summit.org/2017/events/continuous-application-with-fair-scheduler/) | \[Slides\] | \[Video\]
+Upcoming related talk at Spark Summit 2017 SF: [Introduction](https://spark-summit.org/2017/events/continuous-application-with-fair-scheduler/) | [Slides](https://www.slideshare.net/databricks/continuous-application-with-fair-scheduler-with-robert-xue) | [Video](https://youtu.be/oXwOQKXo9VE)
 
 ### Mission
 - Provide advance metrics and better visualization about your spark application's resource utilization
@@ -36,7 +36,7 @@ SparklintListener is an implementation of [SparkFirehoseListener](https://spark.
 that listen to spark event log while the application is running. To enable it, you can try one of the following:
 
 1. Upload packaged jar to your cluster, include jar in classpath directly
-2. Use `--packages` command to inject dependency during job submission if we have a precompiled jar, like `--conf spark.extraListeners=com.groupon.sparklint.SparklintListener --packages com.groupon.sparklint:sparklint-spark201_2.11:1.0.7`
+2. Use `--packages` command to inject dependency during job submission if we have a precompiled jar, like `--conf spark.extraListeners=com.groupon.sparklint.SparklintListener --packages com.groupon.sparklint:sparklint-spark201_2.11:1.0.8`
 3. Add dependency directly in your pom, repackage your application, then during job submission, use `--conf spark.extraListeners=com.groupon.sparklint.SparklintListener`
 
 Finally, find out your spark application's driver node address, open a browser and visit port 23763 (our default port) of the driver node.
@@ -46,12 +46,12 @@ Finally, find out your spark application's driver node address, open a browser a
   <dependency>
       <groupId>com.groupon.sparklint</groupId>
       <artifactId>sparklint-spark201_2.11</artifactId>
-      <version>1.0.7</version>
+      <version>1.0.8</version>
   </dependency>
   ```
   for build.sbt
   ```
-  libraryDependencies += "com.groupon.sparklint" %% "sparklint-spark201" % "1.0.7"
+  libraryDependencies += "com.groupon.sparklint" %% "sparklint-spark201" % "1.0.8"
   ```
 
 ##### Server mode (run on local machine)
