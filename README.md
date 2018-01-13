@@ -112,6 +112,9 @@ You can feed Sparklint an event log file to playback activities.
 
 ### Change log
 
+##### 1.0.9
+- Added cross compile for Spark 2.2.0, 2.2.1
+
 ##### 1.0.8
 - Fixes compatibility issue with spark 2.0+ history server api (@alexnikitchuk, @neggert)
 - Fixes docker image's dependencies issue (@jcdauchy)
