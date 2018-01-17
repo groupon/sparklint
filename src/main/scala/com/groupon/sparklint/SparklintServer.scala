@@ -42,7 +42,7 @@ object SparklintServer extends Logging with OptParse {
       server.backend.appendFolderManager(config.directorySource.get)
     }
     // register initial event sources
-    server.startServer()
+    server.startServer(config.portConfig)
     waitForever
   }
 
