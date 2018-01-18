@@ -4,7 +4,7 @@ Sparklint
 The missing Spark Performance Debugger that can be drag and dropped into your spark application!
 
 > Featured in Spark Summit 2016 EU: [Introduction](https://spark-summit.org/eu-2016/events/sparklint-a-tool-for-monitoring-identifying-and-tuning-inefficient-spark-jobs-across-your-cluster/) | [Slides](https://www.slideshare.net/SparkSummit/spark-summit-eu-talk-by-simon-whitear) | [Video](https://www.youtube.com/watch?v=reGerTzcvoA)    
-Upcoming related talk at Spark Summit 2017 SF: [Introduction](https://spark-summit.org/2017/events/continuous-application-with-fair-scheduler/) | [Slides](https://www.slideshare.net/databricks/continuous-application-with-fair-scheduler-with-robert-xue) | [Video](https://youtu.be/oXwOQKXo9VE)
+ Spark Summit 2017 SF: [Introduction](https://spark-summit.org/2017/events/continuous-application-with-fair-scheduler/) | [Slides](https://www.slideshare.net/databricks/continuous-application-with-fair-scheduler-with-robert-xue) | [Video](https://youtu.be/oXwOQKXo9VE)
 
 ### Mission
 - Provide advance metrics and better visualization about your spark application's resource utilization
@@ -46,7 +46,7 @@ Finally, find out your spark application's driver node address, open a browser a
   <dependency>
       <groupId>com.groupon.sparklint</groupId>
       <artifactId>sparklint-spark201_2.11</artifactId>
-      <version>1.0.8</version>
+      <version>1.0.10</version>
   </dependency>
   ```
   for build.sbt
@@ -111,6 +111,9 @@ You can feed Sparklint an event log file to playback activities.
 * The command to release everything: `sparklintRelease`
 
 ### Change log
+
+##### 1.0.10
+- Addressed a port config bug (#72 @cvaliente)
 
 ##### 1.0.9
 - Added cross compile for Spark 2.2.0, 2.2.1
