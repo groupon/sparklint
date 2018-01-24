@@ -83,7 +83,7 @@ You can feed Sparklint an event log file to playback activities.
 ### Config
 * Common config
     * Set the port of the UI (eg, 4242)
-        - In live mode, send `--conf sparklint.port=4242` to spark submit script
+        - In live mode, send `--conf spark.sparklint.port=4242` to spark submit script
         - In server mode, send `--port 4242` to sbt run commandline argument
 * Server only config
     - `-f [FileName]`: Filename of an Spark event log source to use.
