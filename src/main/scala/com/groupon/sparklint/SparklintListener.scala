@@ -47,5 +47,5 @@ class SparklintListener(appId: String, appName: String, config: SparklintConfig)
   esgm.registerEventSource(liveEventSource)
   sparklint.backend.append(esgm)
   Future(liveEventSource.start())
-  sparklint.startServer()
+  sparklint.startServer(Some(config.port))
 }
