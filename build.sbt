@@ -103,6 +103,7 @@ dockerfile in docker := {
 }
 
 // Release customization
+sonatypeProfileName := "com.groupon"
 deployBranch := "master"
 releaseProcess := Seq[ReleaseStep](
   checkSnapshotDependencies,
@@ -112,12 +113,9 @@ releaseProcess := Seq[ReleaseStep](
   setReleaseVersion,
   commitReleaseVersion,
   tagRelease,
-  releaseStepCommand("sparklintRelease"),
-  releaseStepTask(dockerBuildAndPush),
   mergeReleaseVersion,
   setNextVersion,
   commitNextVersion,
-  releaseStepCommand("sonatypeReleaseAll"),
   pushChanges
 )
 

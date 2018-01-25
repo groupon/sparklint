@@ -110,11 +110,16 @@ You can feed Sparklint an event log file to playback activities.
     - Release version will be tagged as the version number
 * Publish existing docker image `dockerPublish`
 * Build and publish docker image at the same time `dockerBuildAndPush`
-* The command to release everything: `sparklintRelease`
+* The command to release everything: 
+```bash
+sbt release # github branch merging
+git checkout master
+sbt sparklintRelease sonatypeReleaseAll
+```
 
 ### Change log
 
-##### 1.0.10
+##### 1.0.11
 - Addressed a port config bug (#74 @jahubba)
 
 ##### 1.0.10
