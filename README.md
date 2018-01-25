@@ -1,6 +1,8 @@
 Sparklint
 ========
 
+[![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.groupon.sparklint/sparklint-spark200_2.11/badge.svg?subject=sparklint)](https://maven-badges.herokuapp.com/maven-central/com.groupon.sparklint/sparklint-spark200_2.11) 
+
 The missing Spark Performance Debugger that can be drag and dropped into your spark application!
 
 > Featured in Spark Summit 2016 EU: [Introduction](https://spark-summit.org/eu-2016/events/sparklint-a-tool-for-monitoring-identifying-and-tuning-inefficient-spark-jobs-across-your-cluster/) | [Slides](https://www.slideshare.net/SparkSummit/spark-summit-eu-talk-by-simon-whitear) | [Video](https://www.youtube.com/watch?v=reGerTzcvoA)    
@@ -46,7 +48,7 @@ Finally, find out your spark application's driver node address, open a browser a
   <dependency>
       <groupId>com.groupon.sparklint</groupId>
       <artifactId>sparklint-spark201_2.11</artifactId>
-      <version>1.0.10</version>
+      <version>1.0.11</version>
   </dependency>
   ```
   for build.sbt
@@ -111,6 +113,9 @@ You can feed Sparklint an event log file to playback activities.
 * The command to release everything: `sparklintRelease`
 
 ### Change log
+
+##### 1.0.10
+- Addressed a port config bug (#74 @jahubba)
 
 ##### 1.0.10
 - Addressed a port config bug (#72 @cvaliente)
