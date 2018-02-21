@@ -17,7 +17,8 @@ function loadApp(esmId, appId) {
     if (eventSocketStream !== undefined) {
         eventSocketStream.close();
     }
-    eventSocketStream = new WebSocket("ws://" + window.location.host + "/backend/esm/" + esmId + "/" + appId + "/stateWS");
+    var protocol = window.location.protocol == "https:" ? "wss:" : "ws:"
+    eventSocketStream = new WebSocket(protocol+"//" + window.location.host + "/backend/esm/" + esmId + "/" + appId + "/stateWS");
     eventSocketStream.addEventListener('message', function (statePayload) {
         var data = JSON.parse(statePayload.data);
         displayAppState(appId, data);
