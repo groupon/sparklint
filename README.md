@@ -48,7 +48,7 @@ Finally, find out your spark application's driver node address, open a browser a
   <dependency>
       <groupId>com.groupon.sparklint</groupId>
       <artifactId>sparklint-spark201_2.11</artifactId>
-      <version>1.0.11</version>
+      <version>1.0.12</version>
   </dependency>
   ```
   for build.sbt
@@ -118,6 +118,9 @@ sbt sparklintRelease sonatypeReleaseAll
 ```
 
 ### Change log
+
+##### 1.0.12
+- Addressed an https issue (#76 @rluta)
 
 ##### 1.0.11
 - Addressed a port config bug (#74 @jahubba)
