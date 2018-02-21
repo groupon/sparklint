@@ -44,16 +44,17 @@ that listen to spark event log while the application is running. To enable it, y
 Finally, find out your spark application's driver node address, open a browser and visit port 23763 (our default port) of the driver node.
 
 > Add dependency directly for pom.xml
-  ```
+  ```xml
   <dependency>
       <groupId>com.groupon.sparklint</groupId>
       <artifactId>sparklint-spark201_2.11</artifactId>
       <version>1.0.12</version>
   </dependency>
   ```
-  for build.sbt
-  ```
-  libraryDependencies += "com.groupon.sparklint" %% "sparklint-spark201" % "1.0.8"
+
+> for build.sbt
+  ```scala
+  libraryDependencies += "com.groupon.sparklint" %% "sparklint-spark201" % "1.0.12"
   ```
 
 ##### Server mode (run on local machine)
