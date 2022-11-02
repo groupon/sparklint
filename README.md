@@ -1,6 +1,11 @@
 Sparklint
 ========
 
+### Spark documentation
+https://spark.apache.org/docs/latest/
+
+
+
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/com.groupon.sparklint/sparklint-spark200_2.11/badge.svg?subject=sparklint)](https://maven-badges.herokuapp.com/maven-central/com.groupon.sparklint/sparklint-spark200_2.11) 
 
 The missing Spark Performance Debugger that can be drag and dropped into your spark application!
